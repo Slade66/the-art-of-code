@@ -4,7 +4,13 @@
 
 `CompletableFuture` 是 Java 8 引入的一个类，强大的异步编程工具。全称是：`java.util.concurrent.CompletableFuture`。它不仅实现了 `Future` 接口，还实现了 `CompletionStage` 接口，用来表示一个未来会完成的异步计算结果。它允许你异步地执行任务，不阻塞主线程，并在任务完成后调用回调函数处理结果，支持链式调用。
 
-默认使用 `ForkJoinPool.commonPool()`，也可以传入自定义的线程池。
+#### ForkJoinPool
+
+`CompletableFuture` 默认使用 `ForkJoinPool.commonPool()` 作为线程池来执行异步任务，也可以传入自定义的线程池。
+
+默认情况下，`ForkJoinPool` 的线程数通常设置为可用 CPU 核数。如果任务是 CPU 密集型，建议线程数与 CPU 核数接近；如果任务是 I/O 阻塞型，可以适当增大线程数。
+
+它的名称来源于其任务处理机制：一个大任务会被拆分（fork）成多个小任务，待各小任务执行完毕后，再将它们的结果合并（join）成最终的结果。因此，“ForkJoinPool”这一名称直观地反映了其核心功能——在一个线程池内，通过拆分和合并任务，高效地处理那些可递归分解的问题。
 
 #### `CompletableFuture` 有两个版本的方法
 
@@ -141,11 +147,9 @@ public void basicUsage() throws Exception {
 
 #### allOf()
 
-静态方法，等待传入的所有 `CompletableFuture` 都执行完毕，以便进行后续处理。
+静态方法，用来将多个独立的异步任务组合在一起，当所有这些任务都执行完毕时，它返回的 `CompletableFuture` 也会完成。这对于等待一组并发任务全部完成后再继续后续处理非常有用。
 
 返回的 `CompletableFuture` 的结果类型是 `Void`，它本身不会收集各个任务的返回值，所以如果需要获取各个任务的结果，通常需要在所有任务完成后分别调用各个任务的 `join()` 或 `get()` 方法。
-
-当你需要等待多个异步任务全部执行完成后，再进行下一步处理时使用它。
 
 ```java
 // 创建多个异步任务  
