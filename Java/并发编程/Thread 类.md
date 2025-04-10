@@ -76,4 +76,6 @@ try {
 
 #### isInterrupted()
 
-实例方法。检查当前线程有没有被中断。
+实例方法。返回当前线程的中断状态（`true` 或 `false`），不会改变中断标识。
+
+`Thread.interrupted()` 和实例的 `isInterrupted()` 都是在底层调用 native 的 `isInterrupted()`，区别只是静态的返回完中断状态之后还会清除中断状态（设置为 `false`）。
