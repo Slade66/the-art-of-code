@@ -40,3 +40,76 @@
 4. 线程 B 计算新余额（1000 - 500 = 500 元），也将 500 元写入账户。
 
 最终结果是账户余额为 500 元，而不是预期的 0 元。银行损失了 500 元。这是因为线程 B 的操作覆盖了线程 A 的操作结果，两者都基于旧的余额（1000 元）进行计算。
+
+### 原子类的底层原理
+
+[[CAS]]
+
+## 基本类型原子类
+
+### AtomicInteger
+
+**有什么用？**
+
+`AtomicInteger` 是一个包装了 `int` 类型的类，其核心作用在于为多线程环境下的整数操作提供原子性保证，使其成为线程安全的整数。因此，多个线程可以安全地同时修改 `AtomicInteger` 的值，而不会产生数据竞争等并发问题。在需要对共享整数变量进行并发修改，但又希望避免 `synchronized` 等重量级锁带来的性能损耗时，可以考虑使用 `AtomicInteger`。
+
+**怎么用？**
+
+- `get()`: 获取当前值。
+- `set(int newValue)`: 设置新值。
+- `getAndIncrement()`: 原子地将当前值加 1，并返回旧的值。
+- `getAndDecrement()`: 原子地将当前值减 1，并返回旧的值。
+- `compareAndSet(int expectedValue, int newValue)`: 原子地比较当前值是否等于 `expectedValue`，如果相等，则将当前值更新为 `newValue`。返回 `true` 如果更新成功，否则返回 `false`。这是实现更复杂原子操作的基础。
+
+### AtomicBoolean
+
+**有什么用？**
+
+`AtomicBoolean` 是一个包装了 `boolean` 类型的类，其核心作用在于为多线程环境下的布尔值操作提供原子性保证，使其成为线程安全的布尔标志。因此，多个线程可以安全地同时修改 `AtomicBoolean` 的值，而不会产生数据竞争等并发问题。在需要对共享布尔变量进行并发修改，例如控制某个操作是否已完成、某个条件是否满足等场景，但又希望避免 `synchronized` 等重量级锁带来的性能损耗时，可以考虑使用 `AtomicBoolean`。
+
+**怎么用？**
+
+- `get()`: 获取当前布尔值。
+- `set(boolean newValue)`: 设置新的布尔值。
+- `compareAndSet(boolean expectedValue, boolean newValue)`: 尝试将值从 `expectedValue` 更新为 `newValue`。只有当前值确实等于 `expectedValue` 时，更新才会成功，并返回 `true`。否则，更新失败，返回 `false`。
+
+### LongAdder
+
+**有什么用？**
+
+高并发写入时，`AtomicLong` 犹如一个狭窄的单行通道，大量线程争相修改内部数字，但每次只有一个线程能通过“检查并修改”（CAS 操作）成功。失败的线程会不断重试（自旋），造成大量 CPU 资源浪费。
+
+`LongAdder` 通过维护一个基准值 base 和一个 Cell 数组来实现高并发下的高效累加。当并发不高或没有竞争时，更新操作会直接作用于 base。而当检测到竞争时，`LongAdder` 会将更新操作分散到 Cell 数组的不同元素上，每个 Cell 本质上都是一个 `AtomicLong`，用于独立地进行原子更新。最终，通过将 base 的值和 Cell 数组中所有元素的值相加，得到总的累加和。这种设计就像在并发不高时大家都往一个主计数器上加，而当并发很高时，大家就分散到不同的分计数器上加，最后再将主计数器和所有分计数器的值汇总起来，从而有效地减少了对单个原子变量的竞争，显著提高了在高并发写入场景下的性能。
+
+**怎么用？**
+
+- `add(long delta)`: 将给定的值原子地加到当前的和上。
+- `increment()`: 原子地将当前和加 1。
+- `sum()`: 返回当前所有 cell 值的总和。
+- `reset()`: 将所有 cell 的值重置为零。
+
+## 引用类型原子类
+
+### AtomicReference
+
+**有什么用？**
+
+`AtomicReference` 是一个包装了对象引用的类，其核心作用在于为多线程环境下的对象引用操作提供原子性保证，使其成为线程安全的对象引用。因此，多个线程可以安全地同时修改 `AtomicReference` 所引用的对象，而不会产生数据竞争等并发问题。在需要对共享的对象引用进行并发修改，例如更新某个共享的可变对象、切换引用的对象实例等场景，但又希望避免 `synchronized` 等重量级锁带来的性能损耗时，可以考虑使用 `AtomicReference`。
+
+**怎么用？**
+
+- `get()`: 获取当前的对象引用。
+- `set(T newValue)`: 设置新的对象引用。
+- `compareAndSet(T expectedValue, T newValue)`: 尝试将当前对象引用从 `expectedValue` 更新为 `newValue`。只有当前引用确实等于 `expectedValue` 时，更新才会成功，并返回 `true`。否则，更新失败，返回 `false`。
+
+### AtomicStampedReference
+
+**有什么用？**
+
+`AtomicStampedReference` 就像给 `AtomicReference` 包装的对象引用打上了一个版本号（stamp），主要用于解决多线程环境下使用 CAS 操作更新引用时可能出现的 ABA 问题。它通过在每次修改引用时也修改 stamp，从而能够区分出“值虽然一样，但状态已不同”的情况。
+
+**怎么用？**
+
+- `getReference()`: 获取当前的对象引用。
+- `getStamp()`: 获取当前的 stamp 值。用于检查版本号或标记。
+- `compareAndSet(T expectedReference, T newReference, int expectedStamp, int newStamp)`: 尝试原子地将当前的引用更新为 `newReference`，并且只有在当前引用等于 `expectedReference` 且当前的 `stamp` 等于 `expectedStamp` 时，更新才会成功，同时 `stamp` 值也会更新为 `newStamp`。返回 `true` 如果更新成功，否则返回 `false`。
