@@ -2,7 +2,7 @@
 创建日期: 2025-04-01
 ---
 
-`CompletableFuture` 是 Java 8 引入的一个类，强大的异步编程工具。全称是：`java.util.concurrent.CompletableFuture`。它不仅实现了 `Future` 接口，还实现了 `CompletionStage` 接口，用来表示一个未来会完成的异步计算结果。它允许你异步地执行任务，不阻塞主线程，并在任务完成后调用回调函数处理结果，支持链式调用。
+`CompletableFuture` 是 Java 8 引入的强大异步编程工具，它不仅实现了 `Future` 接口，对其功能进行了增强，还实现了 `CompletionStage` 接口，用于描述异步计算的各个阶段。通过 `CompletableFuture`，我们可以将复杂的计算过程拆分为多个阶段，并以流水线的形式进行组合与处理。它支持异步执行任务，不会阻塞主线程，并可在任务完成后自动触发回调函数来处理结果。
 
 #### ForkJoinPool
 
