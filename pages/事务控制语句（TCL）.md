@@ -1,9 +1,10 @@
 - 事务控制语句（Transaction Control Language, TCL）是用于管理数据库事务的一组 SQL 命令。
 - `START TRANSACTION` 或 `BEGIN`
 	- 用于开启事务。一旦开启事务，直到执行 `COMMIT` 前，所有修改都不会生效。
+	- 执行启动事务的命令后，事务并不会立即开始，只有在之后执行第一条 `SELECT` 语句时，事务才会启动。
 	- #### 自动提交模式默认是开启的
 		- 很多数据库连接默认启用了自动提交模式，在这种模式下，每条 SQL 语句执行后都会立即自动提交，相当于每条语句都是一个独立的事务。若需手动控制事务的开始与结束，需先关闭自动提交模式。
-			- 在 MySQL 中
+			- 在 MySQL 中：
 				- 使用 `SHOW VARIABLES LIKE 'autocommit';` 来查看自动提交模式是否开启。
 				- 使用 `SET autocommit = 0;` 来关闭当前会话的自动提交。
 			- 在 JDBC 中，使用 `connection.setAutoCommit(false);`。
