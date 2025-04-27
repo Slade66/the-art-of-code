@@ -12,7 +12,7 @@ heading:: true
 			- 以 `WITH` 关键字开头。
 			- 随后定义一个或多个 CTE。每个 CTE 的格式为 `cte_name AS (SELECT ...)`：
 				- `cte_name` 是你为这个临时的、命名的结果集指定的名称。
-				- 括号内的标准 `SELECT` 查询语句定义了该 CTE 的内容。
+				- 括号内的 `SELECT` 语句定义了该 CTE 的内容。结尾不要加 `;`。
 			- 如果定义了多个 CTE，它们之间需用逗号 `,` 分隔。需要注意的是，后定义的 CTE 可以引用在它之前定义的 CTE。
 		- **主查询**：
 			- 紧跟在 `WITH` 子句（包含所有 CTE 定义）之后的是一个单独的主 SQL 语句（通常是 `SELECT`，也可以是 `INSERT`, `UPDATE`, `DELETE`）。
