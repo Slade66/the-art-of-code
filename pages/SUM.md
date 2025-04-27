@@ -1,0 +1,6 @@
+- `SUM(column_name)`
+	- 计算指定列中所有非 `NULL` 值的总和。
+	- 如果该列所有值都是 `NULL`，或者表中没有符合条件的行，`SUM` 函数会返回 `NULL`。
+- `SUM(DISTINCT column_name)`
+	- 计算指定列中所有唯一且非 `NULL` 值的总和。
+-
