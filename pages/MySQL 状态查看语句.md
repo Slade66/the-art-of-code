@@ -5,4 +5,6 @@
 	- `FULL` 版本可以显示完整的 SQL 语句，不被截断。
 - `SHOW VARIABLES;` 或 `SHOW GLOBAL VARIABLES;`
 	- 作用：查看当前会话（或全局）的 MySQL 服务器的运行配置。
+- `SHOW VARIABLES LIKE 'datadir';`
+	- 作用：查询 MySQL 数据库文件（数据表、日志、配置等）的存储路径。
 -
