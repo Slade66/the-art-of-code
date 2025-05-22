@@ -1,0 +1,2 @@
+- Java Web 是基于 Java 平台，用于开发 Web 应用程序的技术体系。
+- [[HttpSession]]
