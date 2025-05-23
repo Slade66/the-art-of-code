@@ -23,3 +23,4 @@ heading:: true
 - [[Redis 的持久化机制]]
 - [[SQL vs NoSQL]]
 - [[缓存雪崩]]
+- [[缓存击穿]]
