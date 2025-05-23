@@ -22,3 +22,4 @@ heading:: true
 	- [[Spring Data Redis]]
 - [[Redis 的持久化机制]]
 - [[SQL vs NoSQL]]
+- [[缓存雪崩]]
