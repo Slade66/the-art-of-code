@@ -4,3 +4,4 @@
 - [[Hash]]
 - [[Set]]
 - [[Sorted set]]
+- [[Bitmap]]
