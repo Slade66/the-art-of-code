@@ -760,6 +760,87 @@ heading:: true
 			- 解决方法：
 				- 使用 `sync.RWMutex`（读写互斥锁）。
 				- 使用专门为并发场景设计的 `sync.Map` 类型。
+	- `struct`
+	  heading:: true
+		- **基本概念**
+			- 数组、切片和映射是保存相同类型数据的集合，而结构体（`struct`）则用于组合不同类型的数据。结构体可以将多个不同类型的值组织为一个整体。
+		- **结构体的指针**
+			- `struct` 是值类型，传递给函数时会进行拷贝，因此在函数中修改不会影响原始结构体，同时也存在性能开销。为了避免这些问题，可以传递结构体的指针。
+			- Go 在结构体指针的字段访问上做了语法优化，不像 C++ 那样必须使用 `(*ptr).field` 或 `ptr->field`，在 Go 中可以直接使用 `ptr.field` 访问字段，编译器会自动解引用。
+		- **结构体的导出规则**
+			- 如果一个结构体类型在包外可见（即类型名首字母大写），但其字段名未大写（未导出），则这些字段在包外仍不可访问。字段要在包外可访问，需使用大写字母开头。
+		- **结构体嵌套与匿名字段**
+			- 普通结构体嵌套访问字段时，需要通过完整路径访问，例如 `outer.inner.field`，语法较繁琐。
+			- 使用匿名字段（即没有字段名、仅有类型的字段）可以简化访问。当结构体中嵌入另一个结构体作为匿名字段时，其字段会被“提升”，可以像访问外部结构体字段一样直接访问内部字段。这种方式称为结构体嵌入。
+			- ```go
+			  // 定义一个基础结构体，用于表示通用信息
+			  type ContactInfo struct {
+			    email string
+			    phone string
+			  }
+			  
+			  // 用户结构体，嵌入了 ContactInfo 作为匿名字段
+			  type User struct {
+			    name string
+			    age  int
+			    ContactInfo  // 匿名字段，字段将被提升
+			  }
+			  
+			  func main() {
+			    u := User{
+			      name: "Alice",
+			      age:  30,
+			      ContactInfo: ContactInfo{
+			        email: "alice@example.com",
+			        phone: "123-456-7890",
+			      },
+			    }
+			  
+			  // 直接访问嵌入字段的成员
+			  fmt.Println("Name:", u.name)
+			  fmt.Println("Email:", u.email)  // 访问的是 ContactInfo.email
+			  fmt.Println("Phone:", u.phone)  // 访问的是 ContactInfo.phone
+			  ```
+		- **使用字面量初始化结构体**
+			- 可以通过字面量快速创建结构体变量并赋值，若省略某些字段，则这些字段会自动初始化为对应类型的零值。
+			- ```go
+			  lyz := person{age: 23, money: 123.0}
+			  ```
+		- **结构体类型定义与变量声明**
+			- **匿名结构体定义及变量声明（一次性使用）**
+				- ```go
+				  var lyz struct {
+				    age   int
+				    money float64
+				  }
+				  ```
+			- **具名结构体定义及变量声明（多次使用）**
+				- **类型定义语法：**
+					- ```go
+					  type 类型名 基础类型
+					  ```
+				- **结构体类型定义与变量声明示例：**
+					- ```go
+					  type 类型名 struct {
+					    字段名 类型
+					    字段名 类型
+					  }
+					  
+					  type person struct {
+					    age   int
+					    money float64
+					  }
+					  
+					  var lyz person
+					  ```
+			- 声明结构体变量后，其所有字段都会被自动初始化为对应类型的零值。
+		- **访问结构体字段**
+			- 使用 `.` 运算符访问结构体字段。
+			- 示例：
+				- ```go
+				  lyz.age = 23
+				  fmt.Println(lyz.money)
+				  ```
 - Go 的函数
   heading:: true
 	- 函数名的命名规则和变量名相同。
