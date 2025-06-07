@@ -814,25 +814,20 @@ heading:: true
 				    money float64
 				  }
 				  ```
-			- **具名结构体定义及变量声明（多次使用）**
-				- **类型定义语法：**
-					- ```go
-					  type 类型名 基础类型
-					  ```
-				- **结构体类型定义与变量声明示例：**
-					- ```go
-					  type 类型名 struct {
-					    字段名 类型
-					    字段名 类型
-					  }
-					  
-					  type person struct {
-					    age   int
-					    money float64
-					  }
-					  
-					  var lyz person
-					  ```
+			- **具名结构体类型定义及变量声明（多次使用）**
+				- ```go
+				  type 类型名 struct {
+				    字段名 类型
+				    字段名 类型
+				  }
+				  
+				  type person struct {
+				    age   int
+				    money float64
+				  }
+				  
+				  var lyz person
+				  ```
 			- 声明结构体变量后，其所有字段都会被自动初始化为对应类型的零值。
 		- **访问结构体字段**
 			- 使用 `.` 运算符访问结构体字段。
@@ -841,10 +836,92 @@ heading:: true
 				  lyz.age = 23
 				  fmt.Println(lyz.money)
 				  ```
+- Go 的类型定义和类型别名
+  heading:: true
+	- Go 语言使用 `type` 关键字来定义新类型或类型别名。两者在使用上有显著区别。
+	- 类型定义
+	  heading:: true
+		- 类型定义会创建一个全新且独立的类型。即使底层类型相同，新类型与原始类型也被视为不同，不能直接混用。
+		- **语法：**
+			- ```go
+			  type 新类型名 基础类型
+			  ```
+		- **示例：**
+			- 假设我们要处理温度。直接使用 `float64` 可能会导致摄氏度和华氏度混淆。我们可以定义新的类型来增加安全性。
+			- ```go
+			  package main
+			  
+			  import "fmt"
+			  
+			  // 定义一个新类型 Celsius，底层类型为 float64
+			  type Celsius float64
+			  
+			  // 定义另一个新类型 Fahrenheit，底层同为 float64
+			  type Fahrenheit float64
+			  
+			  func main() {
+			      var c Celsius = 25.0
+			      var f Fahrenheit = 77.0
+			  
+			      fmt.Printf("当前摄氏温度: %v\n", c)
+			      fmt.Printf("当前华氏温度: %v\n", f)
+			  
+			      // 下述代码会报错，因为 Celsius 和 Fahrenheit 是不同的类型
+			      // c = f // cannot use f (type Fahrenheit) as type Celsius in assignment
+			  
+			      // 必须进行显式类型转换
+			      c = Celsius(f)
+			      fmt.Printf("转换后的摄氏温度: %v\n", c)
+			  }
+			  ```
+	- 类型别名
+	  heading:: true
+		- 类型别名不会创建新类型，它只是为现有类型起了一个新名字。别名与原类型完全等价，可以互相赋值和混用。
+		- **语法：**
+			- ```go
+			  type 别名 = 原类型
+			  ```
+			- **注意：**类型别名语法中包含一个 `=` 号，区别于类型定义。
+		- **示例：**
+			- ```go
+			  package main
+			  
+			  import "fmt"
+			  
+			  func main() {
+			      // 为 string 类型创建别名 Text
+			      type Text = string
+			  
+			      var s string = "Hello"
+			      var t Text = "World"
+			  
+			      // 因为 Text 与 string 等价，可以互相赋值
+			      s = t
+			      t = s
+			  
+			      fmt.Println(s, t) // 输出 "World World"
+			  }
+			  ```
 - Go 的函数
   heading:: true
 	- 函数名的命名规则和变量名相同。
 	- 调用当前包中定义的函数时，无需指定包名，直接使用函数名即可。
+	- Go 不支持函数重载，以避免函数签名模糊的问题，推荐使用不同的函数名明确表达函数用途：
+		- ```go
+		  // Java 风格（函数重载）：
+		  class Printer {
+		      void print(int val) { /* ... */ }
+		      void print(String val) { /* ... */ }
+		      void print(float val) { /* ... */ }
+		  }
+		  
+		  // Go 风格（不同函数名）：
+		  func PrintInt(val int) { /* ... */ }
+		  func PrintString(val string) { /* ... */ }
+		  func PrintFloat(val float64) { /* ... */ }
+		  
+		  ```
+		- 或者使用方法，将同名函数关联到不同的接收者上，以区分不同类型的操作。
 	- **值传递：**
 		- 在调用带参数的函数时，Go 会将每个实参的值复制到对应的形参变量中，这被称为“值传递”。
 		- 因为函数接收到的是副本而非原始变量，所以在函数内部对参数的修改不会影响外部变量。
