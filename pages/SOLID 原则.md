@@ -1,0 +1,7 @@
+- SOLID 是面向对象设计中五项基本原则的首字母缩写，遵循这些原则有助于构建易于理解、维护和扩展的软件系统。
+- [[S - Single Responsibility Principle（单一职责原则）]]
+- [[O - Open or Closed Principle（开闭原则）]]
+- [[L - Liskov Substitution Principle（里氏替换原则）]]
+- [[I - Interface Segregation Principle（接口隔离原则）]]
+- [[D - Dependency Inversion Principle（依赖倒置原则）]]
+-
