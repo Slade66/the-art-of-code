@@ -4,6 +4,12 @@ heading:: true
 	  heading:: true
 		- **语法**：`DEL key [key ...]`
 		- **作用**：删除指定的 1 个或多个 key。返回删除掉的 key 数量。
+	- `FLUSHDB`
+	  heading:: true
+		- **作用：**删除当前选择的数据库中的所有 key。
+	- `FLUSHALL`
+	  heading:: true
+		- **作用：**删除所有数据库中的所有 key。
 	- `EXISTS`
 	  heading:: true
 		- **语法**：`EXISTS key [key ...]`
