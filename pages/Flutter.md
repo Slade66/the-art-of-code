@@ -6,4 +6,6 @@
 - [[Dart 的代码格式化]]
 - [[Flutter 的常用 Widget]]
 - [[Flutter 构建 Android 版本卡半天]]
+- [[Dart 的类型]]
+- [[Dart 的面向对象]]
 -
