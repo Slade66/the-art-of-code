@@ -43,8 +43,36 @@ heading:: true
 		  logseq.order-list-type:: number
 		- 把 `bin` 目录添加到环境变量
 		  logseq.order-list-type:: number
-	- **编译：**
+	- **编译 & 使用：**
 		- **Python：**
 			- **生成 Python 代码：**`protoc --python_out=. person.proto`
+				- 生成的文件以 `_pb2.py` 结尾，这是 Google 官方的命名约定，用于表示通过 Protobuf 编译器自动生成的 Python 模块，可直接导入使用。
+				- `pb` 代表 Protocol Buffer
+				- `2` 表示使用的是版本 2 的 API（支持 proto2 和 proto3）
 			- **安装 Python 的 Protobuf 库：**`pip install protobuf`
+			- **在 Python 中使用 Protobuf 消息：**
+				- ```python
+				  import person_pb2
+				  
+				  # 创建一个 Person 对象
+				  p = person_pb2.Person()
+				  p.name = "小泽"
+				  p.id = 123
+				  p.email = "xiaoze@school.edu"
+				  p.phones.extend(["13800000000", "13900000000"])  # 添加多个手机号
+				  
+				  # 打印对象内容（文本格式）
+				  print("原始对象：")
+				  print(p)
+				  
+				  # 序列化成二进制
+				  binary_data = p.SerializeToString()
+				  
+				  # 反序列化回对象
+				  p2 = person_pb2.Person()
+				  p2.ParseFromString(binary_data)
+				  
+				  print("\n反序列化后的对象：")
+				  print(p2)
+				  ```
 -
