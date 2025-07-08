@@ -38,6 +38,7 @@ heading:: true
   heading:: true
 	- 使用 `protoc` 编译器可以将 `.proto` 文件编译为对应语言（如 C++、Java、Python、Go 等）的代码，生成的代码可以直接导入并使用。
 	- **安装 `protoc` 编译器：**
+	  id:: 686c8e4e-cbc7-4781-9575-a77cbc8d2372
 		- [下载预编译的压缩包](https://github.com/protocolbuffers/protobuf/releases)
 		  logseq.order-list-type:: number
 		- 找个位置解压
