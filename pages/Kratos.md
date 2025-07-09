@@ -16,4 +16,15 @@ heading:: true
 		- `server`：负责启动服务，把 `service` 绑定到 gRPC 或 HTTP 接口上，让服务真正运行起来。
 		- `conf`：定义配置用的结构体，用来加载和使用配置文件里的内容（比如端口号、数据库地址等）。
 	- `third_party`：用于存放所有外部依赖的 `.proto` 文件。
+- kratos 命令行工具
+  heading:: true
+	- **创建项目：**
+		- 使用默认模板创建一个新的 Kratos 项目：`kratos new <项目名>`
+		- Kratos 通过 Git 仓库管理项目模板，创建项目时会自动拉取模板并初始化项目目录结构。
+		- 使用 `-r` 参数可以指定自定义模板仓库来创建项目。
+		- 如果遇到网络拉取失败的问题（如 GitHub 访问受限），可以设置代理，例如：
+			- ```shell
+			  $env:HTTPS_PROXY = "http://127.0.0.1:10809"
+			  $env:HTTP_PROXY = "http://127.0.0.1:10809"
+			  ```
 -
