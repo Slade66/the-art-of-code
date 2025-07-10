@@ -18,13 +18,17 @@ heading:: true
 	- `third_party`：用于存放所有外部依赖的 `.proto` 文件。
 - kratos 命令行工具
   heading:: true
+	- **安装：**`go install github.com/go-kratos/kratos/cmd/kratos/v2@latest`
 	- **创建项目：**
 		- 使用默认模板创建一个新的 Kratos 项目：`kratos new <项目名>`
 		- Kratos 通过 Git 仓库管理项目模板，创建项目时会自动拉取模板并初始化项目目录结构。
 		- 使用 `-r` 参数可以指定自定义模板仓库来创建项目。
+		- 使用 `--nomod` 参数添加服务：告诉 Kratos 在创建服务时，不要生成独立的模块（即不创建新的 `go.mod` 文件），而是将新服务作为当前项目的一部分，使用统一的依赖管理（共用项目根目录下的 `go.mod`）。
 		- 如果遇到网络拉取失败的问题（如 GitHub 访问受限），可以设置代理，例如：
 			- ```shell
 			  $env:HTTPS_PROXY = "http://127.0.0.1:10809"
 			  $env:HTTP_PROXY = "http://127.0.0.1:10809"
 			  ```
+- 如何编译 Kratos 项目
+  heading:: true
 -
