@@ -299,7 +299,7 @@
  ;;  :charge-range    600}   ; Default value: 600
 
  ;; Favorites to list on the left sidebar
- :favorites ["Spring Cloud" "设计模式" "Go" "Redis" "MySQL"]
+ :favorites ["Kratos" "Spring Cloud" "设计模式" "Go" "Redis" "MySQL"]
 
  ;; Set flashcards interval.
  ;; Expected value:

@@ -36,6 +36,14 @@ heading:: true
 			  $env:HTTPS_PROXY = "http://127.0.0.1:10809"
 			  $env:HTTP_PROXY = "http://127.0.0.1:10809"
 			  ```
+	- **添加 proto 文件：**
+		- `kratos proto add` 命令用于将 proto 文件快速添加到项目的指定目录中。
+		- **举例：**
+			- ```bash
+			   kratos proto add api/bubble/v1/todo.proto
+			  ```
+			- 执行该命令后，`api/bubble/v1/todo.proto` 文件会被添加到 Kratos 项目的 `api/bubble/v1` 目录。如果该目录不存在，命令会自动创建所需的目录结构。
+			- 同时，命令还会自动生成服务接口和数据结构的代码，帮助你快速开发。
 - 如何编译 Kratos 项目
   heading:: true
 -
