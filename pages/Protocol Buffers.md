@@ -79,11 +79,9 @@ heading:: true
 				  ```
 		- **Go：**
 			- **安装 `protoc-gen-go`：**
-				- Google 将各语言的代码生成逻辑拆分为独立的语言插件。
-				- `protoc-gen-go` 负责解析 `.proto` 文件并生成对应的 `.pb.go` 源代码。
-				- **`protoc-gen-go` 与 `protoc-gen-go-grpc` 的区别：**
-					- **protoc-gen-go：**根据 `.proto` 文件生成 Go 的数据结构代码（消息类型），即 `.pb.go` 文件，包含对应的结构体以及序列化和反序列化方法。
-					- **protoc-gen-go-grpc：**生成 gRPC 服务的接口定义、服务端实现骨架和客户端调用代码，方便实现和调用 gRPC 服务。
+				- Google 将各语言的代码生成逻辑拆分为独立的语言插件。`protoc` 本身不直接生成 Go 代码，它需要通过插件来完成：
+					- **`protoc-gen-go`：**用于解析 `.proto` 文件并生成对应的 `.pb.go` 源代码，包含 Go 的数据结构和序列化/反序列化方法。
+					- **`protoc-gen-go-grpc`：**用于生成 gRPC 服务的客户端和服务器端代码。
 					- **适用场景：**
 						- 如果只想用 Protobuf 传输结构化数据，不涉及 RPC，只需安装 `protoc-gen-go`。
 						- 如果要用 gRPC 构建远程调用服务，则需要同时安装并使用 `protoc-gen-go` 和 `protoc-gen-go-grpc`，前者负责生成数据结构，后者负责生成服务接口。
