@@ -44,7 +44,7 @@ heading:: true
 			  ```
 			- 执行该命令后，`api/bubble/v1/todo.proto` 文件会被添加到 Kratos 项目的 `api/bubble/v1` 目录。如果该目录不存在，命令会自动创建所需的目录结构。
 			- 同时，命令还会自动生成服务接口和数据结构的代码，帮助你快速开发。
-	- **根据 proto 文件生成代码：**
+	- **根据 proto 文件生成客户端代码：**
 		- `kratos proto client` 命令用于根据 `.proto` 文件生成对应的 Go 语言客户端代码。
 		- **举例：**
 			- ```bash
@@ -54,6 +54,14 @@ heading:: true
 				- `.pb.go`：包含消息类型和服务接口的 Go 实现及其序列化方法；
 				- `_grpc.pb.go`：包含客户端可调用的接口定义，以及服务端需要实现的接口；
 				- `_http.pb.go`：仅当 `.proto` 文件中声明了 HTTP 映射（`google.api.http`）时才会生成，包含 HTTP 路由相关代码。
+	- **通过 proto 文件生成 Service 模板代码：**
+		- `kratos proto server` 命令用于根据 `.proto` 文件生成服务端代码的模板，包括接口定义和方法的空实现，便于你在其中编写具体的业务逻辑。
+		- `-t` 参数（target）用于指定生成代码的目标目录，Kratos 会将模板文件输出到该目录下。
+		- **举例：**
+			- ```bash
+			  kratos proto server api/bubble/v1/todo.proto -t internal/service
+			  ```
+			- Kratos 会根据 `.proto` 中定义的服务名称，在 `internal/service` 目录下生成对应的 `.go` 文件（如 `todo.go`），其中包含服务方法的空实现，供你后续填充业务逻辑。
 - 如何编译 Kratos 项目
   heading:: true
 -
