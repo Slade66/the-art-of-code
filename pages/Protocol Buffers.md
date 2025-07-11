@@ -18,6 +18,19 @@ heading:: true
 		    repeated string phones = 4; // 数组（列表）
 		  }
 		  ```
+	- **`repeated` 字段：**
+		- `repeated` 字段在 Go 中会生成一个对应类型的切片。
+		- ```proto
+		  message Article {
+		    string title = 1;
+		    repeated string tags = 2; // 文章可以有多个标签
+		  }
+		  ```
+		- 生成的 Go `struct` 中会有一个 `Tags` 字段，会被导出（首字母大写），类型为 `[]string`。
+	- **`optional` 关键字：**
+		- 使用 `optional` 关键字后，生成的 Go `struct` 字段会是一个指针类型。这样，你就可以通过检查指针是否为 `nil` 来判断字段是否被显式设置。
+	- **消息类型的嵌套：**
+		- 在 Go 中，如果一个 `message` 字段引用了另一个 `message`，那么生成的 `struct` 字段会是一个指向被引用 `struct` 的指针。
 	- **字段的类型：**
 		- `int32`，32 位整数
 		- `int64`，64 位整数
@@ -28,6 +41,17 @@ heading:: true
 		- `repeated`，表示数组/列表
 		- `message`，嵌套结构体
 		- `enum`，枚举类型
+	- **`go_package` 选项：**
+		- **作用：**
+			- **分号前：**定义其它 Go 程序 `import` 此包时使用的路径。这个路径必须是从你的 Go module 根目录开始的绝对路径。
+			- **分号后：**写入到生成的 `.pb.go` 文件顶部的包声明 `package PACKAGE_NAME`。一个非常好的实践是在名称后加上 `pb` 后缀，以明确表示这是一个 Protobuf 生成的包。
+		- **示例：**
+			- ```proto
+			  option go_package = "github.com/my-org/my-project/gen/go/user;userpb";
+			  ```
+			- 当 `protoc` 处理这个文件时，它知道：
+				- 这个包的完整导入路径是 `github.com/my-org/my-project/gen/go/user`。
+				- 生成的 `user.pb.go` 文件应该包含 `package userpb`。
 	- **字段编号的作用：**
 		- 如果不用字段编号，像 JSON 一样，虽然对人类友好，但机器解析会更慢，因为需要扫描字符串来匹配字段名，而且数据中还要携带完整的字段名，导致占用更多空间。
 		- Protobuf 仅传输字段编号和值，不传字段名，解析时根据编号映射到对应的字段名，既提升了解析效率，又减少了传输体积。
@@ -88,6 +112,7 @@ heading:: true
 				- **安装命令：**
 					- ```bash
 					  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+					  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 					  ```
 			- **编写 `.proto` 文件：**
 				- ```proto
@@ -101,7 +126,7 @@ heading:: true
 				    string email = 3;
 				  }
 				  ```
-			- **生成 `.pb.go` 文件：**
+			- **编译 `.proto` 文件：**
 				- **运行命令：**
 					- ```bash
 					  protoc --go_out=. person.proto
