@@ -5,7 +5,7 @@ heading:: true
 	- 相较于 JSON/XML，它是一种更高效的数据通信格式。
 - `.proto` 文件
   heading:: true
-	- **作用：**在 `.proto` 文件中使用特殊的语法（接口定义语言）来定义数据结构。
+	- **作用：**在 `.proto` 文件中使用特殊的语法（接口定义语言）来定义数据结构和服务接口。
 	- **例子：**
 		- ```protobuf
 		  syntax = "proto3";  // 指定语法版本，必须是文件第一行，proto3 是推荐的
@@ -174,4 +174,36 @@ heading:: true
 				  	fmt.Println("解码后：", newP)
 				  }
 				  ```
+- **在 proto 文件中添加 HTTP 注解以启用 HTTP 支持：**
+	- 主要目的是使同一个 `.proto` 定义能够同时生成 gRPC 服务端/客户端代码以及 HTTP/JSON 反向代理网关，从而让 gRPC 服务能够通过 HTTP RESTful API 访问。
+	- 你可以在 `.proto` 文件中定义 gRPC 服务，并在服务的方法（RPC）上使用特殊的 `option` 添加 HTTP 注解，指明该 RPC 如何映射到 HTTP/JSON 接口。在你的 Go 应用中，同时启动 gRPC 服务和 HTTP 反向代理。当 HTTP 请求到来时，反向代理会将其转换为 gRPC 请求并发送给 gRPC 服务，随后将 gRPC 服务的响应转换为 HTTP/JSON 格式返回给客户端。
+	- **在 `.proto` 文件中，添加 `google.api.http` 选项：**
+		- ```proto
+		  // 1. 导入 Google API 的注解定义
+		  import "google/api/annotations.proto";
+		  
+		  // Greeter 服务定义
+		  service GreeterService {
+		    // SayHello 方法
+		    rpc SayHello(SayHelloRequest) returns (SayHelloResponse) {
+		      // 2. 添加 HTTP 注解
+		      option (google.api.http) = {
+		        // 定义一个 GET 请求，路径是 /v1/hello/{name}
+		        // {name} 会自动映射到 SayHelloRequest 中的 name 字段
+		        get: "/v1/hello/{name}"
+		      };
+		    }
+		  
+		    // CreateGreeting 方法
+		    rpc CreateGreeting(CreateGreetingRequest) returns (SayHelloResponse) {
+		      // 2. 添加另一个 HTTP 注解
+		      option (google.api.http) = {
+		        // 定义一个 POST 请求，路径是 /v1/greetings
+		        // body: "*" 表示请求的 JSON body 会被映射到 CreateGreetingRequest 的所有字段
+		        post: "/v1/greetings"
+		        body: "*"
+		      };
+		    }
+		  }
+		  ```
 -
