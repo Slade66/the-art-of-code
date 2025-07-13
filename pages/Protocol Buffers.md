@@ -1,21 +1,41 @@
 概念
 heading:: true
-	- 简称 Protobuf，是 Google 开发的一种与语言无关的，用于数据结构定义和序列化的方案。
-	- Protobuf 是一种用于定义数据结构并进行序列化与反序列化的工具。它根据 proto 文件中的定义，生成多种编程语言对应的数据结构操作代码，支持在不同服务之间传输结构化数据，从而实现跨语言和系统的数据通信。
+	- 简称 Protobuf，是 Google 开发的一种与语言无关的，用于定义数据结构和服务接口的工具。它根据 proto 文件中的定义，生成多种编程语言对应的数据结构操作代码（进行序列化与反序列化），支持在不同服务之间传输结构化数据，从而实现跨语言和系统的数据通信。
 	- 相较于 JSON/XML，它是一种更高效的数据通信格式。
 - `.proto` 文件
   heading:: true
 	- **作用：**在 `.proto` 文件中使用特殊的语法（接口定义语言）来定义数据结构和服务接口。
 	- **例子：**
 		- ```protobuf
-		  syntax = "proto3";  // 指定语法版本，必须是文件第一行，proto3 是推荐的
+		  syntax = "proto3";
 		  
-		  // 定义一个消息类型（类似类或结构体）
-		  message Person {
-		    string name = 1;    // 字段类型 字段名 = 字段编号
-		    int32 id = 2;
-		    string email = 3;
-		    repeated string phones = 4; // 数组（列表）
+		  package helloworld.v1;
+		  
+		  import "google/api/annotations.proto";
+		  
+		  option go_package = "user-management-system/api/helloworld/v1;v1";
+		  option java_multiple_files = true;
+		  option java_package = "dev.kratos.api.helloworld.v1";
+		  option java_outer_classname = "HelloworldProtoV1";
+		  
+		  // The greeting service definition.
+		  service Greeter {
+		    // Sends a greeting
+		    rpc SayHello (HelloRequest) returns (HelloReply) {
+		      option (google.api.http) = {
+		        get: "/helloworld/{name}"
+		      };
+		    }
+		  }
+		  
+		  // The request message containing the user's name.
+		  message HelloRequest {
+		    string name = 1;
+		  }
+		  
+		  // The response message containing the greetings
+		  message HelloReply {
+		    string message = 1;
 		  }
 		  ```
 	- **`repeated` 字段：**
