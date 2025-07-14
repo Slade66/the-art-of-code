@@ -4,7 +4,7 @@ heading:: true
 	- 相较于 JSON/XML，它是一种更高效的数据通信格式。
 - `.proto` 文件
   heading:: true
-	- **作用：**在 `.proto` 文件中使用特殊的语法（接口定义语言）来定义数据结构和服务接口。
+	- **作用：**在 `.proto` 文件中使用特殊的语法（接口定义语言）来定义数据结构和服务接口。它就像是一张“合同”，告诉客户端和服务端要怎么通信、数据格式是怎样的。
 	- **例子：**
 		- ```protobuf
 		  syntax = "proto3";
@@ -125,10 +125,14 @@ heading:: true
 			- **安装 `protoc-gen-go`：**
 				- Google 将各语言的代码生成逻辑拆分为独立的语言插件。`protoc` 本身不直接生成 Go 代码，它需要通过插件来完成：
 					- **`protoc-gen-go`：**用于解析 `.proto` 文件并生成对应的 `.pb.go` 源代码，包含 Go 的数据结构和序列化/反序列化方法。
-					- **`protoc-gen-go-grpc`：**用于生成 gRPC 服务的客户端和服务器端代码。
+					- **`protoc-gen-go-grpc`：**用于生成 gRPC 服务的客户端代码（用于发起 RPC 调用）、服务器端接口代码以及注册服务用的函数。
+					- **`protoc-gen-go-http`：**
+						- 从 gRPC 生成 HTTP 接口，从而让浏览器或前端也能通过 HTTP 请求访问你的服务。
+						- `protoc-gen-go-http` 会为带有 HTTP 注解的 gRPC 方法生成中间代码，使服务在运行时能自动接收并处理 HTTP 请求：它先根据请求路径匹配路由，提取 URL、查询参数或请求体中的数据，构造 gRPC 请求结构体，调用对应的服务方法，最后将结果转为 JSON 返回给前端，从而实现 HTTP 到 gRPC 的自动衔接。
 					- **适用场景：**
 						- 如果只想用 Protobuf 传输结构化数据，不涉及 RPC，只需安装 `protoc-gen-go`。
 						- 如果要用 gRPC 构建远程调用服务，则需要同时安装并使用 `protoc-gen-go` 和 `protoc-gen-go-grpc`，前者负责生成数据结构，后者负责生成服务接口。
+						- 若需同时支持 HTTP 调用，只需加上 `protoc-gen-go-http`，即可让 gRPC 服务自动具备 REST 接口能力。
 				- **安装命令：**
 					- ```bash
 					  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
