@@ -28,7 +28,7 @@
 		- 指针类型的字段可以为 `null`。
 		- 字段名以小写字母开头时，GORM 会忽略该字段，不会映射到数据库。
 		- GORM 会将名为 `ID` 的字段作为主键。
-		- GORM 会自动将结构体的名字转换为小写的复数形式作为表名。例如，`User` 结构体会对应到数据库中的 `users` 表。
+		- GORM 会自动将结构体名称转换为小写的复数形式作为表名。例如，`User` 结构体对应到数据库中的 `users` 表，而 `ProductInfo` 则会变成 `product_infos`。
 		- 结构体字段名会被自动转换为蛇形命名法（snake_case）。例如，`UserName` 字段会对应到数据库中的 `user_name` 列。
 	- **`CreatedAt` 和 `UpdatedAt` 字段：**
 		- `CreatedAt` 会在记录被创建时自动填充当前时间。
@@ -67,8 +67,18 @@
 			- **`<-`**：允许在创建和更新时都能读写该字段。
 			- **`->`**：字段为只读，禁止写入，只允许读取。
 			- **`<-:false`**：禁止写入（该字段不能写入，无论是在创建还是更新时）。
-			- **`-`**：完全忽略该字段。既不会在数据库表中创建这个字段，也不能对它进行任何的读写操作。
 			- **`-:migration`**：忽略该字段的迁移，不会在数据库中创建该字段。
+	- **字段标签：**
+		- 字段标签（Field Tags）是 Go 语言中结构体字段的元数据，用于给字段附加额外的描述信息。
+		- `column`：用于指定结构体字段映射到数据库中的列名。
+		- `type`：用于指定字段的数据库数据类型。GORM 会根据字段的类型自动推测数据库的列类型，但你也可以通过 `type` 标签手动指定。
+		- `primaryKey`：指定该字段是主键，如果你的主键不叫 `ID`，就需要这个标签。
+		- `unique`：指定该字段在数据库中必须是唯一的。使用该标签后，GORM 会在创建数据库表时为该字段创建唯一索引，不允许列中出现重复的值。
+		- `index`：你可以使用 `index` 标签为某个字段创建普通索引，大幅提升查询速度。
+		- `default`：当创建一条新记录，如果没有给某个字段赋值，GORM 会使用这里指定的默认值。
+		- `not null`：强制要求这个字段在存入数据库时必须有值，不能为空。
+		- `size`：指定字段的最大长度。常用于字符串类型字段，告诉数据库该字段最多可以存储多少字符。
+		- `-`：完全忽略该字段。既不会在数据库表中创建这个字段，也不能对它进行任何的读写操作。
 	- **嵌套结构体：**
 		- 你可以在一个结构体中直接嵌入另一个结构体，把它们的字段作为自身的字段。
 		- **示例：**
@@ -104,4 +114,26 @@
 			- ```bash
 			  go get -u gorm.io/driver/mysql
 			  ```
+- **连接到数据库：**
+	- **MySQL：**
+		- ```go
+		  import (
+		    "gorm.io/driver/mysql"
+		    "gorm.io/gorm"
+		  )
+		  
+		  func main() {
+		    // dsn = Data Source Name
+		    dsn := "user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
+		    db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+		  }
+		  ```
+- **API：**
+	- `func Open(dialector Dialector, opts ...Option) (db *DB, err error)`
+		- `gorm.Open` 是 GORM 中用于打开数据库连接的函数。它的作用是创建一个数据库连接并返回一个 `*gorm.DB` 类型的对象（通常命名为 `db`），你可以通过这个对象执行数据库操作（例如：查询、插入、更新、删除等）。
+		- **第一个参数**：`mysql.Open(dsn)`
+			- `mysql.Open(dsn)` 是 GORM 提供的 MySQL 数据库驱动函数，它接受一个连接字符串（DSN，Data Source Name）并返回一个 `gorm.Dialector` 类型的对象，GORM 使用它来知道如何与 MySQL 数据库进行交互。
+		- **第二个参数**：`&gorm.Config{}`
+			- `&gorm.Config{}` 是一个指向 `gorm.Config` 结构体的指针，GORM 配置项通过这个结构体来设置。默认情况下，`gorm.Config{}` 是空的，即使用 GORM 的默认配置。
+-
 -
