@@ -222,5 +222,23 @@
 				     Where("users.name = ?", "jinzhu").
 				     Scan(&result) // 3. 将结果扫描到 result 变量中
 				  ```
-		-
+	- `Model`：
+		- `Model()` 是一个指定操作模型的方法。当你调用 `db.Model(&User{})` 时，实际上是在告诉 GORM：“接下来的所有操作（直到调用终结方法）都将围绕 User 这个模型进行。”
+		- GORM 会从你传入的 `&User{}` 中提取所有元数据，为后续操作提供上下文。
+		- **一旦指定了模型，GORM 就会为你启用一系列高级功能：**
+		  id:: 687674d4-d982-444d-8720-53decca005c9
+			- **自动推断表名：**GORM 会根据 `User` 结构体的名称，自动将其转换为蛇形复数形式的表名 `users`。你不需要手动写死表名。
+			- **Hooks 调用：**如果 `User` 模型定义了钩子函数（如 `BeforeUpdate`, `AfterDelete`），在使用 `Model` 进行 `Update`, `Delete` 等操作时，这些钩子会被自动触发。
+			- **软删除支持：**如果 `User` 模型包含了 `gorm.DeletedAt` 字段，那么 `db.Model(&User{}).Delete()` 操作会自动变成一次 `UPDATE ... SET deleted_at = ?`，而不是真正的物理删除。
+			- **关联操作：**你可以使用关联名来进行 `Joins` 或 `Preload`，例如 `db.Model(&User{}).Joins("Emails")`，这样可以简化 `Joins` 语句的书写。
+			- **字段上下文：**GORM 了解 `User` 结构体的所有字段，因此在执行 `Where`、`Select`、`Update` 等操作时，你可以直接使用结构体中的字段名，GORM 会自动将它们映射到数据库表中的相应列名。
+	- `Table`：
+		- `Table()` 是一个直接指定表名的方法。你给它一个字符串，它就在生成的 SQL 中使用这个字符串作为表名。
+		- **它不会：**
+			- 触发任何模型的 Hooks。
+			- 执行软删除逻辑（`Delete` 就是物理删除）。
+		- **什么时候用：**
+			- 当你要查询的数据库表或视图，在你的 Go 项目中没有对应的 `struct` 模型时，`Table` 是唯一的选择。
+			- 如果表名是在运行时动态生成或从配置中读取的，你只能用 `Table`。
+			- 绕过 `Model` 的软删除逻辑。
 -
