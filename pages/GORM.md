@@ -75,7 +75,10 @@
 		- `primaryKey`：指定该字段是主键，如果你的主键不叫 `ID`，就需要这个标签。
 		- `unique`：指定该字段在数据库中必须是唯一的。使用该标签后，GORM 会在创建数据库表时为该字段创建唯一索引，不允许列中出现重复的值。
 		- `index`：你可以使用 `index` 标签为某个字段创建普通索引，大幅提升查询速度。
-		- `default`：当创建一条新记录，如果没有给某个字段赋值，GORM 会使用这里指定的默认值。
+		- `default`：
+			- 当创建一条新记录，如果没有给某个字段赋值，GORM 会使用这里指定的默认值。
+			- 当创建记录时，如果该字段是其类型的零值（如 `int` 的 `0`，`string` 的 `""`），GORM 会使用这个默认值。
+			- 如果你想插入零值本身（比如 `Age: 0`），GORM 还是会用默认值 `18` 覆盖。为了避免这种情况，你可以使用指针类型 `*int`。
 		- `not null`：强制要求这个字段在存入数据库时必须有值，不能为空。
 		- `size`：指定字段的最大长度。常用于字符串类型字段，告诉数据库该字段最多可以存储多少字符。
 		- `-`：完全忽略该字段。既不会在数据库表中创建这个字段，也不能对它进行任何的读写操作。
@@ -128,12 +131,11 @@
 		    db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 		  }
 		  ```
-- **API：**
-	- `func Open(dialector Dialector, opts ...Option) (db *DB, err error)`
-		- `gorm.Open` 是 GORM 中用于打开数据库连接的函数。它的作用是创建一个数据库连接并返回一个 `*gorm.DB` 类型的对象（通常命名为 `db`），你可以通过这个对象执行数据库操作（例如：查询、插入、更新、删除等）。
-		- **第一个参数**：`mysql.Open(dsn)`
-			- `mysql.Open(dsn)` 是 GORM 提供的 MySQL 数据库驱动函数，它接受一个连接字符串（DSN，Data Source Name）并返回一个 `gorm.Dialector` 类型的对象，GORM 使用它来知道如何与 MySQL 数据库进行交互。
-		- **第二个参数**：`&gorm.Config{}`
-			- `&gorm.Config{}` 是一个指向 `gorm.Config` 结构体的指针，GORM 配置项通过这个结构体来设置。默认情况下，`gorm.Config{}` 是空的，即使用 GORM 的默认配置。
--
+		- `func Open(dialector Dialector, opts ...Option) (db *DB, err error)`
+			- `gorm.Open` 是 GORM 中用于打开数据库连接的函数。它的作用是创建一个数据库连接并返回一个 `*gorm.DB` 类型的对象（通常命名为 `db`），你可以通过这个对象执行数据库操作（例如：查询、插入、更新、删除等）。
+			- **第一个参数**：`mysql.Open(dsn)`
+				- `mysql.Open(dsn)` 是 GORM 提供的 MySQL 数据库驱动函数，它接受一个连接字符串（DSN，Data Source Name）并返回一个 `gorm.Dialector` 类型的对象，GORM 使用它来知道如何与 MySQL 数据库进行交互。
+			- **第二个参数**：`&gorm.Config{}`
+				- `&gorm.Config{}` 是一个指向 `gorm.Config` 结构体的指针，GORM 配置项通过这个结构体来设置。默认情况下，`gorm.Config{}` 是空的，即使用 GORM 的默认配置。
+- [[GORM 创建记录]]
 -
