@@ -41,4 +41,5 @@
 				- `&gorm.Config{}` 是一个指向 `gorm.Config` 结构体的指针，GORM 配置项通过这个结构体来设置。默认情况下，`gorm.Config{}` 是空的，即使用 GORM 的默认配置。
 - [[GORM 声明模型]]
 - [[GORM 创建记录]]
+- [[GORM 查询记录]]
 -
