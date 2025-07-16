@@ -48,4 +48,5 @@
 - [[GORM Has Many 一对多]]
 - [[GORM Many To Many 多对多]]
 - [[Preloading]]
+- [[GORM 的事务]]
 -
