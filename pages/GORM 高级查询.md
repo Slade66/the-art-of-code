@@ -340,4 +340,64 @@
 		  fmt.Println(user.FullName) // 输出: "Jinzhu San" (假设数据库里是 Jinzhu, San)
 		  ```
 		- GORM 在 `Find`、`First` 等查询操作成功后，会立刻“反思”一下：“我刚刚填充的这个 `struct`（比如 `User`），它自己有没有定义一个叫 `AfterFind` 的方法？”如果定义了，GORM 就会自动调用它。这让我们可以把一些数据后处理的逻辑，直接写在模型自己身上，非常优雅。
+- **`Scope`：**
+	- **作用：**把你经常用到的查询条件打包成一个“快捷方式”，方便随时调用，让代码不再重复。
+	- **比喻：**
+		- 想象你每天都去同一家星巴克，你每次的点单都一模一样：“大杯，冰美式，加一个shot，不要糖”。
+		- **没有 Scope 的做法**：你每天都要对着店员重复念一遍这句长长的话：“你好，我想要一杯大杯的冰美式，然后麻烦加一个shot，哦对了，不要糖，谢谢。”
+		- **使用 Scope 的做法**：你和熟悉的店员约定好了一个“暗号”。你对他说：“以后我只要说‘老样子’，就是指前面那句长长的话。”
+	- **没有 Scope 的世界：**
+		- ```go
+		  // 功能点 A: 查找所有活跃用户
+		  db.Where("status = ?", "active").Find(&activeUsers)
+		  
+		  // 功能点 B: 查找所有已上架商品
+		  db.Where("is_listed = ?", true).Find(&listedProducts)
+		  
+		  // 功能点 C: 查找特定价格区间的已上架商品
+		  db.Where("is_listed = ?", true).Where("price BETWEEN ? AND ?", 100, 500).Find(&promoProducts)
+		  ```
+		- **代码重复**：`Where("is_listed = ?", true)` 这个条件在 B 和 C 中都出现了一遍。如果以后“已上架”的逻辑变了（比如要加一个 `stock > 0` 的条件），你就得去改两个地方，非常容易遗漏。
+	- **使用 `Scope`：**
+		- `Scope` 本质上就是一个函数，它接收一个 `db` 查询对象，给它增加一些条件后，再把它返回。
+		- ```go
+		  // 定义一个“已上架商品”的滤镜
+		  func Listed(db *gorm.DB) *gorm.DB {
+		    return db.Where("is_listed = ?", true)
+		  }
+		  
+		  // 定义一个“活跃用户”的滤镜
+		  func Active(db *gorm.DB) *gorm.DB {
+		    return db.Where("status = ?", "active")
+		  }
+		  
+		  // 定义一个更灵活的、带参数的“价格区间”滤镜
+		  func PriceBetween(min float64, max float64) func(db *gorm.DB) *gorm.DB {
+		    return func(db *gorm.DB) *gorm.DB {
+		      return db.Where("price BETWEEN ? AND ?", min, max)
+		    }
+		  }
+		  
+		  // 功能点 A: 查找所有活跃用户
+		  var activeUsers []User
+		  db.Model(&User{}).Scopes(Active).Find(&activeUsers)
+		  
+		  // 功能点 B: 查找所有已上架商品
+		  var listedProducts []Product
+		  db.Model(&Product{}).Scopes(Listed).Find(&listedProducts)
+		  
+		  // 功能点 C: 查找特定价格区间的已上架商品 (叠加使用两个滤镜！)
+		  var promoProducts []Product
+		  db.Model(&Product{}).Scopes(Listed, PriceBetween(100, 500)).Find(&promoProducts)
+		  
+		  -- 对应功能点 A
+		  SELECT * FROM `users` WHERE `status` = 'active'
+		  
+		  -- 对应功能点 B
+		  SELECT * FROM `products` WHERE `is_listed` = true
+		  
+		  -- 对应功能点 C
+		  SELECT * FROM `products` WHERE `is_listed` = true AND `price` BETWEEN 100 AND 500
+		  ```
+		- 最终的代码变得极其干净、表意清晰，而且完全没有重复。如果以后“已上架”的逻辑需要修改，你只需要改动 `Listed` 那一个函数，所有使用到它的地方就全部自动更新了！这就是 `Scope` 最大的魅力。
 -
