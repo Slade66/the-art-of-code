@@ -174,11 +174,32 @@
 		  db.Select("name", "age").Find(&users)
 		  // SELECT name, age FROM users;
 		  ```
+		- `Select` 的强大之处在于它不仅能接受列名，还能接受任意的 SQL 表达式，你可以用它来做计算、聚合等各种操作。当表达式中需要参数时，可以使用 `?` 作为占位符。
+			- ```go
+			  db.Table("users").Select("COALESCE(age, ?)", 42).Rows()
+			  // -> SELECT COALESCE(age, '42') FROM users;
+			  
+			  // 计算平均年龄，并用 'as' 起一个别名
+			  var avgAge float64
+			  db.Model(&User{}).Select("AVG(age) as avg_age").Scan(&avgAge)
+			  
+			  // 统计记录总数
+			  var total int64
+			  db.Model(&User{}).Select("COUNT(*) as total").Scan(&total)
+			  ```
 	- `Order`：
 		- 指定查询结果的排序方式。
 		- ```go
 		  db.Order("age desc, name asc").Find(&users)
 		  // SELECT * FROM users ORDER BY age desc, name asc;
+		  ```
+	- `Distinct`：
+		- 当你在 GORM 中使用 `.Distinct()` 方法时，它在后台帮你做了两件事：
+			- 确定要 `SELECT` 的列：你传给 `Distinct` 的参数（比如 `"name"`, `"age"`），GORM 就知道这是你要 `SELECT` 的目标列。
+			- 添加 `DISTINCT` 关键字：GORM 会在 `SELECT` 后面紧跟着加上 `DISTINCT`。
+		- ```go
+		  db.Distinct("column_name").Find(&results)
+		  // SELECT DISTINCT column_name FROM ...;
 		  ```
 	- `Limit` 和 `Offset`：
 		- `Limit(n)`：最多获取 `n` 条记录。
@@ -228,7 +249,7 @@
 			  // LEFT JOIN emails ON emails.user_id = users.id;
 			  ```
 		- **方式二：GORM 关联名**
-			- 如果你的模型之间已经定义了关联关系（例如 `has many`, `belongs to`），你可以直接使用关联字段的名称。GORM 会自动根据你的模型定义生成 `JOIN` 语句。
+			- 如果你的模型之间已经定义了关联关系（例如 `has many`, `belongs to`），你可以直接使用关联字段的名称，GORM 会自动根据你的模型定义生成 `JOIN` 语句，避免手写 SQL。
 			- ```go
 			  // 假设 User struct 中有定义:
 			  // type User struct {
@@ -244,6 +265,7 @@
 			  // FROM `users`
 			  // LEFT JOIN `emails` AS `Emails` ON `users`.`id` = `Emails`.`user_id`
 			  ```
+				- GORM 会自动分析 `User` 和 `Emails` 之间的关联关系（通过 `has many`、`foreignKey` 等标签），生成相应的 `LEFT JOIN` 语句，并根据模型定义自动构建 `ON` 条件。为了避免字段名冲突，GORM 还会为关联表的字段添加别名（如 `Emails_id`, `Emails_email`）。
 	- `Scan`：
 		- `Scan` 是一个结果映射方法。它的作用是将数据库查询返回的行和列数据，填充（“扫描”）到一个你指定的 Go `struct` 变量中。
 		- **为什么要用它？**
