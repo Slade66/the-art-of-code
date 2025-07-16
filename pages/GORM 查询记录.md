@@ -103,14 +103,69 @@
 			  db.Where(map[string]interface{}{"Name": "jinzhu", "Age": 0}).Find(&users)
 			  // 正确生成 SQL: SELECT * FROM users WHERE name = "jinzhu" AND age = 0;
 			  ```
-	- **`Not` 和 `Or` 条件：**
+		- **指定结构体查询字段：**
+			- 这个功能主要为了解决一个核心痛点：在使用 `struct` 作为 `Where` 条件时，GORM 会默认忽略零值字段。
+			- 它的语法是在传入 struct 条件后，再附加上你希望强制生效的字段名（作为字符串参数）。
+			- 这些附加的字段名就像是一个白名单。实际上，你是在告诉 GORM：“嘿，对于前面的那个 `struct`，我不关心它的字段值是否是零值，只要字段名在这个白名单中，就必须把它作为查询条件！而那些不在白名单里的字段，将不会作为查询条件。”
+			- ```go
+			  db.Where(&User{Name: "jinzhu"}, "name", "Age").Find(&users)
+			  // 生成 SQL: SELECT * FROM users WHERE name = "jinzhu" AND age = 0;
+			  
+			  db.Where(&User{Name: "jinzhu"}, "Age").Find(&users)
+			  // 生成 SQL: SELECT * FROM users WHERE age = 0;
+			  ```
+	- **内联条件：**
+		- GORM 的 `Find`、`First`、`Last` 等终结者方法也具有 `Where` 方法的功能。当这些方法后面跟随额外的参数时，GORM 会自动将这些参数视为查询条件，并按 `Where` 方法的方式处理它们。因此，这些终结者方法不仅可以用于查找数据，还可以直接指定查询条件，发挥与 `Where` 方法相同的作用。
+		- 内联条件让你的代码，特别是在只有单个简单查询条件时，看起来更紧凑、更少冗余。但如果你的查询逻辑非常复杂，包含多个 `Where`、`Or`、`Not` 等，使用标准的链式调用写法 (`.Where(...).Or(...)`) 会让代码层次更清晰，更易于阅读和维护。
 		- ```go
-		  db.Not("name = ?", "jinzhu").Find(&users)
-		  // SELECT * FROM users WHERE NOT name = "jinzhu";
+		  // 标准写法
+		  db.Where("name = ?", "jinzhu").Find(&users)
 		  
-		  db.Where("role = ?", "admin").Or("role = ?", "super_admin").Find(&users)
-		  // SELECT * FROM users WHERE role = 'admin' OR role = 'super_admin';
+		  // 内联条件写法 (更简洁)
+		  db.Find(&users, "name = ?", "jinzhu")
 		  ```
+	- **`Not` 条件：**
+		- 生成与 `Where` 条件相反的 SQL（用于反转一个条件）。
+		- **字符串条件：**
+			- GORM 会在你的条件前加上 `NOT`。
+			- ```go
+			  db.Not("name = ?", "jinzhu").First(&user)
+			  // -> SELECT * FROM users WHERE NOT (name = "jinzhu") ...
+			  ```
+		- **Map 条件：**
+			- 当 Map 的值是一个切片 (slice) 时，GORM 会非常智能地生成 `NOT IN` 子句。
+			- ```go
+			  db.Not(map[string]interface{}{"name": []string{"jinzhu", "jinzhu 2"}}).Find(&users)
+			  // -> SELECT * FROM users WHERE name NOT IN ("jinzhu", "jinzhu 2");
+			  ```
+		- **Struct 条件：**
+			- 当 `Not` 与 `struct` 一起使用时，它会对 `struct` 中每一个非零值字段生成一个不等于（`<>`）的条件，然后用 `AND` 连接起来。
+			- ```go
+			  // 查找 name 不为 "jinzhu" 并且 age 不为 18 的用户
+			  db.Not(User{Name: "jinzhu", Age: 18}).First(&user)
+			  // -> SELECT * FROM users WHERE name <> "jinzhu" AND age <> 18 ...
+			  ```
+		- **主键切片：**
+			- ```go
+			  db.Not([]int64{1, 2, 3}).First(&user)
+			  // -> SELECT * FROM users WHERE id NOT IN (1, 2, 3) ...
+			  ```
+	- **`Or` 条件：**
+		- `Or` 用于并联两个或多个条件。
+		- **连接两个字符串条件：**
+			- ```go
+			  db.Where("role = ?", "admin").Or("role = ?", "super_admin").Find(&users)
+			  // -> SELECT * FROM users WHERE role = 'admin' OR role = 'super_admin';
+			  ```
+		- **连接 `Struct` 或 `Map`：**
+			- 当 `Or` 的参数是一个 `struct` 或 `map` 时，GORM 会将这个 `struct/map` 内部的多个字段用 `AND` 组合，并用括号将它们括起来。
+			- ```go
+			  db.Where("name = 'jinzhu'").Or(User{Name: "jinzhu 2", Age: 18}).Find(&users)
+			  // SELECT * FROM users WHERE name = 'jinzhu' OR (name = 'jinzhu 2' AND age = 18);
+			  
+			  db.Where("name = 'jinzhu'").Or(map[string]interface{}{"name": "jinzhu 2", "age": 18}).Find(&users)
+			  // -> SELECT * FROM users WHERE name = 'jinzhu' OR (name = 'jinzhu 2' AND age = 18);
+			  ```
 - **链式方法：**
 	- GORM 的强大之处在于你可以将各种方法像链条一样串联起来，构建出复杂的查询。
 	- `Select`：
