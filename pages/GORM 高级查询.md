@@ -80,5 +80,23 @@
 	  
 	  // SELECT `name` FROM `users`
 	  ```
--
+- **FirstOrInit：**
+	- **作用：**先去数据库里找，找不到就用预先准备的默认数据。只在程序里用，不存数据库。
+	- ```go
+	  // 找叫 "jinzhu" 的用户，找不到就初始化一个叫 "jinzhu" 的空用户
+	  db.FirstOrInit(&user, User{Name: "jinzhu"})
+	  
+	  // SELECT * FROM `users` WHERE `name` = 'jinzhu' LIMIT 1
+	  ```
+- **FirstOrCreate：**
+	- **作用：**先去数据库里找，找不到就新建一个。真的会存到数据库里。
+	- ```go
+	  // 找叫 "jinzhu" 的用户，找不到就新建一个
+	  db.FirstOrCreate(&user, User{Name: "jinzhu"})
+	  
+	  -- 第一步: 查找
+	  // SELECT * FROM `users` WHERE `name` = 'jinzhu' LIMIT 1;
+	  -- 如果上面没找到，会执行第二步:
+	  // INSERT INTO `users` (`name`) VALUES ('jinzhu');
+	  ```
 -
