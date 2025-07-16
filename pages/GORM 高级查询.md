@@ -131,7 +131,7 @@
 			  // 最终 user 变量是 {Name: "non_existing", Age: 20}。
 			  ```
 - **FirstOrCreate：**
-	- **作用：**先去数据库里找，找不到就新建一个。真的会存到数据库里。
+	- **作用：**先去数据库找，找到了就拿来用；如果找不到，我就帮你新建一个，并且这个新的会立刻存进数据库。
 	- ```go
 	  // 找叫 "jinzhu" 的用户，找不到就新建一个
 	  db.FirstOrCreate(&user, User{Name: "jinzhu"})
@@ -211,4 +211,40 @@
 		  -- GORM/数据库驱动在后台会将命名参数转换为数据库能识别的格式
 		  SELECT * FROM `products` WHERE name LIKE '%无线%' OR description LIKE '%无线%'
 		  ```
+- **优化器提示：**
+	- **示例：**
+		- 一个后台管理员要跑一个非常复杂的数据报表，这个查询可能会消耗大量资源，甚至拖垮整个数据库。为了安全起见，我们想限制这个查询的最长执行时间，比如30秒，超时就自动失败。
+		- ```go
+		  import "gorm.io/hints"
+		  
+		  // 使用优化器提示，来设置MySQL的最大执行时间为30000毫秒
+		  db.Clauses(hints.New("MAX_EXECUTION_TIME(30000)")).Find(&ReportData{})
+		  
+		  SELECT * /*+ MAX_EXECUTION_TIME(30000) */ FROM `report_data`
+		  ```
+		- GORM 通过 `Clauses` 方法，在 SQL 语句里加上了 `/*+ ... */` 这样一段特殊的注释。这段注释虽然是注释的样子，但数据库（比如MySQL）会把它当作一个命令来解读，从而改变自己的行为。不同的数据库支持的优化器提示也不同。
+- **索引提示：**
+	- **作用：**直接告诉数据库该走哪条“近路”（索引）。
+	- **比喻：**
+		- GPS 规划了一条路线，要带你穿过市中心无数个红绿灯的小路，因为它计算出这样能快2分钟。但作为“老司机”的你知道，这条路虽然短，但极其难走。你宁愿走稍微远一点但一路通畅的高速公路。于是你强制 GPS：“别废话，就按我说的，走高速（使用 `idx_freeway` 这个索引）！”
+		- ```go
+		  import "gorm.io/hints"
+		  
+		  // 建议（USE）数据库使用 idx_user_city 这个索引
+		  db.Clauses(hints.UseIndex("idx_user_city")).
+		     Where("city = ? AND created_at > ?", "Los Angeles", lastMonth).
+		     Find(&users)
+		  
+		  SELECT * FROM `users` USE INDEX (`idx_user_city`) WHERE `city` = 'Los Angeles' AND `created_at` > ...
+		  
+		  // 强制（FORCE）数据库在 JOIN 操作时使用某个索引
+		  db.Clauses(hints.ForceIndex("idx_user_name").ForJoin()).
+		     Joins("...").
+		     Find(&users)
+		  
+		  SELECT * FROM `users` FORCE INDEX FOR JOIN (`idx_user_name`) JOIN ...
+		  ```
+		- `UseIndex` 像是在说：“我建议你走这条路”。
+		- `ForceIndex` 更霸道，像是在说：“你必须走这条路！”
+		- `ForJoin()` 是说这个索引提示只在 `JOIN` 操作时生效。
 -
