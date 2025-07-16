@@ -51,4 +51,34 @@
 		  //    SELECT AVG(price) AS avg_price FROM `products`
 		  // )
 		  ```
+- **智能选择字段：**
+	- **作用：**按你指定的“模板”来挑数据，自动忽略不需要的字段。
+	- **举例：**你有一张非常详细的个人信息表，但只想打印一张只包含“姓名”和“电话”的名片。你只需要提供一个名片的空模板，GORM 就会自动帮你从信息表里挑出这两项来填充。
+	- `Find()` 的目标 `struct` 长什么样，GORM 就帮你 `SELECT` 什么，非常智能。
+	- ```go
+	  type UserCard struct { Name, Phone string } // 这就是名片模板
+	  var cards []UserCard
+	  db.Model(&User{}).Find(&cards) // GORM一看你要的是名片，就只去查 Name 和 Phone
+	  
+	  // SELECT `name`, `phone` FROM `users`
+	  ```
+- **Find 至 map：**
+	- 如果你只是临时查看某个商品的信息，又不想为结果集专门创建一个 `struct`，那么随手拿个塑料袋（`map`），把所有信息一股脑装进去。
+	- `map` 就是万能容器，什么都能装，最适合处理动态或临时的查询。
+	- ```go
+	  var productBag map[string]interface{}
+	  db.Model(&Product{}).First(&productBag, 101)
+	  
+	  // SELECT * FROM `products` WHERE `id` = 101 LIMIT 1
+	  ```
+- **Pluck：**
+	- **作用：**如果你只需要一整列数据，使用 `Pluck` 可以轻松地将单列数据提取出来。
+	- **举例：**全班同学都填了身高，你现在只想要一个“身高列表”，对其他信息（姓名、年龄）都不感兴趣。`Pluck` 就像一只手，直接把“身高”那一列数据抽出来。
+	- ```go
+	  var names []string
+	  db.Model(&User{}).Pluck("name", &names)
+	  
+	  // SELECT `name` FROM `users`
+	  ```
+-
 -
