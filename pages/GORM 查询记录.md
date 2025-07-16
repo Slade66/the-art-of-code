@@ -266,6 +266,39 @@
 			  // LEFT JOIN `emails` AS `Emails` ON `users`.`id` = `Emails`.`user_id`
 			  ```
 				- GORM 会自动分析 `User` 和 `Emails` 之间的关联关系（通过 `has many`、`foreignKey` 等标签），生成相应的 `LEFT JOIN` 语句，并根据模型定义自动构建 `ON` 条件。为了避免字段名冲突，GORM 还会为关联表的字段添加别名（如 `Emails_id`, `Emails_email`）。
+		- **方式三：连接衍生表**
+			- 先用一个子查询，对数据进行预处理（比如分组、聚合、排序等），生成一个包含关键信息的、小而精的“中间结果集”（即衍生表）。再用一个主查询，将原始表与这个中间结果集进行连接，利用中间结果里的关键信息，从原始表中精确地筛选出最终想要的完整数据。
+			- ```go
+			  // 1. 构建子查询，查询每个用户的最新完成时间
+			  // 这里的 query 是构建的子查询：
+			  // SELECT user_id, MAX(finished_at) AS latest_finish_time
+			  // FROM orders
+			  // GROUP BY user_id
+			  query := db.Table("orders").
+			     Select("user_id, MAX(finished_at) as latest_finish_time"). // 查询用户ID和该用户最晚的完成时间，给这列起个别名 latest_finish_time
+			     Group("user_id") // 按用户ID分组，这样 MAX(finished_at) 才能正确计算每个用户的最晚完成时间
+			  
+			  // 2. 定义一个变量来存储查询结果
+			  var latestOrders []Order // 用来存储最新订单的信息
+			  
+			  // 3. 主查询：从 orders 表查询每个用户的最新订单
+			  db.Table("orders").
+			      // 使用 JOIN 连接子查询结果（即最新的订单）
+			      Joins("JOIN (?) AS q ON orders.user_id = q.user_id AND orders.finished_at = q.latest_finish_time", query).
+			      // 执行查询，并将结果扫描到 latestOrders 变量中
+			      Scan(&latestOrders)
+			  
+			  // 生成的 SQL 语句大致如下：
+			  // SELECT orders.*
+			  // FROM orders
+			  // JOIN (
+			  //     SELECT user_id, MAX(finished_at) AS latest_finish_time
+			  //     FROM orders
+			  //     GROUP BY user_id
+			  // ) AS q
+			  // ON orders.user_id = q.user_id 
+			  // AND orders.finished_at = q.latest_finish_time
+			  ```
 	- `Scan`：
 		- `Scan` 是一个结果映射方法。它的作用是将数据库查询返回的行和列数据，填充（“扫描”）到一个你指定的 Go `struct` 变量中。
 		- **为什么要用它？**
