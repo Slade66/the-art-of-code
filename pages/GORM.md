@@ -43,4 +43,5 @@
 - [[GORM 创建记录]]
 - [[GORM 查询记录]]
 - [[GORM 高级查询]]
+- [[GORM Belongs To 多对一]]
 -
