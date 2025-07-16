@@ -27,29 +27,37 @@
 	  // WHERE (user_name, product_name) IN (('用户A','商品X'),('用户B','商品Y'))
 	  ```
 - **子查询：**
-	- **用途：**GORM 允许你把一个查询的结果当作另一个查询的条件。
-	- **比喻：**老师想表扬“班级平均分以上的同学”。他需要两步：1. 先算出“班级平均分”是多少（比如85分）。2. 再找出所有分数高于85分的同学。
-	- ```go
-	  // 找出所有价格高于平均价格的商品
-	  avgPriceQuery := db.Model(&Product{}).Select("AVG(price)")
-	  db.Where("price > (?)", avgPriceQuery).Find(&products)
-	  
-	  // SELECT * FROM `products` WHERE price > (SELECT AVG(price) FROM `products`)
-	  ```
-	- **FROM 子查询：**
-		- `FROM` 子查询允许你将一个查询的结果作为虚拟表来使用，并在外层查询中引用它。
+	- **用在 `WHERE` 条件里的子查询：**
+		- **用途：**用一个查询的结果，来作为另一个查询的筛选条件。
+		- **比喻：**
+			- 老师想表扬班里所有“成绩高于平均分”的同学。
+			- 他不能直接问“谁的成绩高于平均分？”，因为他自己也不知道平均分是多少。
+			- 他需要先做一个“内部计算”（子查询）：“咱们班的平均分是多少？” 得到结果，比如 `85`分。
+			- 然后再进行主查询：“谁的成绩高于 `85` 分？”
+		- **示例：**
+			- ```go
+			  var vipOrders []Order
+			  // 1. 先定义那个“内部计算”的查询：计算所有订单的平均金额
+			  avgAmountQuery := db.Model(&Order{}).Select("AVG(amount)")
+			  
+			  // 2. 在主查询的 Where 条件里，用 (?) 占位符来使用它
+			  db.Where("amount > (?)", avgAmountQuery).Find(&vipOrders)
+			  
+			  // SELECT * FROM `orders` WHERE amount > (SELECT AVG(amount) FROM `orders`)
+			  ```
+			- GORM 非常聪明。当你把 `avgAmountQuery` 这个 GORM 查询对象传给 `Where` 时，它不会真的去执行它，而是把它翻译成 SQL `(SELECT AVG(amount) FROM orders)`，然后塞进 `(?)` 的位置。这就完美地实现了我们的需求。
+	- **用在 `FROM` 里的子查询：**
+		- `FROM` 子查询允许你将一个查询的结果作为中间表来使用，并在外层查询中引用它。
 		- ```go
-		  // 创建一个子查询，计算平均价格
-		  subQuery := db.Model(&Product{}).Select("AVG(price) AS avg_price")
+		  var youngActiveUsers []User
+		  // 1. 先定义那张“中间表”长什么样：只包含活跃用户的名字和年龄
+		  activeUsersQuery := db.Model(&User{}).Select("name", "age").Where("status = ?", "active")
 		  
-		  // 使用 FROM 子查询将计算出的平均价格作为一个临时表
-		  var products []Product
-		  db.Table("(?) AS avg_price_table", subQuery).Where("price > avg_price_table.avg_price").Find(&products)
+		  // 2. 用 Table("(?) AS ...") 来告诉 GORM，我要查询的是这张“中间表”
+		  db.Table("(?) AS active_users", activeUsersQuery).Where("age < ?", 20).Find(&youngActiveUsers)
 		  
-		  // SELECT * FROM `products` 
-		  // WHERE price > (
-		  //    SELECT AVG(price) AS avg_price FROM `products`
-		  // )
+		  // SELECT * FROM (SELECT `name`,`age` FROM `users` WHERE `status` = 'active')
+		  // AS active_users WHERE `age` < 20
 		  ```
 - **智能选择字段：**
 	- **作用：**按你指定的“模板”来挑数据，自动忽略不需要的字段。
