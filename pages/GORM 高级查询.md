@@ -89,13 +89,47 @@
 	  // SELECT `name` FROM `users`
 	  ```
 - **FirstOrInit：**
-	- **作用：**先去数据库里找，找不到就用预先准备的默认数据。只在程序里用，不存数据库。
+	- **作用：**先去数据库找，找到了就拿来用；如果找不到，就在程序里给你准备一个新的，但注意，这个新的不会存进数据库。
 	- ```go
 	  // 找叫 "jinzhu" 的用户，找不到就初始化一个叫 "jinzhu" 的空用户
 	  db.FirstOrInit(&user, User{Name: "jinzhu"})
 	  
 	  // SELECT * FROM `users` WHERE `name` = 'jinzhu' LIMIT 1
 	  ```
+	- `Attrs`：
+		- **作用：**只在数据库里找不到记录，需要初始化一个“新”对象时，才使用这些默认值。
+		- **举例：**
+			- 查找一个用户，如果他不存在，就准备一个带有默认年龄的新用户对象。
+			- ```go
+			  var user User
+			  // 查找 "jinzhu"，他已经存在了
+			  db.Where(User{Name: "jinzhu"}).Attrs(User{Age: 99}).FirstOrInit(&user)
+			  // 结果: user 是数据库里那个18岁的 jinzhu，Attrs(Age: 99) 被完全忽略了。
+			  
+			  // 查找 "non_existing"，他不存在
+			  db.Where(User{Name: "non_existing"}).Attrs(User{Age: 20}).FirstOrInit(&user)
+			  // 结果: 找不到，所以 GORM 初始化了一个新对象，
+			  // name 来自 Where("non_existing")，age 来自 Attrs(20)。
+			  // 最终 user 变量是 {Name: "non_existing", Age: 20}。
+			  ```
+	- `Assign`：
+		- **作用：**不管找没找到，都把这些值强行设置到最终查出来的 Go 变量上（但同样不存库）。
+		- **举例：**
+			- 查找一个用户，不管他存不存在，都在内存中把他的年龄设置为 20。
+			- ```go
+			  var user User
+			  // 查找 "jinzhu"，他已经存在，是18岁
+			  db.Where(User{Name: "jinzhu"}).Assign(User{Age: 20}).FirstOrInit(&user)
+			  // 结果: 先从数据库查出18岁的 jinzhu，然后 Assign 生效，
+			  // 强行将 user 变量里的 Age 改成了 20。
+			  // 最终 user 变量是 {ID: 111, Name: "jinzhu", Age: 20}。
+			  
+			  // 查找 "non_existing"，他不存在
+			  db.Where(User{Name: "non_existing"}).Assign(User{Age: 20}).FirstOrInit(&user)
+			  // 结果: 找不到，初始化一个新对象，
+			  // name 来自 Where("non_existing")，age 来自 Assign(20)。
+			  // 最终 user 变量是 {Name: "non_existing", Age: 20}。
+			  ```
 - **FirstOrCreate：**
 	- **作用：**先去数据库里找，找不到就新建一个。真的会存到数据库里。
 	- ```go
