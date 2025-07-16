@@ -247,4 +247,97 @@
 		- `UseIndex` 像是在说：“我建议你走这条路”。
 		- `ForceIndex` 更霸道，像是在说：“你必须走这条路！”
 		- `ForJoin()` 是说这个索引提示只在 `JOIN` 操作时生效。
+- **迭代 `Rows()`：**
+	- **作用：**处理海量数据时，一行一行地从数据库吸取数据，几乎不占内存。
+	- **比喻：**
+		- 想象你要把一个巨大的游泳池里的水（海量数据）给抽干。
+		- **普通 `Find()` 的做法**：你试图找一个和游泳池一样大的桶，想一次性把所有水都装进去。结果就是你的小卡车（内存）根本装不下，直接爆胎（内存溢出）。
+		- **`Rows()` 的做法**：你只拿一根吸管。你把吸管一头放进泳池，另一头放进一个小杯子里。你一口一口地吸，吸满一小杯，处理掉，再吸下一小杯。自始至终，你手里的水（内存里的数据）都只有一小杯，所以毫不费力。`db.Rows()` 返回的 `rows` 对象，就是那根神奇的吸管。
+	- **示例：**
+		- 我们需要导出一个包含一百万用户信息的 CSV 文件。我们不可能把一百万个用户对象一次性加载到内存里。
+		- ```go
+		  // 假设 file 是一个已经打开的 csv 文件
+		  csvWriter := csv.NewWriter(file)
+		  csvWriter.Write([]string{"ID", "Name", "Email"}) // 写入表头
+		  
+		  // 1. 获取“吸管”（rows 对象），这步只发送了查询指令，并未加载数据
+		  rows, err := db.Model(&User{}).Rows()
+		  if err != nil { panic(err) }
+		  defer rows.Close() // 非常重要：用完吸管一定要放好！
+		  
+		  // 2. 循环“吸水”
+		  for rows.Next() {
+		      var user User
+		      // 3. 将当前吸到的一行数据，装进 user 这个“小杯子”
+		      db.ScanRows(rows, &user)
+		  
+		      // 4. 处理这杯水：写入CSV文件
+		      csvWriter.Write([]string{fmt.Sprint(user.ID), user.Name, user.Email})
+		  }
+		  csvWriter.Flush()
+		  ```
+		- `db.Rows()` 只会向数据库发送一次查询请求。`rows` 对象本身不存数据，它只是一个指向数据库结果集的“游标”或“指针”。`for rows.Next()` 每循环一次，这个游标就向下移动一行，然后 `db.ScanRows` 就把这一行的数据读进你的 `user` 变量里。这样，你的内存占用永远只是一个 `user` 对象的大小，和数据总量无关。
+- **FindInBatches（分批处理）：**
+	- **作用：**处理海量数据时，像用小推车一样，一批一批地（例如一次100条）捞数据和处理，尤其适合批量更新。
+	- **比喻：**
+		- 还是那个抽干游泳池的比喻。
+		- 用 `Rows()` 的吸管方式，虽然稳，但如果每处理一杯水都要做点别的复杂事情，来回跑可能效率不高。
+		- `FindInBatches` 就像给了你一个小推车和一个桶。你一次从泳池里装100桶水到小推车上，把这一车水推到处理区，对这100桶水进行统一加工（比如加点消毒液），然后再回去推下一车。
+	- **示例：**
+		- 我们需要对所有“待发货”的订单进行打包处理，处理完后需要更新它们的状态为“已打包”。我们决定一次处理100个订单。
+		- ```go
+		  var pendingOrders []Order
+		  // 1. 每次只捞100个待发货订单
+		  result := db.Where("status = ?", "pending").FindInBatches(&pendingOrders, 100, func(tx *gorm.DB, batch int) error {
+		      // 2. pendingOrders 在这里就是当前这一批的100个订单
+		      fmt.Printf("正在处理第 %d 批，共 %d 个订单\n", batch, len(pendingOrders))
+		  
+		      for i := range pendingOrders {
+		          // ...执行打包、打印快递单等复杂逻辑...
+		          pendingOrders[i].Status = "packed"
+		      }
+		  
+		      // 3. 对这一整批订单，进行一次性的保存
+		      return tx.Save(&pendingOrders).Error
+		  })
+		  
+		  -- (GORM 会自动循环执行，直到捞不到数据为止)
+		  -- 第1批
+		  SELECT * FROM `orders` WHERE `status` = 'pending' LIMIT 100 OFFSET 0;
+		  UPDATE `orders` SET `status`='packed' WHERE `id` IN (id1, id2, ...);
+		  
+		  -- 第2批
+		  SELECT * FROM `orders` WHERE `status` = 'pending' LIMIT 100 OFFSET 100;
+		  UPDATE `orders` SET `status`='packed' WHERE `id` IN (id101, id102, ...);
+		  -- ...
+		  ```
+		- GORM 自动帮你处理了 `LIMIT` 和 `OFFSET` 的分页逻辑。你只需要在那个回调函数 `func(...)` 里，专注于处理每一批的数据就行。这种“读取-处理-写入”的循环模式，对于批量数据更新任务来说是最佳选择。
+- **查询钩子：**
+	- **作用：**在从数据库查出数据后，自动执行一段你预设好的“数据加工”程序。
+	- **示例：**
+		- 我们的 `User` 模型在数据库里存的是 `FirstName` 和 `LastName`，但程序里经常需要用到完整的 `FullName`。我们不希望在数据库里重复存 `FullName`，而是希望每次查出 `User` 后，能自动把它拼接好。
+		- ```go
+		  type User struct {
+		      gorm.Model
+		      FirstName string
+		      LastName  string
+		      FullName  string `gorm:"-"` // gorm:"-" 表示这个字段不需要存到数据库
+		  }
+		  
+		  // 在 User struct 上定义这个钩子方法
+		  func (u *User) AfterFind(tx *gorm.DB) (err error) {
+		      // 这就是那个“自动裱花机”
+		      if u.FirstName != "" {
+		          u.FullName = u.FirstName + " " + u.LastName
+		      }
+		      return
+		  }
+		  
+		  // 当我们查询用户时...
+		  var user User
+		  db.First(&user, 1)
+		  // 执行完上面这行后，user.FullName 字段就已经被自动赋值了！
+		  fmt.Println(user.FullName) // 输出: "Jinzhu San" (假设数据库里是 Jinzhu, San)
+		  ```
+		- GORM 在 `Find`、`First` 等查询操作成功后，会立刻“反思”一下：“我刚刚填充的这个 `struct`（比如 `User`），它自己有没有定义一个叫 `AfterFind` 的方法？”如果定义了，GORM 就会自动调用它。这让我们可以把一些数据后处理的逻辑，直接写在模型自己身上，非常优雅。
 -
