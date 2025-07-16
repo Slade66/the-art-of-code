@@ -99,4 +99,54 @@
 	  -- 如果上面没找到，会执行第二步:
 	  // INSERT INTO `users` (`name`) VALUES ('jinzhu');
 	  ```
+- **锁：**
+	- **用途：**在很多人同时抢一件东西时，给这件东西“上个锁”，保证一次只有一个人能操作它，防止数据错乱。
+	- **排他锁（`FOR UPDATE`）：**
+		- `FOR UPDATE` 就是那个“谁都别碰”的信号。一个事务只要对某行数据用了它，其他任何想修改或读取这行数据的事务都必须排队，直到当前事务结束。
+		- ```go
+		  db.Transaction(func(tx *gorm.DB) error {
+		      var ticket Ticket
+		      // 1. 查找门票ID为1的记录，并立即上锁
+		      if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&ticket, 1).Error; err != nil {
+		          return err
+		      }
+		  
+		      // 2. 检查库存
+		      if ticket.Stock < 1 {
+		          return errors.New("没票了！")
+		      }
+		  
+		      // 3. 减库存并保存
+		      ticket.Stock -= 1
+		      return tx.Save(&ticket).Error
+		      // 4. 事务到这里结束，锁自动解开
+		  })
+		  
+		  // SELECT * FROM `tickets` WHERE `id` = 1 FOR UPDATE
+		  ```
+	- **共享锁（`FOR SHARE`）：**
+		- `FOR SHARE` 允许多个事务同时读取同一份数据（大家一起看），但任何想修改（`FOR UPDATE`）这份数据的事务都必须等所有读取的事务结束。它保证了你在读取期间，数据不会被篡改。
+		- ```go
+		  var stock int
+		  db.Model(&Ticket{}).Clauses(clause.Locking{Strength: "SHARE"}).Pluck("stock", &stock)
+		  
+		  // SELECT `stock` FROM `tickets` FOR SHARE
+		  ```
+	- **`NOWAIT` 选项：**
+		- `NOWAIT` 能防止你的程序因为等待锁而被长时间卡住（阻塞）。如果获取不到锁，它不会等待，而是立刻返回一个错误，让你的程序可以去做别的事情。
+		- ```go
+		  err := db.Clauses(clause.Locking{Strength: "UPDATE", Options: "NOWAIT"}).First(&ticket, 1).Error
+		  
+		  // SELECT * FROM `tickets` WHERE `id` = 1 FOR UPDATE NOWAIT
+		  ```
+	- **`SKIP LOCKED` 选项：**
+		- `SKIP LOCKED` 在处理任务队列时是神器。比如有10个后台程序同时去处理1000个待办任务，每个程序都用 `SKIP LOCKED` 去取任务，它们就能自动领走不同的任务而不会互相等待，大大提高了并行处理效率。
+		- **比喻：**你是一个黄牛机器人，任务是抢购所有尚未被预订的票。你对系统说：“请列出所有可购买的票，如果某张票已经被加到购物车（已锁定），就跳过它，直接给我下一张可购买的票。”
+		- ```go
+		  // 这个场景通常用在后台任务处理中
+		  var availableTickets []Ticket
+		  db.Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).Limit(10).Find(&availableTickets)
+		  
+		  // SELECT * FROM `tickets` FOR UPDATE SKIP LOCKED LIMIT 10
+		  ```
 -
