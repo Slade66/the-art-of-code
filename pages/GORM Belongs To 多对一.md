@@ -1,4 +1,10 @@
-- 用来表示一种“从属”关系，比如“一个员工属于一个公司”，或者“一篇博客属于一个作者”。
+- **概念：**
+	- `BELONGS TO` 是 `HAS ONE` 和 `HAS MANY` 的反向关系，表示一种“从属”关系。例如，“一个员工属于一个公司”或“一篇博客属于一个作者”。它建立了一个模型到另一个模型的从属连接。
+	- 一个 `User` 拥有多个 `Email`（`HAS MANY`），而每个 `Email` 属于一个 `User`（`BELONGS TO`）。
+	- 一个公司拥有多名员工（`Company HAS MANY User`），而每个员工属于一个公司（`User BELONGS TO Company`）。
+	- `HAS ONE` / `HAS MANY` 与 `BELONGS TO` 的关键区别在于外键的位置：
+		- 在 `HAS ONE` / `HAS MANY` 中，外键位于被拥有的模型。
+		- 在 `BELONGS TO` 中，外键位于当前模型。
 - **比喻：**
 	- 想象你和你的身份证。
 	- 你，作为一个“人”，可以有很多东西（多篇文章、多个订单）。
