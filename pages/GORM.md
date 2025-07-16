@@ -46,4 +46,5 @@
 - [[GORM Belongs To 多对一]]
 - [[GORM Has One 一对一]]
 - [[GORM Has Many 一对多]]
+- [[GORM Many To Many 多对多]]
 -
