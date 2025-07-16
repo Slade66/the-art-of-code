@@ -400,4 +400,37 @@
 		  SELECT * FROM `products` WHERE `is_listed` = true AND `price` BETWEEN 100 AND 500
 		  ```
 		- 最终的代码变得极其干净、表意清晰，而且完全没有重复。如果以后“已上架”的逻辑需要修改，你只需要改动 `Listed` 那一个函数，所有使用到它的地方就全部自动更新了！这就是 `Scope` 最大的魅力。
+- **Count：**
+	- **作用：**帮你数一数数据库里符合条件的记录一共有多少条，但它只返回数字，不返回数据本身。
+	- **基本的条件计数：**
+		- 这是最常见的用法，数一数满足 `Where` 条件的记录有多少。
+		- ```go
+		  var pendingOrderCount int64
+		  db.Model(&Order{}).Where("status = ?", "pending").Count(&pendingOrderCount)
+		  
+		  SELECT count(*) FROM `orders` WHERE status = 'pending'
+		  ```
+	- **配合 `Distinct` 使用：**
+		- 有时候你不想数总数，而是想数有多少个不重复的“种类”。
+		- ```go
+		  var activeUserCount int64
+		  db.Model(&Order{}).
+		     Where("created_at > ?", today). // 限定今天
+		     Distinct("user_id").             // 对 user_id 进行去重
+		     Count(&activeUserCount)
+		  
+		  SELECT COUNT(DISTINCT(`user_id`)) FROM `orders` WHERE `created_at` > '...'
+		  ```
+	- **配合 `Group` 使用：**
+		- `Group(...).Count(...)` 在 GORM 里的作用，不是统计每个分组里有多少条记录，而是统计“总共有多少个分组”。
+		- **示例：**
+			- 你想知道“今天总共有多少种不同的商品被卖出去了”。你不在乎每种商品卖了多少件，只关心卖出的商品种类数。
+			- ```go
+			  var distinctProductCount int64
+			  // 先按 product_id 分组，然后统计有多少个组
+			  db.Model(&OrderDetail{}).Where("created_at > ?", today).Group("product_id").Count(&distinctProductCount)
+			  
+			  SELECT count(*) FROM (SELECT `product_id` FROM `order_details` WHERE `created_at` > '...' GROUP BY `product_id`) AS `sub`
+			  ```
+			- GORM 先在内部执行 `GROUP BY product_id`，得到一个类似 `[商品A, 商品B, 商品C]` 的不重复商品列表，然后 `Count` 再去数这个列表里有多少项。所以，如果今天卖了100件商品，但只涉及3种不同的商品，那么 `distinctProductCount` 的结果就是 `3`。
 -
