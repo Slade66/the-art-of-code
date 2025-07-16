@@ -44,4 +44,5 @@
 - [[GORM 查询记录]]
 - [[GORM 高级查询]]
 - [[GORM Belongs To 多对一]]
+- [[GORM Has One 一对一]]
 -
