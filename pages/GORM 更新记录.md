@@ -35,4 +35,48 @@
 		  noIDUser := User{Name: "David", Age: 40}
 		  db.Save(&noIDUser)  // 执行插入操作
 		  ```
+- **`Update` 方法：**
+	- 如果你只需要更新某个字段的值，可以使用 `Update` 方法。
+	- `Update` 方法有一个前提条件，即必须提供条件（`WHERE` 子句），否则会抛出错误 `ErrMissingWhereClause`。
+	- **更新单个字段：**
+		- **基本用法：**
+			- ```go
+			  // 更新 name 字段
+			  db.Model(&User{}).Where("active = ?", true).Update("name", "hello")
+			  
+			  UPDATE users SET name='hello', updated_at='2013-11-17 21:34:10' WHERE active=true;
+			  ```
+		- **使用 `Model` 和主键：**
+			- 如果你使用了 `Model` 并且给定了一个具有主键的对象，GORM 会自动使用该主键构建更新条件。
+			- ```go
+			  // 如果 user.ID = 111
+			  db.Model(&user).Update("name", "hello")
+			  
+			  UPDATE users SET name='hello', updated_at='2013-11-17 21:34:10' WHERE id=111;
+			  ```
+		- **使用条件和模型：**
+			- 你还可以结合 `Model` 和 `Where` 条件来进行更精确的更新。
+			- ```go
+			  db.Model(&user).Where("active = ?", true).Update("name", "hello")
+			  
+			  UPDATE users SET name='hello', updated_at='2013-11-17 21:34:10' WHERE id=111 AND active=true;
+			  ```
+	- **更新多个字段：**
+		- **使用结构体（`struct`）更新：**
+			- 当你需要更新多个字段时，可以通过传入一个结构体来实现。需要注意的是，使用结构体更新时，只有非零字段会被更新。
+			- ```go
+			  // 使用结构体更新多个字段（只有非零字段会更新）
+			  db.Model(&user).Updates(User{Name: "hello", Age: 18, Active: false})
+			  
+			  UPDATE users SET name='hello', age=18, updated_at = '2013-11-17 21:34:10' WHERE id = 111;
+			  ```
+			- **注意**：如果结构体中的某些字段是零值（比如 `Age` 字段为 0，`Active` 为 `false`），这些字段将不会被更新。这是 GORM 的默认行为。
+		- **使用 `map` 更新：**
+			- 如果你希望更新所有字段（包括零值字段），你可以使用 `map` 来指定字段和值。通过 `map` 传入的所有字段都会被更新（无论字段的值是否为零值）。
+			- ```go
+			  // 使用 map 更新多个字段（包括零值字段）
+			  db.Model(&user).Updates(map[string]interface{}{"name": "hello", "age": 18, "active": false})
+			  
+			  UPDATE users SET name='hello', age=18, active=false, updated_at='2013-11-17 21:34:10' WHERE id=111;
+			  ```
 -
