@@ -42,6 +42,8 @@
 - [[GORM 声明模型]]
 - [[GORM 创建记录]]
 - [[GORM 查询记录]]
+- [[GORM 更新记录]]
+- [[GORM 删除记录]]
 - [[GORM 高级查询]]
 - [[GORM Belongs To 多对一]]
 - [[GORM Has One 一对一]]
