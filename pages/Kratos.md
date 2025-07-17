@@ -151,4 +151,68 @@ heading:: true
 	- 将 `cleanup` 定义在函数内部并返回，而不是直接在外部定义，有以下几个原因：
 		- 使其能够直接访问函数内部的一些上下文信息，因为那些需要清理的资源通常是在函数内部初始化的。
 		- 允许外部控制执行时机并支持延迟执行：这样可以让调用者决定何时执行 `cleanup`，而不是在程序运行时立即执行，从而确保在合适的时机（例如应用退出时）释放资源。
+- **为什么要分层设计模型？**
+	- 不分层设计的弊端在于，所有层共用同一个模型，导致层与层之间耦合过高。一旦模型发生变动，所有层都需进行修改。此外，这种设计容易引发隐私泄露等风险，比如直接返回数据库层的模型，其中许多隐私字段未被妥善处理。
+	- **不分层设计：**
+		- ```go
+		  // 不分层设计：所有层共用同一个模型
+		  package model
+		  
+		  type User struct {
+		      ID           int64  `json:"id"`
+		      Username     string `json:"username"`
+		      PasswordHash string `json:"-"` // 忽略密码
+		      LastLoginIP  string `json:"-"` // 隐私字段，误返回 API
+		  }
+		  
+		  // biz 层
+		  func GetUser(id int64) (*model.User, error) {
+		      return repo.GetByID(id) // 直接返回包含 LastLoginIP 的 User 模型
+		  }
+		  
+		  // service 层
+		  func GetUser(ctx context.Context, req *pb.GetUserRequest) (*model.User, error) {
+		      return biz.GetUser(req.GetId()) // 直接返回 model.User，可能泄露 LastLoginIP
+		  }
+		  ```
+	- **分层设计：**
+		- ```go
+		  // data 层模型（数据库存储）
+		  package data
+		  
+		  type User struct {
+		      ID           int64  `gorm:"primarykey"`
+		      Username     string `gorm:"unique"`
+		      PasswordHash string
+		      LastLoginIP  string // 数据库保存该字段
+		  }
+		  
+		  // biz 层模型（业务逻辑）
+		  package biz
+		  
+		  type User struct {
+		      ID       int64
+		      Username string
+		      // 没有 LastLoginIP 字段
+		  }
+		  
+		  // 转换逻辑：将 data.User 转换为 biz.User
+		  func convertToBiz(po *data.User) *biz.User {
+		      return &biz.User{
+		          ID:       po.ID,
+		          Username: po.Username,
+		          // LastLoginIP 被“过滤”掉
+		      }
+		  }
+		  
+		  // service 层
+		  func GetUser(ctx context.Context, req *pb.GetUserRequest) (*biz.User, error) {
+		      userData, err := repo.GetByID(req.GetId())
+		      if err != nil {
+		          return nil, err
+		      }
+		      return convertToBiz(userData), nil // 返回简化后的 biz.User
+		  }
+		  ```
+-
 -
