@@ -71,6 +71,20 @@
 			  UPDATE users SET name='hello', age=18, updated_at = '2013-11-17 21:34:10' WHERE id = 111;
 			  ```
 			- **注意**：如果结构体中的某些字段是零值（比如 `Age` 字段为 0，`Active` 为 `false`），这些字段将不会被更新。这是 GORM 的默认行为。
+			- **使用 `Select` 和结构体（`struct`）更新：**
+				- ```go
+				  db.Model(&user).Select("Name", "Age").Updates(User{Name: "new_name", Age: 0})
+				  // 生成的 SQL: UPDATE users SET name='new_name', age=0 WHERE id=111;
+				  // 在这个例子中，Select("Name", "Age") 会更新 Name 和 Age 字段，即使 Age 字段的值是零。
+				  
+				  db.Model(&user).Select("*").Updates(User{Name: "jinzhu", Role: "admin", Age: 0})
+				  // 生成的 SQL: UPDATE users SET name='jinzhu', role='admin', age=0 WHERE id=111;
+				  // 这里 Select("*") 表示选择所有字段并更新，包括零值字段。
+				  
+				  db.Model(&user).Select("*").Omit("Role").Updates(User{Name: "jinzhu", Role: "admin", Age: 0})
+				  // 生成的 SQL: UPDATE users SET name='jinzhu', age=0 WHERE id=111;
+				  // Omit("Role") 会忽略 Role 字段的更新，只更新 Name 和 Age 字段。
+				  ```
 		- **使用 `map` 更新：**
 			- 如果你希望更新所有字段（包括零值字段），你可以使用 `map` 来指定字段和值。通过 `map` 传入的所有字段都会被更新（无论字段的值是否为零值）。
 			- ```go
@@ -79,4 +93,53 @@
 			  
 			  UPDATE users SET name='hello', age=18, active=false, updated_at='2013-11-17 21:34:10' WHERE id=111;
 			  ```
+	- **更新选定字段：**
+		- 在 GORM 中，除了基本的更新操作，我们还可以选择只更新部分字段或者忽略某些字段。这可以通过 `Select` 和 `Omit` 来实现。
+		- `Select`：用于指定更新哪些字段。
+		- `Omit`：用于指定忽略某些字段。
+		- **使用 `Select` 更新特定字段：**
+			- ```go
+			  // 假设用户的 ID 是 111
+			  db.Model(&user).Select("name").Updates(map[string]interface{}{"name": "hello", "age": 18, "active": false})
+			  // 生成的 SQL: UPDATE users SET name='hello' WHERE id=111;
+			  ```
+		- **使用 `Omit` 忽略字段：**
+			- ```go
+			  db.Model(&user).Omit("name").Updates(map[string]interface{}{"name": "hello", "age": 18, "active": false})
+			  // 生成的 SQL: UPDATE users SET age=18, active=false WHERE id=111;
+			  ```
+- **更新钩子：**
+	- **BeforeUpdate**：在更新操作之前执行。
+	- **AfterUpdate**：在更新操作之后执行。
+- **批量更新：**
+	- **使用结构体进行批量更新：**
+		- ```go
+		  db.Model(User{}).Where("role = ?", "admin").Updates(User{Name: "hello", Age: 18})
+		  // 生成的 SQL: UPDATE users SET name='hello', age=18 WHERE role = 'admin';
+		  ```
+	- **使用 `map` 进行批量更新：**
+		- ```go
+		  db.Table("users").Where("id IN ?", []int{10, 11}).Updates(map[string]interface{}{"name": "hello", "age": 18})
+		  // 生成的 SQL: UPDATE users SET name='hello', age=18 WHERE id IN (10, 11);
+		  ```
+- **阻止全局更新：**
+	- GORM 默认不允许全局更新，如果没有提供任何条件，GORM 会抛出 `ErrMissingWhereClause` 错误。
+	- **启用全局更新：**
+		- 如果你想允许没有条件的全局更新，可以通过设置 `AllowGlobalUpdate` 来启用：
+		- ```go
+		  db.Session(&gorm.Session{AllowGlobalUpdate: true}).Model(&User{}).Update("name", "jinzhu")
+		  // 生成的 SQL: UPDATE users SET name='jinzhu';
+		  ```
+	- **直接执行原始 SQL 更新：**
+		- ```go
+		  db.Exec("UPDATE users SET name = ?", "jinzhu")
+		  // 生成的 SQL: UPDATE users SET name = "jinzhu";
+		  ```
+	- **使用条件进行全局更新：**
+		- 如果需要执行全局更新，必须明确指定条件。
+		- ```go
+		  db.Model(&User{}).Where("1 = 1").Update("name", "jinzhu")
+		  // 生成的 SQL: UPDATE users SET name='jinzhu' WHERE 1=1;
+		  // 这里 Where("1 = 1") 是一个始终为 true 的条件，相当于更新表中所有记录。
+		  ```
 -
