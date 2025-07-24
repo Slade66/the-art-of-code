@@ -1,0 +1,30 @@
+自动迁移（Auto Migration）
+heading:: true
+	- 随着开发需求的变化，数据库表结构可能会发生变化。为了保持数据库表结构与 Go 代码中的结构体模型同步，并避免手动修改数据库表，GORM 提供了 `AutoMigrate` 功能。该功能可以自动更新数据库表结构，包括创建新表、添加缺少的字段、外键约束和索引等，但不会删除现有的列数据，以确保数据的安全性。
+	- **注意：**`AutoMigrate` 不会删除列，所以如果你删除了结构体中的某个字段，数据库中的对应列不会被删除，避免了数据丢失的风险。
+	- **用法：**
+		- ```go
+		  db.AutoMigrate(&User{})
+		  ```
+		- 这个命令会检查 `User` 这个结构体模型对应的表是否存在，如果存在，就检查是否有需要更新的部分（例如新增列、修改列类型等）。
+		- **迁移多个模型：**
+			- 你可以一次迁移多个模型，GORM 会自动更新每个模型对应的表：
+				- ```go
+				  db.AutoMigrate(&User{}, &Product{}, &Order{})
+				  ```
+	- **迁移设置：**
+		- **指定存储引擎：**
+			- ```go
+			  db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&User{})
+			  ```
+		- **指定字符集：**
+			- 你可以为创建的表指定字符集，例如使用 `utf8mb4` 字符集来支持更多的 Unicode 字符，这比 `utf8` 字符集能支持更多的字符（如表情符号）。
+			- ```go
+			  db.Set("gorm:table_options", "CHARSET=utf8mb4").AutoMigrate(&User{})
+			  ```
+		- **指定排序规则：**
+			- 排序规则（Collation）决定了字符串数据如何进行比较和排序。
+			- ```go
+			  db.Set("gorm:table_options", "COLLATE=utf8mb4_general_ci").AutoMigrate(&User{})
+			  ```
+-
