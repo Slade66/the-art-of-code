@@ -76,6 +76,15 @@ heading:: true
 - 复合数据类型
   heading:: true
 	- 复合数据类型是由基本数据类型组合而成的更复杂的数据结构。
+	- **函数类型（Function Types）：**
+		- Go 中的函数本身也是一种类型，可以用来声明函数变量。
+		- ```go
+		  func add(a, b int) int {
+		      return a + b
+		  }
+		  
+		  var f func(int, int) int = add  // 将函数赋值给变量
+		  ```
 - 类型转换
   heading:: true
 	- 类型转换用于将一个值从一种类型转换为另一种类型。由于 Go 不会自动进行隐式类型转换，因此需要手动指定转换方式。
