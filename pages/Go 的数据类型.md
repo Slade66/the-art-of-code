@@ -65,10 +65,7 @@ heading:: true
 	- **布尔类型（Boolean Type）：**
 		- **bool**：布尔类型，用于表示 `true` 或 `false`。
 	- **字符串类型（String Type）：**
-		- **string**：
-			- 表示文本数据，由一系列字符组成。
-			- 在 Go 中，字符串是不可变的，意味着一旦创建，其内容无法修改。
-			- 字符串的默认值为 `""`（空字符串）。
+		- [[Go 的 string]]
 	- **字符类型（Character Type）：**
 		- **rune**：
 			- Go 的字符类型是 `rune`，它是 `int32` 的别名，表示一个 Unicode 码点（即字符对应的数字编号），占用 32 位（4 字节）。
