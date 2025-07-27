@@ -45,6 +45,7 @@
 	  delete(目标映射, "要删除的键")
 	  ```
 - **遍历映射：**
+	- `range` 可以用于遍历映射，它返回键和值的每一对。
 	- ```go
 	  for key, value := range m {
 	      fmt.Println(key, "=>", value)

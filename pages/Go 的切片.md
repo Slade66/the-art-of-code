@@ -40,6 +40,18 @@
 	  copy(c, s)
 	  fmt.Println("cpy:", c)
 	  ```
+- **遍历切片：**
+	- 可以使用 `range` 迭代切片。`range` 会返回切片中每个元素的索引和值。
+	- **示例：**
+		- 在这里，我们只关心元素的值（即 `num`），所以用 `_` 忽略了索引。
+		- ```go
+		  nums := []int{2, 3, 4}
+		  sum := 0
+		  for _, num := range nums {
+		      sum += num
+		  }
+		  fmt.Println("sum:", sum)
+		  ```
 - **创建切片的方式：**
 	- **从数组或现有切片创建：**
 		- ```go
