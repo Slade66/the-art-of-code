@@ -113,9 +113,72 @@
 		- 在 Go 的设计哲学中，`error` 是处理预期错误的标准方式，而 `panic` 仅用于真正的异常情况。
 		- 始终避免使用 `panic` 处理普通错误，这类错误应通过返回 `error` 来处理。`panic` 的合理使用场景仅限于程序遇到不可恢复的严重错误，导致继续运行无意义时，此时应使用它 “快速失败”。典型场景包括关键配置文件加载失败、必要依赖服务不可用等。
 - **`recover` 函数：**
-	- `panic` 的冒泡行为是可以阻止的。`recover()` 函数可以在 `defer` 中捕获 `panic`，从而“戳破”这个气泡，使程序从恐慌状态恢复，避免程序崩溃并继续正常运行。
-	- `recover()` 必须在 `defer` 语句中调用才能生效。如果在非 `defer` 语句中调用 `recover`，它将返回 `nil` 且没有任何作用。
-	- 若成功捕获 `panic`，`recover` 会返回传给 `panic` 的值，程序将从触发 `panic` 的函数中提前返回，继续执行该函数调用者的后续代码。若未发生 `panic`，`recover` 返回 `nil`，程序按正常流程继续执行。
+	- `panic` 的冒泡行为是可以阻止的。`recover()` 函数可以在 `defer` 中捕获一个正在“冒泡”的 `panic`，从而“戳破”这个气泡，使程序从恐慌状态中恢复，避免崩溃并继续运行。
+	- `recover()` 必须在 `defer` 语句中调用才能生效。
+		- 为什么？因为当 `panic` 发生时，正常的代码执行流程会立即停止，只有 `defer` 中的任务会继续执行。因此，`defer` 函数是唯一能在 `panic` 发生后、程序崩溃前进行干预的地方。
+	- 如果在没有 `panic` 的情况下调用 `recover()`，或在 `defer` 之外调用它，它不会起任何作用，并会返回 `nil`。
+	- 如果成功捕获 `panic`，`recover` 会返回传给 `panic` 的值。
+	- 处理了下层 `panic` 的函数，自己也无法从发生 `panic` 的那个调用点继续向后执行。
+	- **示例：**
+		- ```go
+		  package main
+		  
+		  import (
+		  	"fmt"
+		  	"time"
+		  )
+		  
+		  // 第 3 层：这个函数会触发 panic
+		  func panickingFunction() {
+		  	fmt.Println(" [3] 进入了会 panic 的函数... ")
+		  
+		  	// 触发 panic
+		  	panic("发生了一个本不该发生的错误")
+		  
+		  	// --- 关键点 1 ---
+		  	// panic 一旦触发，当前函数的执行就已停止。
+		  	// 下面这行代码是永远、永远不会被执行的。
+		  	fmt.Println(" [3] panic 之后（这行代码永远不会执行）")
+		  }
+		  
+		  // 第 2 层：这个函数负责调用并恢复(recover) panic
+		  func recoveringFunction() {
+		  	// 使用 defer 来设置一个“安全网”
+		  	defer func() {
+		  		fmt.Println(" [2] defer 安全网已启动...")
+		  
+		  		// 调用 recover() 来捕获 panic
+		  		if r := recover(); r != nil {
+		  			fmt.Printf(" [2] 成功捕获到 panic！值为: %v\n", r)
+		  			fmt.Println(" [2] panic 已被处理，程序将从这里恢复并正常返回。")
+		  		}
+		  	}()
+		  
+		  	fmt.Println(" [2] 准备调用会 panic 的函数... ")
+		  	panickingFunction() // 调用第 3 层函数
+		  
+		  	// --- 关键点 2 ---
+		  	// 当 panickingFunction() 发生 panic 时，执行流会立即跳转到本函数的 defer 代码块。
+		  	// 因此，本函数的正常流程也被中断了，下面这行代码同样不会被执行。
+		  	fmt.Println(" [2] 调用 panickingFunction() 之后（这行也不会执行）")
+		  }
+		  
+		  // 第 1 层：主函数，调用我们的“恢复函数”
+		  func main() {
+		  	fmt.Println(" [1] 程序开始... ")
+		  
+		  	recoveringFunction()
+		  
+		  	// --- 关键点 3 ---
+		  	// 因为 recoveringFunction 内部成功处理了 panic，
+		  	// 所以 panic 没有“冒泡”到 main 函数。
+		  	// main 函数会认为 recoveringFunction 只是一个正常返回的函数调用。
+		  	// 因此，这里的代码会继续执行。
+		  	fmt.Println(" [1] recoveringFunction 已返回，程序继续执行...")
+		  	time.Sleep(1 * time.Second)
+		  	fmt.Println(" [1] 程序正常结束。")
+		  }
+		  ```
 - [[errors]]
 - [[Go 的自定义错误]]
 -
