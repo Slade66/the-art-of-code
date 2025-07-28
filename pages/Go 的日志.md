@@ -27,4 +27,71 @@
 		  myslog.Info("hi there") // 使用 Info 级别记录一条简单的消息。
 		  myslog.Info("hello again", "key", "val", "age", 25) // 除了基本消息，还附带了两对键值对属性
 		  ```
+- **`log` 包：**
+	- **缺点：**
+		- **难以解析**：纯文本日志不适合机器处理。
+		- **缺乏级别**：没有 `Info`、`Warning`、`Error` 等级别的区分。
+	- **基本用法：**
+		- `Println()` / `Printf()`：用于记录普通信息，打印日志后程序继续执行。
+		- `Fatalf()`：打印日志后，会调用 `os.Exit(1)`，导致程序立即退出。
+		- `Panicf()`：打印日志后，会触发一个 `panic`。
+	- **配置：**
+		- **输出目标：**
+			- 默认情况下，标准日志记录器将日志输出到标准错误流（`os.Stderr`），并自动添加日期和时间。你可以通过 `log.SetOutput()` 将日志重定向到任何实现了 `io.Writer` 接口的对象，例如文件或内存中的变量。
+			- ```go
+			  package main
+			  
+			  import (
+			  	"bytes"
+			  	"log"
+			  	"os"
+			  )
+			  
+			  func main() {
+			  	// 将日志输出重定向到文件
+			  	file, _ := os.OpenFile("logfile.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+			  	defer file.Close()
+			  	log.SetOutput(file)
+			  	log.Println("This is a log message written to the file.")
+			  
+			  	// 将日志输出重定向到内存中的缓冲区
+			  	var buf bytes.Buffer
+			  	log.SetOutput(&buf)
+			  	log.Println("This is a log message written to memory.")
+			  
+			  	// 打印内存中的日志内容
+			  	log.Println("Logged content:", buf.String())
+			  }
+			  
+			  ```
+		- **格式标志：**
+			- 你可以通过 `log.SetFlags()` 来控制每条日志开头的前缀信息，如日期、时间、文件名和代码行号等。
+			- **示例：**
+				- ```go
+				  log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+				  log.Println("with micro")
+				  // 2023/08/22 10:45:16.904141 with micro
+				  
+				  log.SetFlags(log.LstdFlags | log.Lshortfile)
+				  log.Println("with file/line")
+				  // 2023/08/22 10:45:16 logging.go:40: with file/line
+				  ```
+				- `log.LstdFlags` 是 `log.Ldate | log.Ltime` 的简写，表示“日期+时间”。
+				- `| log.Lmicroseconds`：按位或操作符 `|` 用于在标准标志的基础上增加微秒级的精度。
+				- `| log.Lshortfile`：在标准标志的基础上增加输出日志的文件名和行号，这对调试非常有用。
+		- **自定义 Logger：**
+			- 除了使用全局标准日志记录器，你还可以通过 `log.New()` 创建自己的日志记录器实例。这使你能够将不同模块的日志输出到不同的位置或使用不同的格式。
+			- ```go
+			  mylog := log.New(os.Stdout, "my:", log.LstdFlags)
+			  mylog.Println("from mylog")
+			  // my:2023/08/22 10:45:16 from mylog
+			  
+			  mylog.SetPrefix("ohmy:")
+			  mylog.Println("from mylog")
+			  // ohmy:2023/08/22 10:45:16 from mylog
+			  ```
+			- 第一个参数 `os.Stdout` 指定了输出目标为标准输出。
+			- 第二个参数 `"my:"` 设置了固定的前缀。
+			- 第三个参数 `log.LstdFlags` 指定了日志的格式。
+			- `mylog.SetPrefix()` 允许动态修改记录器的前缀。
 -
