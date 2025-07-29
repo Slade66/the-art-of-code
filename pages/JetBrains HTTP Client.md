@@ -43,12 +43,19 @@
 		- **请求体（`Request-Body`）**：对于 `POST` 或 `PUT` 请求，需要在此处写入发送的数据，如 JSON 格式的内容。
 - **命名请求**：
 	- 为了在运行/调试配置、`Search Everywhere` 和 `Run Anything` 中更方便地找到请求，可以为请求命名。
-	- **示例：**
-		- ```text
-		  ### 获取用户列表
-		  GET https://api.example.com/users
-		  ```
-		- `### 获取用户列表` 即为该请求的名称。
+	- **命名请求有几种方式：**
+		- 在请求上方使用 `###` 加上名称。
+		- 使用 `# @name` 加上名称。
+		- 使用 `# @name =` 加上名称。
+		- **示例：**
+			- ```text
+			  ### 获取用户列表
+			  GET https://api.example.com/users
+			  ```
+			- `### 获取用户列表` 即为该请求的名称。
+	- **名称处理规则：**
+		- 如果一个请求没有名称，GoLand 会使用它在请求文件中的位置作为名称（例如 `#1`）。
+		- 如果一个请求文件中包含多个同名的请求，GoLand 会在每个同名请求的名称后面附加其位置编号，使其唯一，方便您在 `Services` 工具窗口、运行/调试配置等地方找到。
 - **快速创建 HTTP 请求**：
 	- **通过菜单栏**：
 		- 在 GoLand 菜单栏中点击 `Tools` -> `HTTP Client` -> `Create Request in HTTP Client`。
@@ -75,5 +82,131 @@
 		  Content-Type: application/x-www-form-urlencoded
 		  
 		  field1=value%+value&field2=value%&value
+		  ```
+- **GET 请求的简写形式：**
+	- 对于 `GET` 请求，您可以省略请求方法 `GET`，只指定 URI。GoLand 会默认将其识别为 `GET` 请求。
+	- **示例：**
+		- ```http
+		  # 这是一个简写的 GET 请求，获取首页内容
+		  https://example.com/
+		  
+		  ###
+		  # 这是另一个简写的 GET 请求，获取用户个人资料
+		  https://api.yourdomain.com/profile
+		  ```
+- **将长请求分解为多行：**
+	- **路径分行：**
+		- ```http
+		  GET http://example.com:8080
+		      /api
+		      /html
+		      /get
+		      ?id=123
+		      &value=content
+		  ```
+	- **查询参数分行：**
+		- ```http
+		  GET https://example.com:8080/api/get/html?
+		      firstname=John&
+		      lastname=Doe&
+		      planet=Tatooine&
+		      town=Freetown
+		  ```
+	- **`application/x-www-form-urlencoded` 请求体分行：**
+		- ```http
+		  POST https://ijhttp-examples.jetbrains.com/post
+		  Content-Type: application/x-www-form-urlencoded
+		  
+		  key1 = value1 &
+		  key2 = value2 &
+		  key3 = value3 &
+		  key4 = value4 &
+		  key5 = value5
+		  ```
+- **提供请求消息体：**
+	- **直接在请求中编写请求体：**
+		- ```http
+		  // 请求体直接在请求中提供
+		  POST https://example.com:8080/api/createItem HTTP/1.1
+		  Content-Type: application/json
+		  Cookie: session_id=abc123xyz
+		  
+		  {
+		    "itemName": "新商品",
+		    "price": 99.99,
+		    "description": "这是商品的描述"
+		  }
+		  ```
+	- **从文件中读取请求体：**
+		- 要从文件中读取请求体，请键入 `<` 符号，后跟文件路径。这对于发送大型请求体或需要重用请求体内容时非常有用。
+		- **示例：**
+			- 假设您有一个 `input.json` 文件，内容如下：
+				- ```json
+				  // input.json
+				  {
+				    "reportTitle": "月度销售报告",
+				    "data": [
+				      {"product": "A", "sales": 100},
+				      {"product": "B", "sales": 150}
+				    ]
+				  }
+				  ```
+			- 在 HTTP 请求文件中：
+				- ```http
+				  // 请求体从文件中读取
+				  POST https://example.com:8080/api/reports
+				  Content-Type: application/json
+				  
+				  < ./input.json
+				  ```
+- **使用 `multipart/form-data` 内容类型：**
+	- `multipart/form-data` 是一种 HTTP `Content-Type`，主要用于在 HTTP 请求中发送包含多种类型数据的表单。最常见的应用场景是文件上传，但它也可以同时包含普通的文本字段。
+	- 它的核心思想是将整个请求体分解成多个独立的“部分”（part），每个部分都有自己的内容类型和名称，并且部分之间通过一个唯一的边界字符串（boundary）分隔。
+	- **为什么要用它？**
+		- 传统的 `application/x-www-form-urlencoded` 适合发送简单的键值对文本数据，但无法有效地处理二进制文件。`multipart/form-data` 则解决了这个问题，允许你在一个请求中同时发送文本字段和文件。
+	- **怎么用？**
+		- **设置 `Content-Type` 头：**
+		  logseq.order-list-type:: number
+			- 在 HTTP 请求头中，必须将 `Content-Type` 设置为 `multipart/form-data`，并紧接着指定一个 `boundary` 字符串。`boundary` 是用来分隔各个数据部分的标识符，必须是一个在整个请求体中不会重复的唯一字符串，否则会导致解析错误。
+			- **示例：**
+				- ```http
+				  POST https://example.com/api/upload HTTP/1.1
+				  Content-Type: multipart/form-data; boundary=myCustomBoundaryString
+				  ```
+				- 这里的 `myCustomBoundaryString` 是我们自定义的边界字符串。通常为了确保唯一性，`boundary` 会是一个随机生成的长字符串。
+		- **定义各个数据部分：**
+		  logseq.order-list-type:: number
+			- 每个数据部分都以 `--` 和 `boundary` 字符串开始，并在其内部包含该部分的具体数据。
+			- **`--boundary`**：表示每个数据部分的开始。
+			- **`Content-Disposition` 头：** 每个部分必需包含该头，它描述该部分是“表单数据”（`form-data`），并指定该字段的 `name`。
+				- `name="fieldName"`：对应后端接收的表单字段名称。
+				- `filename="fileName.ext"`（可选，通常用于文件）：如果该部分是文件，需包含 `filename` 参数，指明文件的原始名称。
+			- **`Content-Type` 头（可选）：** 如果该部分是文件，通常会指定文件的 MIME 类型（如 `image/jpeg`、`application/pdf`、`text/plain` 等）。如果未指定，后端可能会尝试猜测或使用默认值。
+			- **空行：** 所有头部信息之后必须有一个空行。
+			- **数据内容：** 空行之后为该部分的实际数据。
+		- **结束整个请求体：**
+		  logseq.order-list-type:: number
+			- `multipart/form-data` 请求的结束标志是 `--` 和 `boundary` 字符串，后面再加 `--`。
+	- **示例：**
+		- ```http
+		  POST https://example.com/api/upload HTTP/1.1
+		  Content-Type: multipart/form-data; boundary=boundary
+		  
+		  --boundary
+		  Content-Disposition: form-data; name="first"; filename="input.txt"
+		  
+		  // The 'input.txt' file will be uploaded
+		  < ./input.txt
+		  
+		  --boundary
+		  Content-Disposition: form-data; name="second"; filename="input-second.txt"
+		  
+		  // A temporary 'input-second.txt' file with the 'Text' content will be created and uploaded
+		  Text
+		  --boundary
+		  Content-Disposition: form-data; name="third";
+		  
+		  // The 'input.txt' file contents will be sent as plain text.
+		  < ./input.txt --boundary--
 		  ```
 -
