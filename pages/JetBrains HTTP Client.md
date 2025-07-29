@@ -209,4 +209,48 @@
 		  // The 'input.txt' file contents will be sent as plain text.
 		  < ./input.txt --boundary--
 		  ```
+- **自定义 HTTP 请求超时**：
+	- GoLand HTTP Client 默认有两种主要的超时设置：
+		- **连接超时 (Connection Timeout):** 默认为 **60 秒**，即 GoLand 尝试与目标服务器建立 TCP 连接的最大时间。如果在该时间内未能建立连接，请求将会失败。
+		- **读取超时 / 数据包超时 (Read Timeout / New Packets Timeout):** 默认为 **60 秒**，指连接建立后，GoLand 等待服务器发送下一个数据包（例如响应头或响应体一部分）的最长时间。如果在该时间内未收到任何数据，请求会失败。该超时设置会不断计时，每当接收到新数据时，计时器会重置。
+	- **GoLand 提供了两种层级的超时配置方式：**
+		- **请求级别自定义超时**：
+			- 您可以在单个 HTTP 请求文件中使用注释标签设置超时。这种方式灵活，只对当前请求生效，不会影响其他请求。
+			- **设置读取超时（`@timeout`）：**
+				- 用于控制连接建立后等待新数据包的超时时间。
+				- **语法：** `# @timeout <value> [unit]` 或 `// @timeout <value> [unit]`
+				- **示例：**
+					- ```http
+					  # @timeout 600
+					  GET example.com/api/long-response
+					  ```
+					- 这个例子将 `GET example.com/api/long-response` 的读取超时设置为 600 秒。
+			- **设置连接超时（`@connection-timeout`）：**
+				- 用于控制与服务器建立连接的超时时间。
+				- **语法：** `# @connection-timeout <value> [unit]` 或 `// @connection-timeout <value> [unit]`
+				- **示例：**
+					- ```http
+					  // @connection-timeout 2 m
+					  GET example.com/api/unstable-connection
+					  ```
+					- 这个例子将 `GET example.com/api/unstable-connection` 的连接超时设置为 2 分钟。
+			- **单位说明：**
+				- 默认情况下，超时值以秒为单位。但您可以在数值后面明确指定单位：
+					- `ms`：毫秒
+					- `s`：秒 (默认)
+					- `m`：分钟
+		- **IDE 级别自定义超时**：
+			- 若希望所有 HTTP 请求（包括 GoLand 与外部服务交互时发出的请求）都遵循特定的超时设置，可以在 IDE 级别进行配置。这通过修改 GoLand 的 VM 选项来实现。
+			- **如何修改 VM 选项：**
+				- 点击 `Help (帮助)` -> `Edit Custom VM Options (编辑自定义 VM 选项)`。
+				- 这将打开 `.vmoptions` 文件，您可以在其中添加或修改以下参数：
+				- ```text
+				  # 配置连接超时
+				  -Didea.connection.timeout=30000
+				  # 配置读取超时
+				  -Didea.read.timeout=120000
+				  ```
+			- **默认单位为毫秒：** 通过 VM 选项设置的超时值，默认单位是毫秒。
+			- **请求级别覆盖 IDE 级别设置：** 如果在单个 HTTP 请求中使用了 `@timeout` 或 `@connection-timeout` 标签，它将覆盖 VM 选项中设置的相应超时。这意味着请求级别的设置优先级更高。
+			- **全局影响：** VM 选项会影响 GoLand 整个应用程序的行为。这些超时不仅适用于 HTTP Client 中的请求，还会影响 GoLand 与网络交互时发出的所有 HTTP 请求（如检查更新、下载依赖、访问插件市场等）。因此，修改这些值时请谨慎操作。
 -
