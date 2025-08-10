@@ -1,3 +1,4 @@
 - [[231. Power of Two]]
 - [[869. Reordered Power of 2]]
+- [[2235. Add Two Integers]]
 -
