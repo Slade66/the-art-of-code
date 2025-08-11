@@ -1,0 +1,15 @@
+-
+- ## 是什么？
+	- WSL integration 是一项允许开发者在 Windows 的 Linux 子系统（WSL）中控制运行于 Docker Desktop WSL 环境中的 Docker 引擎的技术。
+- ## 有什么用？
+	- 设想这样一个场景：你的电脑是 Windows 系统，安装了 Docker Desktop；同时，为了方便开发，你又在 WSL 2 中安装了一个 Ubuntu 系统。
+	- 如果没有这个集成功能，若想在 Ubuntu 中使用 Docker，就必须再安装并运行一套 Docker 服务。
+	- 这样会带来两个问题：
+		- **资源浪费**：同时运行两个 Docker 引擎（一个在 Windows，一个在 Ubuntu）会占用额外的内存和 CPU 资源。
+		- **管理混乱**：Windows 中创建的容器在 Ubuntu 中不可见，反之亦然；两个环境的镜像、网络和存储卷互不共享，管理十分不便。
+	- 集成功能的作用是在日常使用的 WSL 发行版（如 `Ubuntu`）中直接连接 `docker-desktop` 的 Docker Daemon，从而让整个系统只需运行一套 Docker 服务。
+- ## 原理
+	- Docker Desktop 会将 `docker-desktop` 环境中的 Docker Socket 挂载到 `Ubuntu` 系统中。
+	- Docker Socket 是一个 Unix 套接字文件，用于在 Docker CLI 与 Docker Daemon 之间建立通信。
+	- 启用集成后，在 `Ubuntu` 中执行的 `docker` 命令会通过该 socket 文件转发至运行在 `docker-desktop` 子系统中的 Docker Daemon。
+-
