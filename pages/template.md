@@ -31,6 +31,7 @@
 		- ### Algorithm
 			- 算法的步骤。
 		- ### Code
-			- ```go
+			- ```mysql
+			  
 			  ```
 -
