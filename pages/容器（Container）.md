@@ -24,4 +24,6 @@
 		- `--cpus`：限制容器能使用的 CPU 核心数。
 		- `--restart`：设置容器的重启策略。当容器因意外退出时，Docker 可以根据策略自动重启它。
 		- `--network`：将容器连接到指定的 Docker 网络。
+		- ` --gpus`：将主机的 GPU 资源分配给 Docker 容器。
+- [[docker logs]]
 -
