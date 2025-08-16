@@ -2,4 +2,5 @@
 - [[1407. Top Travellers]]
 - [[607. Sales Person]]
 - [[175. Combine Two Tables]]
+- [[1440. Evaluate Boolean Expression]]
 -
