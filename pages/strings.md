@@ -30,4 +30,5 @@
 		  // 3. n < 0，替换所有
 		  fmt.Println(strings.Replace(s, "l", "L", -1)) // heLLo worLd
 		  ```
+- [[strings.ReplaceAll]]
 -

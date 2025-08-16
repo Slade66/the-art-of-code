@@ -1,0 +1,4 @@
+-
+- **函数签名：**`func ReplaceAll(s, old, new string) string`
+- 它完全等价于 `strings.Replace(s, old, new, -1)`，如果确定要替换所有匹配项，使用 `ReplaceAll` 会让代码更具可读性。
+-
