@@ -37,4 +37,12 @@
 			- ```mysql
 			  
 			  ```
+- 生词
+  template:: 生词
+  template-including-parent:: false
+	- **音标：**``
+	- **词性和释义：**``
+	- **例句：**
+		- ``
+			-
 -
