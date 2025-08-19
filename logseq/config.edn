@@ -299,7 +299,7 @@
  ;;  :charge-range    600}   ; Default value: 600
 
  ;; Favorites to list on the left sidebar
- :favorites ["Docker"]
+ :favorites ["生词表" "Docker"]
 
  ;; Set flashcards interval.
  ;; Expected value:
