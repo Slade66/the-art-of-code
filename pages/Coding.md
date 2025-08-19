@@ -3,4 +3,5 @@
 - [[2235. Add Two Integers]]
 - [[2469. Convert the Temperature]]
 - [[1323. Maximum 69 Number]]
+- [[2413. Smallest Even Multiple]]
 -
