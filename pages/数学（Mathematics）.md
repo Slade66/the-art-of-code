@@ -1,2 +1,4 @@
 - [[阶乘（Factorial）]]
+- [[最小公倍数（Least Common Multiple）]]
+- [[最大公约数（Greatest Common Divisor）]]
 -
