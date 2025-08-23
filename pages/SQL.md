@@ -4,4 +4,5 @@
 - [[175. Combine Two Tables]]
 - [[1440. Evaluate Boolean Expression]]
 - [[1890. The Latest Login in 2020]]
+- [[1821. Find Customers With Positive Revenue this Year]]
 -
