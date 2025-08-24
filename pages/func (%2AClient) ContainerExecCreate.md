@@ -7,7 +7,7 @@
 	  ```
 - **参数：**
 	- `ctx context.Context`： [[context]]
-	- `containerID string`：目标容器的唯一标识，可以是容器 ID，也可以是容器名。
+	- `containerID string`：目标容器的 ID。
 	- `options container.ExecOptions`：[[type ExecOptions]]
 - **返回值：**
 	- `container.ExecCreateResponse`：
