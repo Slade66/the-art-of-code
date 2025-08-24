@@ -1,14 +1,14 @@
 - **作用：**
-	- 该函数用于获取某个执行实例在被查询那一刻的状态信息。
+	- 该函数用于查看 `exec` 任务的运行状态。
 - **方法签名：**
 	- ```go
 	  func (cli *Client) ContainerExecInspect(ctx context.Context, execID string) (container.ExecInspect, error)
 	  ```
 - **参数：**
 	- `ctx context.Context`：[[context]]
-	- `execID string`：你想要查询的那个执行实例的 ID。
+	- `execID string`：你想要查询的那个 `exec` 任务的 ID。
 - **返回值：**
-	- `container.ExecInspect`：这个结构体包含了 `exec` 实例的所有详细信息。
+	- `container.ExecInspect`：这个结构体包含了 `exec` 任务的运行状态信息。
 		- ```go
 		  // ExecInspect holds information returned by exec inspect.
 		  type ExecInspect struct {
@@ -39,3 +39,5 @@
 		  }
 		  ```
 	- `error`：如果在查询过程中发生任何错误（如网络问题、`execID` 不存在），将返回一个非 `nil` 的 `error` 对象。
+- **注意：**
+	- 该函数用于检查任务的状态，例如任务是否仍在运行、其最终的退出码是多少，但它并不负责捕获命令执行后产生的输出。
