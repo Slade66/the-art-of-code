@@ -6,8 +6,8 @@
 - [[func (*Conn) WriteMessage]]
 - **下载：**`go get github.com/gorilla/websocket`
 - **两种消息收发方式：**
-	- `ReadMessage` 和 `WriteMessage`：一次性读写完整消息。适合聊天、通知等场景，简单直接。
-	- `NextReader` 和 `NextWriter`：流式读写消息，避免一次性载入全部数据到内存，适用于文件传输等大负载场景。
+	- **`ReadMessage` 和 `WriteMessage`：**一次性读写完整消息。适合聊天、通知等场景，简单直接。
+	- **`NextReader` 和 `NextWriter`：**流式读写消息。避免一次性载入全部数据到内存，适用于文件传输等大负载场景。
 - **怎么用？**
 	- **服务器端使用流程：**
 		- **创建 HTTP 服务**：启动 HTTP 服务器，并为 WebSocket 路由注册一个处理函数。
