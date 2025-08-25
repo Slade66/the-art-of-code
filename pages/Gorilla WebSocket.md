@@ -4,6 +4,7 @@
 - [[type Conn]]
 - [[func (*Conn) ReadMessage]]
 - [[func (*Conn) WriteMessage]]
+- [[func IsUnexpectedCloseError]]
 - **下载：**`go get github.com/gorilla/websocket`
 - **两种消息收发方式：**
 	- **`ReadMessage` 和 `WriteMessage`：**一次性读写完整消息。适合聊天、通知等场景，简单直接。

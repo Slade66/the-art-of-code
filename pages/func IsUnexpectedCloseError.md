@@ -1,0 +1,21 @@
+- **作用：**
+	- 判断一个连接关闭错误是否属于意料之外。当 `conn.ReadMessage()` 因连接关闭返回错误时，该函数可以帮助你区分正常的业务逻辑关闭（如用户下线）和需要记录日志、排查的异常关闭。
+- **方法签名：**
+	- ```go
+	  func IsUnexpectedCloseError(err error, expectedCodes ...int) bool
+	  ```
+- **参数：**
+	- `err error`：`conn.ReadMessage()` 或其他读取方法返回的原始错误对象。
+	- `expectedCodes ...int`：可变参数，用于指定一个或多个预期关闭码。常见的正常关闭码包括 `websocket.CloseGoingAway`（用户关闭浏览器标签页）和 `websocket.CloseNormalClosure`（代码主动正常关闭）。
+- **返回值：**
+	- `bool`：
+		- 返回 `true`：当且仅当 `err` 的类型为 `*websocket.CloseError`，且其关闭码 (`Code`) 不在 `expectedCodes` 列表中。
+		- 返回 `false`：当 `err` 不是 `*websocket.CloseError`，或者 `err` 是 `*websocket.CloseError` 且关闭码在 `expectedCodes` 列表中。
+- **核心执行流程：**
+	- **类型断言**：函数首先检查传入的 `err` 是否可以被断言为 `*websocket.CloseError` 类型。如果不是，说明这个错误与 WebSocket 的正常关闭流程无关（可能是底层网络错误），直接返回 `false`。
+	- **遍历预期码**：如果类型断言成功，函数会遍历你传入的 `expectedCodes` 列表。
+	- **匹配检查**：在遍历过程中，它会将实际的错误关闭码 `e.Code` 与列表中的每一个 `code` 进行比较。只要找到一个匹配项，就意味着这是一个“预期内”的关闭，函数立即返回 `false`。
+	- **最终判定**：如果遍历完所有 `expectedCodes` 都没有找到匹配项，那就证明这个关闭错误是“意外”的，函数最终返回 `true`。
+- **注意：**
+	- **为什么 `IsUnexpectedCloseError` 函数在断言失败时返回 `false`？**
+		- 因为它遵循单一职责原则，只负责判断某个“关闭错误”是否超出了预期，而其它类型的错误（如网络超时、IO 错误）并不在它的处理范围内。因此，对于那些并非 `CloseError` 类型的错误，这个函数无法判定它们是否属于“意外的关闭错误”，因为它们根本就不是“关闭错误”。
