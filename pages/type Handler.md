@@ -1,5 +1,6 @@
 - **作用：**
-	- `Handler` 接口的作用是定义一个处理 HTTP 请求的规范。任何实现了此接口的类型，都可以作为一个独立的 HTTP 请求处理器，被 Go 的 Web 服务器调用。
+	- `Handler` 接口的作用是定义一个处理 HTTP 请求的规范。
+	- 任何实现了此接口（`ServeHTTP` 方法）的类型，都可以作为一个 HTTP 请求处理器，被 Go 的 Web 服务器调用。
 - **接口定义与方法解析：**
 	- ```go
 	  type Handler interface {

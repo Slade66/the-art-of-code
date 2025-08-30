@@ -1,0 +1,15 @@
+-
+- **有什么用？**
+	- 在 Go 语言中，`net/http` 包是构建 Web 服务的核心。
+	- Go 语言将一个功能完备、性能卓越且可用于生产环境的 HTTP 实现，直接内置于其标准库中。这赋予了开发者无需依赖任何第三方框架，就能构建出强大 HTTP 客户端和服务器的能力。
+	- 无论是搭建简单的 API 端点，还是开发复杂的高性能微服务，`net/http` 包都能提供一个坚实、可靠的基础。
+- [[type Handler]]
+- [[func HandleFunc]]
+- [[type ResponseWriter]]
+- [[type Request]]
+- [[func ListenAndServe]]
+- [[type ServeMux]]
+- [[func (*ServeMux) Handle]]
+- [[func (*ServeMux) HandleFunc]]
+- [[type HandlerFunc]]
+-
