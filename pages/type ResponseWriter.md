@@ -29,4 +29,10 @@
 	  	WriteHeader(statusCode int)
 	  }
 	  ```
+- **`ResponseWriter` 的工作原理：**
+	- `http.ResponseWriter` 不是一个你填充完后一次性发送的数据结构，它实际上是对底层网络连接的一个实时抽象。你对 `ResponseWriter` 的所有操作，都会直接映射到向底层 TCP 流写入数据的过程。
+	- 一个标准的 HTTP 响应是严格按顺序发送的字节序列：状态行 -> 响应头 -> 空行 -> 响应体。
+		- 当你调用 `w.Header().Set()` 时，你只是在修改一个尚未发送的内存中的 Header 映射。在这个阶段，没有任何数据被发送。你可以自由地添加、修改或删除头部信息。
+		- 当你调用 `w.WriteHeader(code)` 时，服务器会立即将状态行和所有 Header 写入到底层 TCP 连接。这部分数据一旦发送，就无法撤回或修改。
+		- 当你调用 `w.Write(body)` 时，如果之前没有调用过 `WriteHeader`，服务器会为了遵守 HTTP 协议，自动先发送默认的 `200 OK` 状态码和所有 Header，然后才开始发送响应体数据。
 -
