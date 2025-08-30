@@ -1,4 +1,4 @@
 -
 - [[Standard library]]
-- [[Gorilla WebSocket]]
+- [[gorilla/websocket]]
 -

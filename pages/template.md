@@ -67,3 +67,13 @@
 	- **结构体定义与字段解析：**
 		- ```go
 		  ```
+	-
+- Go 的接口
+  template:: Go 的接口
+  template-including-parent:: false
+	- **作用：**
+	- **接口定义与方法解析：**
+		- ```go
+		  ```
+	-
+-
