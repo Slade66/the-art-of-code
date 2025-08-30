@@ -6,6 +6,7 @@
 - [[type Handler]]
 - [[func HandleFunc]]
 - [[type ResponseWriter]]
+- [[func Error]]
 - [[type Request]]
 - [[func ListenAndServe]]
 - [[type ServeMux]]
