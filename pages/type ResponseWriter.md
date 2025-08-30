@@ -1,6 +1,5 @@
 - **作用：**
-	- `ResponseWriter` 接口用于构造并发送 HTTP 响应。
-	- `ResponseWriter` 接口就像一个“写信人”，负责将你想要返回给客户端的所有响应信息（状态码、响应头、响应体）写入并发送出去。
+	- `ResponseWriter` 接口用于构造并向客户端发送 HTTP 响应，你可以通过它来设置响应头、指定状态码，以及写入响应体。
 - **接口定义与方法解析：**
 	- ```go
 	  type ResponseWriter interface {
