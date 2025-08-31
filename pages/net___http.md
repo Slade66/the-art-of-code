@@ -19,6 +19,7 @@
 - [[func PostForm]]
 - [[type Client]]
 - [[func NewRequestWithContext]]
+- [[func NewRequest]]
 - **注意：**
 	- **生产环境请勿使用 `http.DefaultClient`：**
 		- 在生产环境的应用中，绝不能直接使用 `http.Get` 这类便捷函数或 `http.DefaultClient`。
