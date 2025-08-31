@@ -1,0 +1,23 @@
+- **作用：**用于向指定的 URL 发送一个 POST 请求，请求体的数据是经过 URL-encoded 编码的表单数据。
+- **方法签名：**
+	- ```go
+	  func PostForm(url string, data url.Values) (resp *Response, err error)
+	  ```
+- **参数：**
+	- `url string`：请求的目标 URL。
+	- `data url.Values`：一个 `url.Values` 类型的键值对集合，它本质上是 `map[string][]string` 的别名。该参数包含了要作为请求体发送的表单数据。
+- **返回值：**
+	- `resp *Response`：如果请求成功，返回一个指向 [[type Response]] 结构体的指针，其中包含了服务器的响应。
+	- `err error`：如果请求失败，返回一个非空的 `error` 对象，否则为 `nil`。
+- **核心执行流程：**
+	- 1. 它首先接收一个 URL 和一个 `url.Values` 类型的数据。
+	- 2. `url.Values` 类型的数据会被自动进行 URL-encoded 编码，并作为请求体。
+	- 3. 请求的 `Content-Type` 头会被自动设置为 `application/x-www-form-urlencoded`。
+	- 4. 函数随后使用默认的 HTTP 客户端 (`DefaultClient`) 发送这个 POST 请求。
+	- 5. 在请求过程中，如果遇到重定向，`DefaultClient` 会根据其配置自动处理。
+	- 6. 请求执行完毕后，函数返回服务器的响应 (`*http.Response`) 和可能发生的错误。
+- **注意：**
+	- **资源管理**：成功调用 `PostForm` 后，返回的 `resp.Body` 必须通过 `resp.Body.Close()` 方法显式关闭，以释放底层网络连接等资源。通常使用 `defer resp.Body.Close()` 来确保这一点。
+	- **请求头**：`PostForm` 函数自动设置 `Content-Type` 为 `application/x-www-form-urlencoded`。如果需要自定义其他请求头（如 `Authorization`），应使用 `http.NewRequest` 和 `http.DefaultClient.Do` 来手动构建和发送请求。
+	- **上下文**：`PostForm` 没有提供设置 `context.Context` 的参数。如果需要设置超时、取消等上下文信息，应使用 `http.NewRequestWithContext`。
+	- **内部实现**：`PostForm` 是对 `DefaultClient.PostForm` 的一个简单封装。这意味着它使用了 Go 标准库默认的 HTTP 客户端，该客户端有其默认的超时和重定向策略。

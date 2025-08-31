@@ -16,4 +16,5 @@
 - [[func Get]]
 - [[type Response]]
 - [[func Post]]
+- [[func PostForm]]
 -
