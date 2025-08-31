@@ -13,4 +13,7 @@
 - [[func (*ServeMux) Handle]]
 - [[func (*ServeMux) HandleFunc]]
 - [[type HandlerFunc]]
+- [[func Get]]
+- [[type Response]]
+- [[func Post]]
 -

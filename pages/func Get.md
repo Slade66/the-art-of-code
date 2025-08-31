@@ -19,3 +19,4 @@
 	- **自动处理重定向：**如果服务器返回 301、302 等重定向状态码，它会自动向新的 URL 发起请求，最多可连续重定向 10 次。
 	- **非 2xx 响应不代表请求失败：**服务器返回非 2xx 状态码（如 404 或 500）时，`err` 并不会是 `nil`。你需要通过检查 `resp.StatusCode` 来判断请求在业务上是否成功。
 	- **必须关闭 `resp.Body`：**使用此函数最重要的一点是，必须关闭 `resp.Body`。它是一个数据流，会维持底层的网络连接。如果不关闭，会导致连接无法被复用，最终耗尽系统资源，引发“连接过多”的错误。你可以使用 `defer resp.Body.Close()` 来确保其被正确关闭。
+	- **自定义请求：**`Get` 函数虽简单但功能有限，如果需要设置请求头（如 `User-Agent`、`Authorization`）、使用 `POST`、`PUT` 等方法，或配置 `context` 来控制超时和取消，可以通过 `http.NewRequest` 或 `http.NewRequestWithContext` 创建请求对象，再使用 `http.DefaultClient.Do(req)` 发送。
