@@ -64,10 +64,11 @@
   template:: Go 的结构体
   template-including-parent:: false
 	- **作用：**
-	- **结构体定义与字段解析：**
+	- **结构体定义：**
 		- ```go
 		  ```
-	-
+	- **重要字段解析：**
+		-
 - Go 的接口
   template:: Go 的接口
   template-including-parent:: false
