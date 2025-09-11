@@ -50,4 +50,27 @@
 				- `git fetch`：从远程仓库下载最新的改动到本地，但不会自动合并到你当前的工作分支。
 				- `git merge`：将远程分支的更新合并到当前本地分支。
 		- **删除远程分支：**`git push origin --delete [远程分支名]`
+		- **拉取远程分支：**
+			- `git switch <远程分支>` 或 `git checkout <远程分支>`
+				- **注意：**
+					- 当你执行 `git switch develop` 或 `git checkout develop` 时（假设本地不存在 `develop` 分支），Git 并不是直接“切换”到远程分支，因为你不能直接在远程跟踪分支（如 `origin/develop`）上工作。远程跟踪分支是你本地仓库对远程仓库状态的一个“只读”快照。
+				- **工作流程：**
+					- 当你输入 `git switch develop` 时，Git 首先会检查：“本地是否存在一个叫做 `develop` 的分支？”
+					- 如果有，就直接切过去。
+					- 如果没有，它会继续检查：“是否存在一个唯一的远程跟踪分支，其名字在去掉远程仓库名（如 `origin/`）后，恰好是 `develop`？”
+						- **注意：**
+							- 如果你有多个远程仓库（比如 `origin` 和 `upstream`），并且它们都有 `develop` 分支（即存在 `origin/develop` 和 `upstream/develop`），Git 会提示你命令有歧义，你需要更明确地指定。
+					- 一旦 Git 找到了唯一的远程跟踪分支 `origin/develop`，它就会在本地创建一个新的分支，也命名为 `develop`。
+					- Git 会自动设置新创建的本地 `develop` 分支去“跟踪”远程的 `origin/develop` 分支。
+						- 这个“跟踪关系”意味着：
+							- 当你在这个分支上使用 `git pull` 时，Git 知道要去 `origin` 拉取 `develop` 分支的更新。
+							- 当你使用 `git push` 时，Git 知道要把你的提交推送到 `origin` 的 `develop` 分支上。
+					- 最后一步，Git 会将你的工作区切换到这个刚刚创建的本地 `develop` 分支上。
+			- **指定本地分支名和它要跟踪的远程分支：**
+				- ```bash
+				  git checkout -b dev origin/develop
+				  ```
+				- 在本地创建一个名为 `dev` 的新分支。这个新分支将以远程的 `origin/develop` 分支为基础，并自动设置跟踪关系。
+				- 这个方法在你想要用一个不同的本地分支名来跟踪远程分支时特别有用。
+- [[git fetch]]
 -
