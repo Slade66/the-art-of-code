@@ -15,6 +15,41 @@
 		- **精确的成本控制**：LLM 服务的费用是按 token 计费的。你可以为每个用户设置“每小时最多使用 100,000 `total_tokens`”的规则。这能有效防止单个用户因发送长文本或生成长回复而产生意外的高额费用，让成本完全可控。
 		- **实现差异化服务套餐**：结合 `key-auth` 等认证插件，你可以为不同级别的用户设置不同的 token 配额。例如：免费用户每分钟限额 1,000 tokens，而付费的 Pro 用户每分钟限额 50,000 tokens，从而实现商业化运营。
 		- **结合 `ai-proxy-multi` 实现智能回退**：如 `ai-proxy-multi` 文档中的示例，可以为一个高优先级的模型设置 token 限流。一旦该模型的 token 用完，请求就会自动回退到另一个不受此限制的备用模型，提升了系统的整体吞吐量和可用性。
+	- **原理：**
+		- `ai-rate-limiting` 插件本身不计算 Token，它直接从后端大模型服务的响应体中读取 Token 数量。
+		- **重要前提：**
+			- 这个机制能正常工作的前提是：你的后端模型服务在完成推理后，返回的响应体中必须包含一个和 OpenAI API 格式兼容的 `usage` 字段。如果你的服务不返回这个字段，`ai-rate-limiting` 将无法获取 Token 数量，限流也就不会生效。
+		- **流程：**
+			- 客户端向 APISIX 发起请求。
+			- `ai-proxy` 插件将请求转发给你后端的 `http://10.30.80.223:1025/generate` 服务。
+			- 你的后端模型服务处理请求后，返回一个 JSON 格式的响应。
+			- `ai-rate-limiting` 插件会在响应返回给客户端之前拦截这个 JSON 响应。
+			- 它会去解析这个 JSON，并寻找一个名为 `usage` 的字段，然后从中读取 `prompt_tokens`, `completion_tokens`, 和 `total_tokens` 的值。
+			- 插件拿到 `total_tokens` 的值，然后把它累加到当前 IP 地址的计数器上。
+		- **一个标准的 OpenAI 兼容响应示例如下：**
+			- ```json
+			  {
+			    "id": "chatcmpl-xxxxxxxx",
+			    "object": "chat.completion",
+			    "created": 1715888888,
+			    "model": "your-model-name",
+			    "choices": [
+			      {
+			        "index": 0,
+			        "message": {
+			          "role": "assistant",
+			          "content": "这是模型的回答内容。"
+			        },
+			        "finish_reason": "stop"
+			      }
+			    ],
+			    "usage": {
+			      "prompt_tokens": 25,
+			      "completion_tokens": 50,
+			      "total_tokens": 75
+			    }
+			  }
+			  ```
 - #### `ai-prompt-guard`（提示词守卫）
 	- **作用**：这是一个强大的安全过滤插件，它通过你定义的正则表达式规则来严格校验用户的输入内容。你可以配置一个“允许规则列表”（`allow_patterns`）和一个“拒绝规则列表”（`deny_patterns`）。一个请求必须至少匹配一条允许规则，且不能匹配任何拒绝规则，才能被放行。
 	- **应用场景**：
