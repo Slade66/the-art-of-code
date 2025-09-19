@@ -1,0 +1,23 @@
+- 问题分析：
+	- ```
+	  Refused to frame 'http://10.30.60.116:3000/' because it violates the following Content Security Policy directive: "default-src 'self' 172.18.0.11:443 blob: data:". Note that 'frame-src' was not explicitly set, so 'default-src' is used as a fallback.
+	  ```
+	- 这段错误信息表明，你试图通过 `<iframe>` 标签加载 `http://10.30.60.116:3000/` 这个地址的内容，但该地址的域名和端口（`10.30.60.116:3000`）与你当前页面的 **CSP** 中允许的加载来源不符。因此，浏览器出于安全考虑，拒绝了这次加载请求。
+	- 在 `frame-src` 或 `default-src` 中明确添加 `http://10.30.60.116:3000` 作为可信来源。
+- **内容安全策略 (CSP)** 是一种安全机制，它允许网站管理员控制浏览器可以加载哪些资源。这可以有效防止跨站脚本攻击（XSS）等恶意行为。
+- **`default-src`** 是 CSP 指令中的一个关键策略，它为所有未显式设置的资源类型（如脚本、样式、图片、字体等）提供一个默认的加载来源。在这个例子中，`frame-src`（用于控制 `<iframe>` 加载来源）没有被明确设置，所以 `default-src` 成为了它的回退策略。因为没有专门为 iframe 设置 `frame-src` 指令，所以浏览器使用了 `default-src` 作为后备规则。
+- **`'self'`** 表示允许加载同源（Same-origin）的资源，即来自与当前页面相同的协议、域名和端口的资源。
+-
+- 你的 Web 平台服务器发送了一个 HTTP 响应头，叫做 `Content-Security-Policy`。这个策略告诉浏览器只允许从哪些来源加载资源（脚本、图片、iframe 等）。
+-
+- 你需要在你的 Web 平台的 CSP 策略中，明确允许嵌入来自 Grafana 的 iframe。嵌入外部的 iframe
+-
+- **做什么**：告诉浏览器哪些动态资源（脚本, `<iframe>`, 图片等）是允许加载的。
+- **怎么用**：通过配置 `default-src`, `script-src`, `style-src`, `frame-src` 等指令。
+-
+- **服务器端 (策略制定者)**：服务器通过发送一个名为 `Content-Security-Policy` 的 HTTP 响应头，来**定义和声明**一套安全规则。比如，“只允许加载来自 `self` 和 `https://apis.google.com` 的脚本”。
+- **浏览器端 (策略执行者)**：浏览器在收到这个响应头后，会严格**遵守并执行**这个策略。当页面尝试加载任何资源时，浏览器会先检查该资源的来源是否符合服务器声明的策略。如果不符合，浏览器就会拒绝加载该资源，并在控制台报错。
+- 服务器是“立法者”，制定了法律（CSP策略）；浏览器是“警察”，严格执行这些法律。
+-
+- **CSP** 主要用来防御 **跨站脚本攻击 (XSS)** 和 **数据注入攻击**。
+-

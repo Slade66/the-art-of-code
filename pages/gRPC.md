@@ -1,0 +1,5 @@
+- 这是目前 Go 微服务生态的绝对主流。
+- **核心库**: `google.golang.org/grpc` (gRPC 的 Go 实现) 和 `google.golang.org/protobuf` (用于处理 Protocol Buffers)。
+- **工作方式**: 通过 Protobuf 定义服务接口（IDL, Interface Definition Language），然后生成客户端和服务端的代码骨架。通信基于 HTTP/2，性能高，且支持双向流。
+- RPC 框架
+-

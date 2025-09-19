@@ -299,7 +299,7 @@
  ;;  :charge-range    600}   ; Default value: 600
 
  ;; Favorites to list on the left sidebar
- :favorites ["The Go Programming Language" "生词表" "Docker"]
+ :favorites ["english/生词表" "The Go Programming Language" "生词表" "Docker"]
 
  ;; Set flashcards interval.
  ;; Expected value:

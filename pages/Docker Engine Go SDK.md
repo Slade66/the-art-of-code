@@ -7,4 +7,5 @@
 - [[func (*Client) ContainerExecStart]]
 - [[func (*Client) ContainerExecResize]]
 - [[func (*Client) ContainerExecInspect]]
+- [[type Opt]]
 -
