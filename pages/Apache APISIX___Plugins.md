@@ -5,7 +5,7 @@
 			- **确认身份（你是谁？）：**就像进入办公楼时，你需要在前台出示身份证或工牌，安保人员会核实并确认你确实是本公司的员工李小泽，随后才会允许你进入。
 		- **授权（Authorization）：**
 			- **授予权限（你能做什么？）：**当你通过身份认证进入大楼后，你的工牌可能只允许进入三楼的办公区，而不能进入五楼的服务器机房。
-	- key-auth
-	- jwt-auth
-	- wolf-rbac
+	- [[Apache APISIX/Plugins/key-auth]]
+	- [[Apache APISIX/Plugins/jwt-auth]]
+	- [[Apache APISIX/Plugins/wolf-rbac]]
 -

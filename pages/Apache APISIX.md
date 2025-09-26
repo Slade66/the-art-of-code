@@ -20,5 +20,6 @@
 	- **实现动态同步：**整个过程无需重启 APISIX 服务，配置变更会通过上述机制实时且动态地同步到所有网关节点，确保配置的快速一致性。
 - [[Route]]
 - [[Upstream]]
+- [[Apache APISIX/Consumer]]
 - [[Apache APISIX/Plugins]]
 -
