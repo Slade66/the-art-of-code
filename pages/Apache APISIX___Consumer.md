@@ -9,6 +9,7 @@
 		- `username`：消费者的名称。
 		- `plugins`：用于配置消费者的认证方式及其对应的私有凭证信息，例如指定认证方式为密钥认证（`key-auth`）并设置具体的密钥（`key`）。
 			- **与路由上的 `plugins` 参数对比**
+			  collapsed:: true
 				- 要理解 `Consumer` 中 `plugins` 参数的作用，关键是将其与 `Route` 中的同名参数进行对比。虽然名称相同，但它们的角色截然不同。
 				- 在 `Consumer` 中，`plugins` 用于存放与消费者身份绑定的认证信息，例如 API 密钥或 JWT 密钥，相当于“身份凭证”。
 				- 在 `Route` 中，`plugins` 用于定义准入规则或启用功能，例如“此路由需要检查 API 密钥”。它关注的是规则本身，而不涉及密钥具体内容。
@@ -25,6 +26,7 @@
 				- 简而言之，一个负责定义“钥匙”，另一个负责规定“门上要有锁”。
 	- **示例：**
 		- **创建一个消费者：**
+		  id:: 68d639f4-fc38-4393-b280-ed94f9856624
 			- ```http
 			  PUT http://10.30.60.116:9180/apisix/admin/consumers
 			  Content-Type: application/json
