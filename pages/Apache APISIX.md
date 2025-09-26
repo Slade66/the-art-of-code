@@ -18,8 +18,8 @@
 	- **配置写入 etcd：**当管理员通过 Admin API 发送创建或修改配置的请求时，APISIX 不会直接修改内存，而是将新的配置写入 etcd 集群。
 	- **实时变更通知与更新：**一旦 etcd 中的数据发生变化，所有监听该目录的 APISIX 节点会在毫秒级内收到变更通知，并立即更新内存中的规则。
 	- **实现动态同步：**整个过程无需重启 APISIX 服务，配置变更会通过上述机制实时且动态地同步到所有网关节点，确保配置的快速一致性。
-- [[Route]]
-- [[Upstream]]
+- [[Apache APISIX/Route]]
+- [[Apache APISIX/Upstream]]
 - [[Apache APISIX/Consumer]]
 - [[Apache APISIX/Plugins]]
 -

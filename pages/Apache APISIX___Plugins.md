@@ -8,4 +8,6 @@
 	- [[Apache APISIX/Plugins/key-auth]]
 	- [[Apache APISIX/Plugins/jwt-auth]]
 	- [[Apache APISIX/Plugins/wolf-rbac]]
+- **Traffic**
+	- [[Apache APISIX/Plugins/limit-count]]
 -
