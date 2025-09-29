@@ -72,4 +72,70 @@
 - **Credential API**
 	- **Credential 资源请求地址：**`/apisix/admin/consumers/{username}/credentials/{credential_id}`
 	- `plugins`：认证插件的配置
+- **例子：**
+	- 首先，创建一个未指定认证插件的 Consumer，后续再通过 Credential 配置认证插件：
+		- ```http
+		  PUT http://10.30.60.116:9180/apisix/admin/consumers
+		  Content-Type: application/json
+		  X-API-KEY: edd1c9f034335f45453292ad8625c8f1
+		  
+		  {
+		    "username": "liyuze"
+		  }
+		  ```
+	- 为该 Consumer 创建两个 key-auth 凭证：
+		- ```http
+		  PUT http://10.30.60.116:9180/apisix/admin/consumers/liyuze/credentials/key-auth-one
+		  Content-Type: application/json
+		  X-API-KEY: edd1c9f034335f45453292ad8625c8f1
+		  
+		  {
+		    "plugins": {
+		      "key-auth": {
+		        "key": "auth-one"
+		      }
+		    }
+		  }
+		  ```
+		- ```http
+		  PUT http://10.30.60.116:9180/apisix/admin/consumers/liyuze/credentials/key-auth-two
+		  Content-Type: application/json
+		  X-API-KEY: edd1c9f034335f45453292ad8625c8f1
+		  
+		  {
+		    "plugins": {
+		      "key-auth": {
+		        "key": "auth-two"
+		      }
+		    }
+		  }
+		  ```
+	- 创建一个路由，并在其上启用 key-auth 插件：
+		- ```http
+		  PUT http://10.30.60.116:9180/apisix/admin/routes/ip
+		  X-API-KEY: edd1c9f034335f45453292ad8625c8f1
+		  Content-Type: application/json
+		  
+		  {
+		    "plugins": {
+		      "key-auth": {}
+		    },
+		    "upstream": {
+		      "nodes": {
+		        "httpbin.org:80": 1
+		      },
+		      "type": "roundrobin"
+		    },
+		    "uri": "/ip"
+		  }
+		  ```
+	- 使用 `auth-one` 和 `auth-two` 两个密钥请求该路由，都能正确返回结果：
+		- ```http
+		  GET http://10.30.60.116:9080/ip
+		  apikey: auth-one
+		  ```
+		- ```http
+		  GET http://10.30.60.116:9080/ip
+		  apikey: auth-two
+		  ```
 -
