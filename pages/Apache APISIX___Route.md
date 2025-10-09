@@ -3,6 +3,18 @@
 - **Route API**
 	- **Route 资源请求路径：**`/apisix/admin/routes/{id}?ttl=0`
 	- **ID 命名规则：**APISIX 资源的 ID 长度必须在 1 到 64 个字符之间，仅包含大小写字母、数字、中划线（`-`）、下划线（`_`）和点号（`.`）。
+	- **请求方法：**
+		- `GET`，`/apisix/admin/routes`，无请求体参数，获取所有路由
+		- `GET`，`/apisix/admin/routes/{id}`，无请求体参数，根据指定的 id 获取路由
+		- `PUT`，`/apisix/admin/routes/{id}`，若干个请求体参数，根据指定的 id 创建路由
+		- `POST`，`/apisix/admin/routes`，若干个请求体参数，创建路由并分配一个随机的 id
+		- `DELETE`，`/apisix/admin/routes/{id}`，无请求体参数，根据指定的 id 删除路由
+		- `PATCH`，`/apisix/admin/routes/{id}`，若干个请求体参数，更新指定路由的配置
+		  collapsed:: true
+			- 把参数的值设置为 `null` 是删除。
+		- `PATCH`，`/apisix/admin/routes/{id}/{path}`，若干个请求体参数，更新指定路径下的属性
+		  collapsed:: true
+			- 其它的属性保持不变。
 	- **请求体参数：**
 		- `id`：路由的唯一标识符。方便以后管理这条路由。
 		- `uri`：路由的匹配规则。当客户端请求的 URL 路径符合你定义的这个规则时，该路由配置就会被命中并生效。
