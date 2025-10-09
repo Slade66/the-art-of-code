@@ -5,9 +5,15 @@
 	- 所有认证类插件（如 `key-auth`、`basic-auth`、`jwt-auth`、`ldap-auth` 等）的最终目的，都是将当前请求映射到一个已知的 `Consumer` 身份。
 - **Consumer API**
 	- **消费者资源请求地址：**`/apisix/admin/consumers/{username}`
+	- **请求方法：**
+		- `GET`，`/apisix/admin/consumers`，无需请求参数，获取全部的消费者
+		- `GET`，`/apisix/admin/consumers/{username}`，无需请求参数，根据用户名获取指定的消费者
+		- `PUT`，`/apisix/admin/consumers`，若干个请求参数，创建一个新的消费者
+		- `DELETE`，`/apisix/admin/consumers/{username}`，无需请求参数，根据用户名删除指定的消费者
 	- **请求体参数：**
 		- `username`：消费者的名称。
 		- `plugins`：用于配置消费者的认证方式及其对应的私有凭证信息，例如指定认证方式为密钥认证（`key-auth`）并设置具体的密钥（`key`）。
+		  collapsed:: true
 			- **与路由上的 `plugins` 参数对比**
 			  collapsed:: true
 				- 要理解 `Consumer` 中 `plugins` 参数的作用，关键是将其与 `Route` 中的同名参数进行对比。虽然名称相同，但它们的角色截然不同。
