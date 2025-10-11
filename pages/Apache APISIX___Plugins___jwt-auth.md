@@ -1,7 +1,7 @@
 - **jwt-auth 插件有什么用？**
 	- jwt-auth 插件要求客户端在访问后端服务之前，通过 JWT 来验证自己的身份。
 - **jwt-auth 插件的配置项**
-	- **消费者或凭证的配置：**
+	- **Consumer 或 Credential 上的配置：**
 		- `key`：JWT 凭证的标识符。
 		  collapsed:: true
 			- 这个 `key` 的值必须被包含在 JWT 的载荷（Payload）中。
@@ -11,7 +11,6 @@
 		- `secret`：使用对称加密算法时用来签发和验证 JWT 的共享密钥。
 		  collapsed:: true
 			- **何时使用：**当你的 `algorithm` 设置为 `HS256` 或 `HS512` 时，该参数是必需的。如果未提供，APISIX 会自动为你生成一个。
-			- 你可以把这个敏感的密钥安全地存放在专门的密钥管理器中，而不是明文写在配置里。
 		- `public_key`：使用非对称加密算法时用来验证 JWT 签名的公钥。
 		  collapsed:: true
 			- **何时使用：**当你的 `algorithm` 设置为 `RS256` 或 `ES256` 时，这个参数是必需的。
@@ -27,6 +26,9 @@
 		  collapsed:: true
 			- 它定义了 APISIX 应该去 JWT Payload 中的哪个字段里寻找上面我们定义的 `key` 值。
 			- 默认情况下，APISIX 会在名为 `"key"` 的字段中查找。如果认证服务生成的 Token 使用 `"sub"`（Subject）或 `"iss"`（Issuer）作为用户标识，你就可以将该参数设置为 `"sub"`，这样 APISIX 就会到 `sub` 字段中获取用户标识。
+	- **Routes 或 Services 上的配置：**
+		- `header`：从哪个请求头字段中提取 token。默认为 `authorization`。
+	- 你可以将密钥和 RSA 密钥对安全地存放在专用的密钥管理器中，而不是以明文形式写在配置里，并通过 APISIX Secret 资源从加密的 HashiCorp Vault 中获取。
 - **jwt-auth 插件的使用示例：**
 	- 创建消费者：
 	  logseq.order-list-type:: number
