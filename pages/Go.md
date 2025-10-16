@@ -31,7 +31,6 @@ heading:: true
 - [[Go 的泛型]]
 - [[Go 的日志]]
 - [[Go 的 uuid]]
-- [[The Go Programming Language/Packages]]
 - [[Standard library]]
 - [[gorilla/websocket]]
 - [[内置函数]]
