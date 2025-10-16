@@ -10,8 +10,8 @@
 		  var a int // 一次声明一个变量
 		  var x, y int // 一次声明多个变量，如果类型相同，可在最后统一指定类型，前面的变量可省略类型声明
 		  ```
-		- **声明一个“变量列表”：**
-			- 当需要一次性声明多个变量时，可以使用圆括号 `()` 将它们组合起来，这和 `import` 语句的分组方式非常相似，能让代码更整洁。
+		- **声明一个“变量列表”（“分组”声明）：**
+			- 当需要一次性声明多个变量时，可以使用圆括号 `()` 将它们组合起来，这和 `import` 语句的分组方式非常相似，能让代码更整洁（少写许多 var 关键字）。
 			- ```go
 			  var (
 			      c      bool
@@ -71,11 +71,246 @@
 				  a, b := 2, 3 // a 是赋值，b 是声明并初始化
 				  ```
 - **变量的零值：**
-	- 如果变量只声明而未赋值和初始化，Go 会自动赋予其类型的零值。
-	- 不同类型有不同的零值，各类型的零值：
-		- 整数类型为 `0`
-		- 字符串为空字符串 `""`
-		- 布尔类型为 `false`
+  id:: 68f05b45-cb59-4906-8647-02713479d0c4
+	- 零值是一个变量的默认值。如果变量只声明而未赋值和初始化，Go 会自动赋予其类型的零值。
+	- 你可以把它想象成一个“出厂设置”。如果在声明变量时你没有告诉 Go 它应该是什么，Go 就会给它一个预设好的、干净的初始状态，而不是留下一块存有“垃圾”数据的内存。
+	- 不同类型有不同的零值：
+		- 所有数字类型的零值是：`0`
+		- 字符串类型的零值是：`""`
+		- 布尔类型的零值是：`false`
+	- **代码示例：**
+		- ```go
+		  package main
+		  
+		  import "fmt"
+		  
+		  func main() {
+		  	// 数值类型的零值
+		  	var i int
+		  	var i8 int8
+		  	var i16 int16
+		  	var i32 int32
+		  	var i64 int64
+		  	var ui uint
+		  	var ui8 uint8
+		  	var ui16 uint16
+		  	var ui32 uint32
+		  	var ui64 uint64
+		  	var uintptr uintptr
+		  	
+		  	// 浮点数类型的零值
+		  	var f32 float32
+		  	var f64 float64
+		  	
+		  	// 复数类型的零值
+		  	var c64 complex64
+		  	var c128 complex128
+		  	
+		  	// 布尔类型的零值
+		  	var b bool
+		  	
+		  	// 字符串类型的零值
+		  	var s string
+		  	
+		  	// 字节和rune类型的零值
+		  	var by byte // byte 是 uint8 的别名
+		  	var r rune  // rune 是 int32 的别名
+		  	
+		  	// 指针类型的零值
+		  	var ptr *int
+		  	
+		  	// 切片类型的零值
+		  	var slice []int
+		  	
+		  	// 映射类型的零值
+		  	var m map[string]int
+		  	
+		  	// 通道类型的零值
+		  	var ch chan int
+		  	
+		  	// 函数类型的零值
+		  	var fn func()
+		  	
+		  	// 接口类型的零值
+		  	var iface interface{}
+		  	
+		  	// 结构体类型的零值
+		  	type Person struct {
+		  		Name string
+		  		Age  int
+		  	}
+		  	var person Person
+		  	
+		  	// 数组类型的零值
+		  	var arr [3]int
+		  	
+		  	fmt.Println("=== 数值类型的零值 ===")
+		  	fmt.Printf("int: %v\n", i)
+		  	fmt.Printf("int8: %v\n", i8)
+		  	fmt.Printf("int16: %v\n", i16)
+		  	fmt.Printf("int32: %v\n", i32)
+		  	fmt.Printf("int64: %v\n", i64)
+		  	fmt.Printf("uint: %v\n", ui)
+		  	fmt.Printf("uint8: %v\n", ui8)
+		  	fmt.Printf("uint16: %v\n", ui16)
+		  	fmt.Printf("uint32: %v\n", ui32)
+		  	fmt.Printf("uint64: %v\n", ui64)
+		  	fmt.Printf("uintptr: %v\n", uintptr)
+		  	
+		  	fmt.Println("\n=== 浮点数类型的零值 ===")
+		  	fmt.Printf("float32: %v\n", f32)
+		  	fmt.Printf("float64: %v\n", f64)
+		  	
+		  	fmt.Println("\n=== 复数类型的零值 ===")
+		  	fmt.Printf("complex64: %v\n", c64)
+		  	fmt.Printf("complex128: %v\n", c128)
+		  	
+		  	fmt.Println("\n=== 布尔类型的零值 ===")
+		  	fmt.Printf("bool: %v\n", b)
+		  	
+		  	fmt.Println("\n=== 字符串类型的零值 ===")
+		  	fmt.Printf("string: %q\n", s)
+		  	
+		  	fmt.Println("\n=== 字节和Rune类型的零值 ===")
+		  	fmt.Printf("byte: %v\n", by)
+		  	fmt.Printf("rune: %v\n", r)
+		  	
+		  	fmt.Println("\n=== 指针类型的零值 ===")
+		  	fmt.Printf("*int: %v\n", ptr)
+		  	
+		  	fmt.Println("\n=== 切片类型的零值 ===")
+		  	fmt.Printf("[]int: %v, len=%d, cap=%d\n", slice, len(slice), cap(slice))
+		  	
+		  	fmt.Println("\n=== 映射类型的零值 ===")
+		  	fmt.Printf("map[string]int: %v\n", m)
+		  	
+		  	fmt.Println("\n=== 通道类型的零值 ===")
+		  	fmt.Printf("chan int: %v\n", ch)
+		  	
+		  	fmt.Println("\n=== 函数类型的零值 ===")
+		  	fmt.Printf("func(): %v\n", fn)
+		  	
+		  	fmt.Println("\n=== 接口类型的零值 ===")
+		  	fmt.Printf("interface{}: %v\n", iface)
+		  	
+		  	fmt.Println("\n=== 结构体类型的零值 ===")
+		  	fmt.Printf("Person: %+v\n", person)
+		  	
+		  	fmt.Println("\n=== 数组类型的零值 ===")
+		  	fmt.Printf("[3]int: %v\n", arr)
+		  }
+		  ```
+		- ```text
+		  === 数值类型的零值 ===
+		  int: 0
+		  int8: 0
+		  int16: 0
+		  int32: 0
+		  int64: 0
+		  uint: 0
+		  uint8: 0
+		  uint16: 0
+		  uint32: 0
+		  uint64: 0
+		  uintptr: 0
+		  
+		  === 浮点数类型的零值 ===
+		  float32: 0
+		  float64: 0
+		  
+		  === 复数类型的零值 ===
+		  complex64: (0+0i)
+		  complex128: (0+0i)
+		  
+		  === 布尔类型的零值 ===
+		  bool: false
+		  
+		  === 字符串类型的零值 ===
+		  string: "" (空字符串)
+		  
+		  === 字节和Rune类型的零值 ===
+		  byte: 0
+		  rune: 0
+		  
+		  === 指针类型的零值 ===
+		  *int: <nil> (nil)
+		  
+		  === 切片类型的零值 ===
+		  []int: [] (nil), len=0, cap=0
+		  
+		  === 映射类型的零值 ===
+		  map[string]int: map[] (nil)
+		  
+		  === 通道类型的零值 ===
+		  chan int: <nil> (nil)
+		  
+		  === 函数类型的零值 ===
+		  func(): <nil> (nil)
+		  
+		  === 接口类型的零值 ===
+		  interface{}: <nil> (nil)
+		  
+		  === 结构体类型的零值 ===
+		  Person: {Name: Age:0} (所有字段都是零值)
+		  
+		  === 数组类型的零值 ===
+		  [3]int: [0 0 0] (所有元素都是零值)
+		  PS A:\Users\liyuz\Desktop\fuck-go> go run a/a.go
+		  === 数值类型的零值 ===
+		  int: 0
+		  int8: 0
+		  int16: 0
+		  int32: 0
+		  int64: 0
+		  uint: 0
+		  uint8: 0
+		  uint16: 0
+		  uint32: 0
+		  uint64: 0
+		  uintptr: 0
+		  
+		  === 浮点数类型的零值 ===
+		  float32: 0
+		  float64: 0
+		  
+		  === 复数类型的零值 ===
+		  complex64: (0+0i)
+		  complex128: (0+0i)
+		  
+		  === 布尔类型的零值 ===
+		  bool: false
+		  
+		  === 字符串类型的零值 ===
+		  string: ""
+		  
+		  === 字节和Rune类型的零值 ===
+		  byte: 0
+		  rune: 0
+		  
+		  === 指针类型的零值 ===
+		  *int: <nil>
+		  
+		  === 切片类型的零值 ===
+		  []int: [], len=0, cap=0
+		  
+		  === 映射类型的零值 ===
+		  map[string]int: map[]
+		  
+		  === 通道类型的零值 ===
+		  chan int: <nil>
+		  
+		  === 函数类型的零值 ===
+		  func(): <nil>
+		  
+		  === 接口类型的零值 ===
+		  interface{}: <nil>
+		  
+		  === 结构体类型的零值 ===
+		  Person: {Name: Age:0}
+		  
+		  === 数组类型的零值 ===
+		  [3]int: [0 0 0]
+		  ```
 - **变量的命名规则：**
 	- 变量名只能包含字母、数字和下划线，大小写敏感，且必须以字母开头。
 	- 首字母大写表示导出（可被其他包访问），首字母小写表示不导出（仅在包内可见）。
