@@ -7,7 +7,19 @@
 			- **授予权限（你能做什么？）：**当你通过身份认证进入大楼后，你的工牌可能只允许进入三楼的办公区，而不能进入五楼的服务器机房。
 	- [[Apache APISIX/Plugins/key-auth]]
 	- [[Apache APISIX/Plugins/jwt-auth]]
-	- [[Apache APISIX/Plugins/wolf-rbac]]
+	- [[Apache APISIX/Plugins/forward-auth]]
+	- [[Apache APISIX/Plugins/clickhouse-logger]]
 - **Traffic**
 	- [[Apache APISIX/Plugins/limit-count]]
+- 其它
+	- 查询全局级别的插件配置：
+		- ```http
+		  GET http://10.30.60.116:9180/apisix/admin/global_rules
+		  X-API-KEY: edd1c9f034335f45453292ad8625c8f1
+		  ```
+	- 删掉某个全局配置：
+		- ```http
+		  DELETE http://10.30.60.116:9180/apisix/admin/global_rules/1
+		  X-API-KEY: edd1c9f034335f45453292ad8625c8f1
+		  ```
 -
