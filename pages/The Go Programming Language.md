@@ -1,5 +1,6 @@
 Go 语言的基本概念
 heading:: true
+title:: The Go Programming Language
 	- Go 语言用于开发基础设施软件，也用于开发服务器端程序。
 	- Go 语言的语法很像 C 语言，因为它是由 C 语言之父所开发的。
 	- Go 语言就是新时代的 C 语言，用于取代 C++。
