@@ -1,0 +1,6 @@
+- **作用：**内置函数，用于为切片（slice）、映射（map）和通道（channel）分配内存并完成初始化。
+- **函数签名：**`func make(t Type, size ...IntegerType) Type`
+	- `t Type`：要创建的引用类型，必须是 `slice`、`map` 或 `chan`。
+	- `size ...IntegerType`：一个或多个整数参数，用于指定长度、容量或缓冲区大小。
+- **注意：**
+	- `make` 返回一个准备就绪的对象实例（一个值），而不是一个需要额外操作才能使用的地址。

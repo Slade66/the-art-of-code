@@ -1,0 +1,7 @@
+- [[Generic]]
+- [[String]]
+- [[List]]
+- [[Hash]]
+- [[Set]]
+- [[Sorted set]]
+- [[Bitmap]]

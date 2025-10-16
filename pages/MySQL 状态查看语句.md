@@ -1,0 +1,10 @@
+- `SHOW DATABASES;` 或 `SHOW SCHEMAS;`
+	- 作用：列出当前 MySQL 服务器上所有的数据库名称。
+- `SHOW PROCESSLIST;` 或 `SHOW FULL PROCESSLIST;`
+	- 作用：实时查看当前有哪些连接正在访问数据库、它们在执行什么操作，以及执行了多久。
+	- `FULL` 版本可以显示完整的 SQL 语句，不被截断。
+- `SHOW VARIABLES;` 或 `SHOW GLOBAL VARIABLES;`
+	- 作用：查看当前会话（或全局）的 MySQL 服务器的运行配置。
+- `SHOW VARIABLES LIKE 'datadir';`
+	- 作用：查询 MySQL 数据库文件（数据表、日志、配置等）的存储路径。
+-

@@ -1,0 +1,9 @@
+- 浏览器端安全（Browser-Side Security）
+	- [[内容安全策略（Content Security Policy, CSP）]]
+	- [[混合内容（Mixed Content）]]
+	- 同源策略（Same-Origin Policy, SOP）
+	- 跨域资源共享（Cross-Origin Resource Sharing, CORS）
+	- 策略和内容由服务器定义和提供，但安全检查和拦截的动作由浏览器完成。这些安全机制是浏览器为了保护用户安全而实施的核心机制。
+	- 作为后端开发者，该如何与浏览器强大的安全模型协作，来保护我的用户和我的应用？
+	- 这些安全机制（如 CSP、混合内容阻止）之所以存在，就是为了抵御一些常见的网络攻击。
+-

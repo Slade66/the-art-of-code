@@ -1,0 +1,6 @@
+- `AVG(column_name)`
+	- 计算指定列中所有非 `NULL` 值的平均值。
+	- 计算方式是先求出该列所有非 `NULL` 值的总和 (`SUM`)，然后除以非 `NULL` 值的数量 (`COUNT`)。
+- `AVG(DISTINCT column_name)`
+	- 计算指定列中所有唯一且非 `NULL` 值的平均值。
+-

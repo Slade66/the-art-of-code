@@ -1,0 +1,31 @@
+-
+- **有什么用？**
+	- 在 Go 语言中，`net/http` 包是构建 Web 服务的核心。
+	- Go 语言将一个功能完备、性能卓越且可用于生产环境的 HTTP 实现，直接内置于其标准库中。这赋予了开发者无需依赖任何第三方框架，就能构建出强大 HTTP 客户端和服务器的能力。
+	- 无论是搭建简单的 API 端点，还是开发复杂的高性能微服务，`net/http` 包都能提供一个坚实、可靠的基础。
+- [[type Handler]]
+- [[func HandleFunc]]
+- [[type ResponseWriter]]
+- [[func Error]]
+- [[type Request]]
+- [[func ListenAndServe]]
+- [[type ServeMux]]
+- [[func (*ServeMux) Handle]]
+- [[func (*ServeMux) HandleFunc]]
+- [[type HandlerFunc]]
+- [[func Get]]
+- [[type Response]]
+- [[func Post]]
+- [[func PostForm]]
+- [[type Client]]
+- [[func NewRequestWithContext]]
+- [[func NewRequest]]
+- [[func (c *Client) Do(req *Request) (*Response, error)]]
+- [[type Server]]
+- [[type Transport]]
+- **注意：**
+	- **生产环境请勿使用 `http.DefaultClient`：**
+		- 在生产环境的应用中，绝不能直接使用 `http.Get` 这类便捷函数或 `http.DefaultClient`。
+		- 原因在于 `http.DefaultClient` 默认没有设置超时，如果远端服务器迟迟不响应，请求会一直阻塞，导致 goroutine 泄露，最终可能耗尽系统资源。
+		- 正确的做法是创建并配置自己的 `http.Client` 实例。
+-
