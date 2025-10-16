@@ -8,11 +8,12 @@ title:: The Go Programming Language
 	- Go 语言是一种编译型语言，源代码在执行前会被编译成与目标平台相匹配的独立静态二进制可执行文件，内含所有依赖（包括标准库和第三方包），无需额外的库、解释器或虚拟机，只需拷贝该文件即可直接运行，其执行性能接近 C 语言。
 	- Go 的编译速度极快，快到让人几乎忘了它是一门编译型语言。即使是大型项目，通常也能在几秒内完成编译，启动速度堪比解释型语言，几乎是“瞬间运行”。
 	- Go 语言是一种静态类型语言，如果使用了错误的类型，编译时会报错。
+- [[The Go Programming Language/Package]]
+- [[The Go Programming Language/import]]
+- [[The Go Programming Language/Function]]
 - [[Go 的接口变量为什么装得下指针？]]
 - [[Go 的工具链]]
 - [[Go 的工作区]]
-- [[Go 的包]]
-- [[The Go Programming Language/import]]
 - [[Go 的标准库]]
 - [[Go 的语法格式]]
 - [[Go 的数据类型]]
@@ -23,7 +24,6 @@ title:: The Go Programming Language
 - [[Go 的内置数据结构]]
 - [[Go 的 string]]
 - [[Go 的类型定义和类型别名]]
-- [[Go 的函数]]
 - [[Go 的指针]]
 - [[Go 的方法]]
 - [[Go 的接口]]

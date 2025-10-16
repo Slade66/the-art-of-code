@@ -84,7 +84,7 @@ heading:: true
 	- **接口（Interfaces）：**
 		- [[Go 的接口]]
 	- **函数类型（Function Types）：**
-		- [[Go 的函数]]
+		- [[The Go Programming Language/Function]]
 	- **指针类型（Pointer Types）：**
 		- [[Go 的指针]]
 - 类型转换
