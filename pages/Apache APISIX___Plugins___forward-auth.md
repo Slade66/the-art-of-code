@@ -28,4 +28,10 @@
 	- `upstream_headers`：鉴权通过后，允许鉴权服务返回的哪些头继续透传至上游。
 	- `client_headers`：鉴权失败后，需要从认证服务响应中复制哪些请求头，并返回给客户端。
 	- `status_on_error`：当认证服务发生网络错误时，返回给客户端的 HTTP 状态码。
+- **forward-auth 插件自动注入的 Headers**
+	- `X-Forwarded-Proto` - HTTP Scheme
+	- `X-Forwarded-Method` - HTTP Method
+	- `X-Forwarded-Host` - Host
+	- `X-Forwarded-Uri` - URI
+	- `X-Forwarded-For` - Source IP
 -

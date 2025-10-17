@@ -40,8 +40,9 @@
 	- `context.WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc)`
 		- 提供一个带倒计时的 `Context`。当你需要为某个操作（如数据库查询、API 调用）设置最大执行时间时，它会在时间到达后自动停止操作。
 	- `context.WithValue(parent Context, key, val any) Context`
-		- 在 `Context` 上附加一个键值对，用于在整个请求处理链中传递请求范围的元数据。不要将其用于传递普通的函数参数！
-		- 使用自定义类型作为 key，可以避免冲突。你无法预料第三方库是否会使用相同的 key，从而导致你写入的信息被意外覆盖，在后续取值进行断言时引发程序崩溃。
+		- 会将一组键值对存入新的 `ctx` 中，之后可以通过 `ctx.Value(key)` 取回对应的值。
+		- `context` 主要用于在整个请求处理链中传递与请求范围相关的元数据，而不是普通的函数参数。
+		- Go 标准库文档建议在包内定义未导出的自定义类型作为 key，以避免冲突。因为你无法预知第三方库是否会使用相同的 key，一旦冲突，可能导致你写入的数据被覆盖，后续取值时的类型断言就会出错甚至导致程序崩溃。
 - **例子：**
 	- ```go
 	  func hello(w http.ResponseWriter, req *http.Request) {
