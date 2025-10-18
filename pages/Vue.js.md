@@ -37,6 +37,15 @@
 			  console.log(count.value)   // 10
 			  // 此时，所有使用 count 的组件都会自动更新
 			  ```
+		- **用 const 来接收 ref 的返回值**
+			- 在 JavaScript 中，const 关键字并不是保证内容不可变，而是保证变量的绑定（Binding）不可变。
+			- ```javascript
+			  const count = ref(0)
+			  ```
+				- **`count` 这个变量名永远指向同一个 ref 对象**。你不能重新给 `count` 赋值。
+				- 但是，你完全可以修改这个 `ref` 对象内部的属性 `.value`。
+			- **好处：**这样可以避免对 `count` 变量的重新赋值，从而确保 **`count` 始终是一个 `ref` 引用对象**。如果不小心将 `count` 重新赋值为一个普通的非响应式值，它就会失去 `ref` 特性，变成普通的数值。此时，所有依赖 `count` 的组件都将无法感知变化，UI 也不会再自动更新。
+			- 固定住装水的容器，但是容器内部装的是水还是蜂蜜无所谓。
 		- **`.value` 的访问规则：**
 			- 在 `<script>` 中，必须通过 `count.value` 来读取或修改内部值。
 			- 而在 `<template>`（模板）中，Vue 会自动对 `ref` 进行深层解包（Unwrap），因此可以直接使用 `count`，无需手动访问 `count.value`。
