@@ -35,6 +35,8 @@
 - 总之，如果你想开始一个新的 Vue.js 项目，使用 `create-vue` 是最标准和最推荐的方式。
 - **怎么用？**
 	- `npm create vue@latest`
+	  logseq.order-list-type:: number
+	  collapsed:: true
 		- `npm create`：用于执行一个包，而不是安装它。
 		- `vue`：
 			- 这是你要执行的那个包的名称。
@@ -46,6 +48,10 @@
 		- `@latest`：
 			- 这是一个版本标签，表示使用最新版本的 `create-vue` 工具。
 		- `npm create vue@latest` 翻译过来就是：运行最新版本（`@latest`）的 `create-vue` 这个工具包。
+	- `npm install`
+	  logseq.order-list-type:: number
+	- `npm run dev`
+	  logseq.order-list-type:: number
 - **运行流程：**
 	- 当你运行 `npm create vue@latest` 时，`npm` 会执行以下操作：
 		- 从 npm 仓库下载并执行 **最新版本** 的 `create-vue` 脚本。
