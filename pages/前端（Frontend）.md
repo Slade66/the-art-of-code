@@ -1,3 +1,5 @@
 -
 - [[JavaScript 包管理器：npm、Yarn 与 pnpm 的深度解析]]
+- [[create-vue]]
+- [[如何设置 npm 的代理（proxy）]]
 -
