@@ -1,0 +1,54 @@
+-
+- `create-vue` 是 Vue.js 官方推荐的用来创建新项目的脚手架工具（Project Scaffolding Tool）。
+- **作用：**快速、方便地创建一个基于 Vue.js 的新项目。
+- **基于 Vite：**它使用 Vite 作为内置的构建工具（Build Tool）和开发服务器（Development Server）。
+- **交互式配置：**
+	- 当你运行 npm create vue@latest、yarn create vue@latest 或 pnpm create vue@latest 命令时，它会通过命令行提示你进行一系列配置选择，例如：
+		- 项目名称（Project Name）
+		- 是否添加 TypeScript
+		- 是否添加 Vue Router（路由）
+		- 是否添加 Pinia（状态管理）
+		- 是否添加 Vitest（单元测试）
+		- 是否添加 Cypress/Playwright（端到端测试, E2E Testing）
+		- 是否添加 ESLint/Prettier（代码规范和格式化）
+- **没有 `create-vue` 的手动配置时代：**
+	- 在以前或没有脚手架工具的情况下，你想创建一个支持现代 JavaScript (ES6+) 的项目，你需要：
+		- **初始化项目：** 运行 `npm init`。
+		- **安装核心依赖：** 运行 `npm install vue`。
+		- **安装构建工具：** 运行 `npm install webpack webpack-cli`。
+		- **安装转换工具 (Babel)：** 运行 `npm install @babel/core babel-loader @babel/preset-env`。
+		- **配置 Webpack：** 手动创建一个 `webpack.config.js` 文件，编写配置代码，告诉 Webpack 如何处理 `.vue` 文件、如何使用 Babel 转换 JavaScript 文件等。
+		- **配置 Babel：** 手动创建一个 `.babelrc` 或类似的配置文件。
+		- **安装 Vue Loader：** 运行 `npm install vue-loader`，并将其配置到 Webpack 中。
+		- **配置脚本：** 手动修改 `package.json` 添加 `start` 和 `build` 命令。
+	- 这个过程涉及多个文件、多个配置项，初学者很容易配错，消耗时间。
+- **使用 `create-vue` 后的一键配置时代：**
+	- 你只需要做两步：
+		- **运行命令：** 在命令行输入 `npm create vue@latest`。
+		- **回答问题：** 根据提示选择是否要 TypeScript、Router 等（比如全部选 `No`）。
+	- `create-vue` 会**自动**为你：
+		- 创建好项目目录结构。
+		- 安装好所有的基础依赖（如 `vue` 和 `vite`）。
+		- 生成一个完整的 `package.json`，里面已经配置好了 `dev`（开发）和 `build`（构建）等命令。
+		- 生成好 Vue 项目所需的配置文件，例如 `vite.config.js`，**你不需要自己去配置 Vite**。
+		- 你避免了手动配置复杂的 Webpack/Vite 和 Babel/TypeScript 等构建环境的麻烦，可以直接在 App.vue 中开始编写业务逻辑。
+- 总之，如果你想开始一个新的 Vue.js 项目，使用 `create-vue` 是最标准和最推荐的方式。
+- **怎么用？**
+	- `npm create vue@latest`
+		- `npm create`：用于执行一个包，而不是安装它。
+		- `vue`：
+			- 这是你要执行的那个包的名称。
+			- 虽然没有直接写 `create-vue`，但当你在 `npm create` 后面跟上一个初始化器 (`initializer`) 名称时，`npm` 会自动在包名前面加上前缀 `create-`。因此，`npm create vue` 实际上等同于执行 `npm exec create-vue`。npm 会自动查找并执行名为 `create-vue` 的包。
+			- **为什么采用这种简写？**
+				- 为了简化脚手架工具的调用而设计的一种机制。
+				- **方便记忆和输入：** 用户只需要记住框架或库的名字（如 `vue`、`vite`、`react-app`），而不需要记住完整的脚手架包名（如 `create-vue`、`create-vite`、`create-react-app`）。
+				- 许多知名的前端和 Node.js 项目都遵循了将脚手架工具命名为 `create-<项目名>` 的规范。
+		- `@latest`：
+			- 这是一个版本标签，表示使用最新版本的 `create-vue` 工具。
+		- `npm create vue@latest` 翻译过来就是：运行最新版本（`@latest`）的 `create-vue` 这个工具包。
+- **运行流程：**
+	- 当你运行 `npm create vue@latest` 时，`npm` 会执行以下操作：
+		- 从 npm 仓库下载并执行 **最新版本** 的 `create-vue` 脚本。
+		- `create-vue` 脚本启动，并在命令行中引导你进行一系列的**交互式配置**（例如，让你选择是否使用 TypeScript、Vue Router 等）。
+		- 根据你的选择，自动创建出基于 Vite 的 Vue 项目骨架，并安装好所有必要的依赖包。
+-
