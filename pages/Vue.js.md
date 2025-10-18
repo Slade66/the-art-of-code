@@ -1,4 +1,36 @@
 -
+- v-model
+	- `v-model` 是一个 **双向数据绑定指令**
+	- **从数据到视图：**将变量的值设置到元素的 value 属性。
+	- **从视图到数据：**监听输入框的 `input` 事件，一旦用户输入，立即更新变量的值。
+	- 在模板中使用 `v-model="newTodo"` 相当于同时做了两件事：
+		- **绑定值 (`:value`)**: `<input :value="newTodo.value">`
+		- **监听事件 (`@input`)**: `<input @input="newTodo.value = $event.target.value">`
+		- **效果：** 无论你是在 JavaScript 中修改 `newTodo.value`，还是用户在输入框中打字，两者总是保持同步。
+- `v-for`
+	- v-for 是一个列表渲染指令，它的作用是基于一个数组（或其他可迭代对象），重复渲染一个元素或组件多次。
+	- 在实际开发中，`v-for` 通常应与 `:key` 属性一起使用，例如：`<li v-for="todo in todos" :key="todo.id">`。`key` 的作用是帮助 Vue 精确追踪每个节点的唯一身份，从而在列表数据发生变化时，只对必要的部分进行更新，最大限度地减少 DOM 操作并提升渲染性能。
+- `{{ ... }}`
+	- 文本插值表达式，它用于将 JavaScript 表达式的结果嵌入到 HTML 文本内容中。
+	- **单向绑定**：它是单向的，只负责将数据从 JavaScript 状态流向 HTML 视图。
+- **属性绑定：**
+	- `:checked`
+		- `:` 是 `v-bind` 指令的缩写。
+		- **`:checked="todo.completed"`** 是 **`v-bind:checked`** 的缩写。
+		- 用于将 数据 绑定到 HTML 元素的 属性。
+		- `v-bind` 能够将 HTML 元素的属性与 Vue 的状态数据相连接，从而实现**单向数据绑定**（数据从模型流向视图）。
+- **事件处理：**
+	- `@click`
+		- 是 `v-on:click` 的简写，绑定点击事件，点击之后会执行指定的函数。
+	- `@change`
+		- 是 **`v-on:change`** 的缩写。
+		- 用于监听用户的交互事件并调用相应的方法。
+- **条件渲染：**
+	- `:class`
+		- `:class="{ completed: todo.completed }"`
+			- 当 `todo.completed` 为 $\text{true}$ 时，`completed` 类名会被应用。
+- **`<style scoped>`**：
+	- 它确保 CSS 样式只应用于 **当前组件** 的元素，避免了样式冲突，这在大型前端项目中非常重要。
 - Composition API
 	- `ref`
 		- `ref`（Reference）函数用于创建响应式数据。
