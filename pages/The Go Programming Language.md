@@ -14,6 +14,7 @@
 - [[The Go Programming Language/常量]]
 - [[The Go Programming Language/循环]]
 - [[The Go Programming Language/条件分支]]
+- [[The Go Programming Language/defer]]
 - [[Go 的接口变量为什么装得下指针？]]
 - [[Go 的工具链]]
 - [[Go 的工作区]]
