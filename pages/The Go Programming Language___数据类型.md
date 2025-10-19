@@ -91,7 +91,7 @@ heading:: true
 	- **字典（Maps）：**
 		- [[Go 的 map]]
 	- **结构体（Structs）：**
-		- [[Go 的 struct]]
+		- [[The Go Programming Language/struct]]
 	- **接口（Interfaces）：**
 		- [[Go 的接口]]
 	- **函数类型（Function Types）：**
