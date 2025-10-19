@@ -97,7 +97,7 @@ heading:: true
 	- **函数类型（Function Types）：**
 		- [[The Go Programming Language/函数]]
 	- **指针类型（Pointer Types）：**
-		- [[Go 的指针]]
+		- [[The Go Programming Language/指针]]
 	- **通道类型（Channel Types）：**
 - 类型转换
   heading:: true
