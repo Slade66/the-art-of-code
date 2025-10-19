@@ -1,6 +1,4 @@
-Go 语言的基本概念
-heading:: true
-title:: The Go Programming Language
+- **Go 语言的基本概念**
 	- Go 语言用于开发基础设施软件，也用于开发服务器端程序。
 	- Go 语言的语法很像 C 语言，因为它是由 C 语言之父所开发的。
 	- Go 语言就是新时代的 C 语言，用于取代 C++。
@@ -14,12 +12,12 @@ title:: The Go Programming Language
 - [[The Go Programming Language/Variable]]
 - [[The Go Programming Language/数据类型]]
 - [[The Go Programming Language/常量]]
+- [[Go 的循环]]
 - [[Go 的接口变量为什么装得下指针？]]
 - [[Go 的工具链]]
 - [[Go 的工作区]]
 - [[Go 的标准库]]
 - [[Go 的语法格式]]
-- [[Go 的循环]]
 - [[Go 的条件语句]]
 - [[Go 的数组]]
 - [[Go 的切片]]
