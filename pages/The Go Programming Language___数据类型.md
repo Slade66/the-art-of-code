@@ -93,7 +93,7 @@ heading:: true
 	- **结构体（Structs）：**
 		- [[The Go Programming Language/struct]]
 	- **接口（Interfaces）：**
-		- [[Go 的接口]]
+		- [[The Go Programming Language/接口]]
 	- **函数类型（Function Types）：**
 		- [[The Go Programming Language/函数]]
 	- **指针类型（Pointer Types）：**
