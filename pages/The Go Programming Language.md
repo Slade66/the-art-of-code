@@ -22,7 +22,6 @@
 - [[The Go Programming Language/map]]
 - [[The Go Programming Language/方法]]
 - [[The Go Programming Language/接口]]
-- [[Go 的接口变量为什么装得下指针？]]
 - [[Go 的工具链]]
 - [[Go 的工作区]]
 - [[Go 的标准库]]
