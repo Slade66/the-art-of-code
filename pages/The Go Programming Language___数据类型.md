@@ -89,7 +89,7 @@ heading:: true
 	- **切片（Slices）：**
 		- [[The Go Programming Language/slice]]
 	- **字典（Maps）：**
-		- [[Go 的 map]]
+		- [[The Go Programming Language/map]]
 	- **结构体（Structs）：**
 		- [[The Go Programming Language/struct]]
 	- **接口（Interfaces）：**
