@@ -85,7 +85,7 @@ heading:: true
   heading:: true
 	- 复合数据类型是由基本数据类型组合而成的更复杂的数据结构。
 	- **数组（Arrays）：**
-		- [[Go 的数组]]
+		- [[The Go Programming Language/数组]]
 	- **切片（Slices）：**
 		- [[Go 的切片]]
 	- **字典（Maps）：**
