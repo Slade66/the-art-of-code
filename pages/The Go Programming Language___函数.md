@@ -27,7 +27,7 @@
 	- 在调用带参数的函数时，Go 会将每个实参的值复制到对应的形参变量中，这被称为“值传递”。
 	- 因为函数接收到的是副本而非原始变量，所以在函数内部对参数的修改不会影响外部变量。
 	- 如果希望函数能够直接修改原始变量的值，则需要通过指针传递变量的引用。
-	- 切片（slice）是一个描述符（header），它包含一个指向底层数组的指针。函数接收的是这个描述符的副本，但它指向的数组是同一个。因此，修改切片元素会影响外部。
+	- 切片（slice）是一个结构体，它包含一个指向底层数组的指针。函数接收的是这个描述符的副本，但它指向的数组是同一个。因此，修改切片元素会影响外部。
 	- Map 是引用类型。当 map 作为参数传递时，函数接收的是一个指向底层数据结构的指针的副本。对 map 的修改会反映到原始的 map 上。
 - **声明函数的语法：**
 	- ```go
@@ -176,6 +176,10 @@
 		  ```
 		- 这种模式强制开发者显式地处理可能发生的错误，而不是像其他语言那样依赖异常 `try-catch` 机制，这使得 Go 代码通常更加稳健可靠。
 - **当一个函数返回另外一个函数：**
+	- **闭包：**
+		- 闭包是一个函数值，它引用了其函数体之外的变量。
+		- 闭包允许一个函数携带和维护自己的私有状态。
+		- **状态的持久化：**即使外层函数执行完并返回，闭包（也就是返回的那个匿名函数）仍然保留着对外层变量的引用。那些外部变量不会被销毁，因为它们已经被闭包“绑定”住了。只要闭包还存在（例如被某个变量引用），这些被绑定的变量就会**跟着它一起存活**。
 	- **例子 1：**
 		- ```go
 		  func makeAdder(x int) func(int) int {
@@ -189,9 +193,13 @@
 		      // add5(10) 的返回值是？
 		  }
 		  ```
-		- 这是一个闭包。`makeAdder(5)` 返回一个函数，这个函数“记住”了它被创建时的环境，即 `x = 5`。调用 `add5(10)` 时，`y = 10`，因此返回 `5 + 10`。
+		- 这是一个闭包。`makeAdder(5)` 返回一个函数，这个**函数“记住”了它被创建时的环境**，即 `x = 5`。调用 `add5(10)` 时，`y = 10`，因此返回 `5 + 10`。
 	- **例子 2：**
 		- ```go
+		  package main
+		  
+		  import "fmt"
+		  
 		  func makeCounter() func() int {
 		      i := 0
 		      return func() int {
@@ -201,22 +209,110 @@
 		  }
 		  
 		  func main() {
-		      counter := makeCounter()
-		      counter()
-		      counter()
-		      fmt.Println(counter())
+		      counter := makeCounter() // makeCounter() returns a function
+		      counter() // i = 1
+		      counter() // i = 2
+		      fmt.Println(counter()) // i = 3
 		  }
 		  ```
-		- 闭包捕获了变量 `i`。第一次调用 `i` 变为 1 并返回 1。第二次调用 `i` 变为 2 并返回 2。第三次调用 `i` 变为 3 并返回 3。
-		- **闭包：**
-			- 这个匿名函数访问并修改了它外部函数的变量 `i`。
-			- 变量 `i` 不会在 `makeCounter` 函数返回后被销毁，而是会一直存在于内存中，被这个返回的函数所引用。
-		- **`main()` 函数中的执行流程：**
-			- 调用 `makeCounter`，创建了一个新的变量 `i=0` 和一个新的闭包。
-			- 第一次调用闭包，`i` 变为 1，返回 1。
-			- 第二次调用闭包，`i` 变为 2，返回 2。
-			- 第三次调用闭包，`i` 变为 3，返回 3，并将其输出。
-		- **函数工厂：** `makeCounter` 这样的函数被称为函数工厂，因为它返回另一个函数。每次调用 `makeCounter()` 都会创建一个**全新且独立**的 `i` 变量和闭包环境。例如，如果你再定义 `counter2 := makeCounter()`，`counter2` 也会有它自己的、从 0 开始计数的 `i` 变量。
+		- 这个匿名函数会访问并修改其外层函数中的变量 `i`。变量 `i` 不会在 `makeCounter` 返回后被销毁，而是会一直保存在内存中，由返回的函数持续引用。
+		- **闭包工厂：**像 `makeCounter` 这样的函数被称为闭包工厂，因为它会返回一个函数。每次调用 `makeCounter()`，都会创建一个**全新且独立**的 `i` 变量及其闭包环境。
+			- 例如，再定义一个 `counter2 := makeCounter()` 时，`counter2` 也会拥有自己独立的 `i`，从 0 开始计数，和 `counter` 的闭包环境互不干扰。
 - **“立即调用”的匿名函数 (IIFE)**
 	- 在定义匿名函数 `func() { ... }` 之后，立即使用 `()` 来调用它。
+- **函数本身就是一种值：**
+	- 你可以将一个函数赋值给一个变量。
+	- 也可以把一个函数当作参数传递给另一个函数。
+	- 你可以把一个函数当成另一个函数的返回值。
+	- ```go
+	  package main
+	  
+	  import "fmt"
+	  
+	  // 1. 定义一个函数类型
+	  type operation func(int, int) int
+	  
+	  // 2. 将函数赋值给变量
+	  var add operation = func(a, b int) int {
+	  	return a + b
+	  }
+	  
+	  // 3. 函数作为参数
+	  func calculate(a, b int, op operation) int {
+	  	return op(a, b)
+	  }
+	  
+	  // 4. 函数作为返回值
+	  func getOperation(opType string) operation {
+	  	switch opType {
+	  	case "power":
+	  		return func(a, b int) int {
+	  			result := 1
+	  			for i := 0; i < b; i++ {
+	  				result *= a
+	  			}
+	  			return result
+	  		}
+	  	case "multiply":
+	  		return func(a, b int) int {
+	  			return a * b
+	  		}
+	  	default:
+	  		return add // 返回之前定义的函数变量
+	  	}
+	  }
+	  
+	  // 5. 高阶函数示例
+	  func applyToEach(numbers []int, f func(int) int) []int {
+	  	result := make([]int, len(numbers))
+	  	for i, v := range numbers {
+	  		result[i] = f(v)
+	  	}
+	  	return result
+	  }
+	  
+	  func main() {
+	  	// 1. 使用已赋值的函数变量
+	  	fmt.Println("5 + 3 =", add(5, 3))
+	  
+	  	// 2. 函数作为参数传递
+	  	subtract := func(a, b int) int { return a - b }
+	  	fmt.Println("10 - 4 =", calculate(10, 4, subtract))
+	  
+	  	// 3. 获取并调用返回的函数
+	  	powerFunc := getOperation("power")
+	  	fmt.Println("2 ^ 3 =", powerFunc(2, 3))
+	  
+	  	// 4. 匿名函数直接调用
+	  	fmt.Println("10 * 2 =", func(a, b int) int {
+	  		return a * b
+	  	}(10, 2))
+	  
+	  	// 5. 高阶函数使用
+	  	nums := []int{1, 2, 3, 4}
+	  	doubled := applyToEach(nums, func(n int) int {
+	  		return n * 2
+	  	})
+	  	fmt.Println("Doubled:", doubled)
+	  
+	  	// 6. 闭包示例
+	  	makeAdder := func(x int) func(int) int {
+	  		return func(y int) int {
+	  			return x + y
+	  		}
+	  	}
+	  
+	  	add5 := makeAdder(5)
+	  	fmt.Println("5 + 10 =", add5(10)) // 15
+	  }
+	  ```
+- **函数有自己的类型：**
+	- 一个函数的“类型”由其参数和返回值决定。
+	- **示例：**
+		- ```go
+		  func compute(fn func(float64, float64) float64) float64 {
+		  	return fn(3, 4)
+		  }
+		  ```
+		- `compute` 函数的参数 `fn` 的类型就是 `func(float64, float64) float64`。任何**签名匹配**的函数都可以传给它。
 -
