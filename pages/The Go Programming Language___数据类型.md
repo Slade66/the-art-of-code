@@ -87,7 +87,7 @@ heading:: true
 	- **数组（Arrays）：**
 		- [[The Go Programming Language/数组]]
 	- **切片（Slices）：**
-		- [[Go 的切片]]
+		- [[The Go Programming Language/slice]]
 	- **字典（Maps）：**
 		- [[Go 的 map]]
 	- **结构体（Structs）：**
