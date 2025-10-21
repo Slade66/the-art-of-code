@@ -74,4 +74,8 @@
 	  	}
 	  }
 	  ```
+	- **定义：**创建一个 `struct`（如 `UserNotFoundError`）来存放需要的额外信息（例如 `UserID`）。
+	- **实现：**为该 `struct` 添加 `Error() string` 方法，在其中使用 `fmt.Sprintf` 拼接清晰的错误信息。
+	- **返回：**在函数（如 `GetUserNameFromDB`）中，当发生错误时，执行 `return "", &UserNotFoundError{...}`。
+	- **检查：**调用方（如 `main` 函数）无需关心具体的错误类型，只需按照惯例检查 `if err != nil` 即可。
 -
