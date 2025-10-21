@@ -25,7 +25,6 @@
 - [[The Go Programming Language/Standard library]]
 - [[Go 的工具链]]
 - [[Go 的工作区]]
-- [[Go 的标准库]]
 - [[Go 的语法格式]]
 - [[Go 的 string]]
 - [[Go 的类型定义和类型别名]]
