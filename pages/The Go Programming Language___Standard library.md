@@ -1,4 +1,3 @@
-- [[Standard library/time]]
 - [[strconv]]
 - [[strings]]
 - [[io]]
