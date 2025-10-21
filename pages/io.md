@@ -1,3 +1,3 @@
--
+- [[type Reader interface]]
 - [[func Copy]]
 -
