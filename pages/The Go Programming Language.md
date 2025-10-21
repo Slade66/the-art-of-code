@@ -23,7 +23,6 @@
 - [[The Go Programming Language/方法]]
 - [[The Go Programming Language/接口]]
 - [[The Go Programming Language/Standard library]]
-- [[type error interface]]
 - [[The Go Programming Language/错误处理]]
 - [[Go 的工具链]]
 - [[Go 的工作区]]
