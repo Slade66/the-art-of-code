@@ -251,4 +251,39 @@
 	- 你可以传入多个 `config.WithSource`，比如同时从文件和配置中心加载。
 	- 这一步只是完成初始化，让 Kratos 知道应该从哪里获取配置数据。此时它只是“注册”了配置源，但还没有真正去打开或读取这些源。
 	- 在你调用 `c.Load()` 方法后，Kratos 才会真正地去遍历它注册的所有 `Source`，命令它们去执行 I/O 操作（即读取文件），然后把读到的内容加载到内存中，并进行合并。
+- **Kratos 官方项目模板 `kratos-layout` 是如何组织和管理配置的？**
+	- Kratos 推荐使用 Protobuf 文件（`.proto`）来定义配置结构，而不是在 Go 代码中手动编写 `struct`。
+		- **统一解析：**你只需定义一次 `.proto` 文件，Kratos 就能自动解析 JSON、YAML、XML 等多种格式的配置文件，并将配置值映射到由 `proto` 生成的 Go 结构体中。
+		- **类型安全：**当你在 `proto` 中定义 `google.protobuf.Duration timeout = 3;` 时，Kratos 会自动将配置文件中的 `"5s"`、`"100ms"` 等字符串安全地转换为 Go 的 `time.Duration` 类型，而不需要你自己手动解析。
+	- **kratos-layout 中涉及到配置文件有以下部分：**
+		- `cmd/server/main.go`：
+			- 这是服务的入口文件。默认情况下，使用内置的 `config/file` 组件从本地文件系统读取配置，读取路径为相对目录 `configs`。
+			- 如果需要从其他配置源（如配置中心）加载配置，可以修改该文件中 `config.New()` 的参数。
+			- 加载后的配置会被解析到 `conf.Bootstrap` 结构体中。通过依赖注入机制，该结构体的内容会传递到服务的各个内部层（如 `server` 或 `data`），使每一层都能获取所需的配置信息并完成初始化。
+		- `configs/config.yaml`：
+			- 这是一个示例配置文件。
+			- 它的作用，就是为了让你在本地开发机上调试时，`main.go` 能成功读到一些配置（比如本地数据库地址、`8000` 端口），让服务能跑起来。
+			- 不要将生产环境的配置放在这里。
+		- `internal/conf`：
+			- 该目录用于存放配置结构的定义，也就是用来描述“配置文件长什么样”的地方。
+			- `config.proto`：由开发者手动编辑，使用 Protobuf 语法定义配置应包含的字段（如 `server`、`data`）及其类型（如 `string`、`int32`）。
+			- `config.pb.go`：通过执行 `make config` 自动生成，文件中是对应的 Go 代码，包含 `config.proto` 定义的结构体（如 `Bootstrap`、`Server`、`Data`）。`main.go` 中 `Scan` 的目标 `conf.Bootstrap` 就来源于此。
+			- 关键点：`config.proto` 是配置结构的单一事实来源。应确保 `configs/config.yaml` 的内容在结构上与 `config.proto` 定义保持一致。
+		- `make config`
+			- 这是 `Makefile` 中的一个快捷命令。
+			- 它会调用 `protoc`（Protobuf 编译器），扫描 `internal/conf/` 目录下的所有 `.proto` 文件，并生成或更新对应的 `config.pb.go` 文件。
+			- 每当你修改了 `internal/conf/config.proto`（例如新增配置项）后，都需要在项目根目录手动执行一次 `make config`，以重新生成 `config.pb.go`，否则代码中将无法访问新添加的配置项。
+	- 当你要去“加一个 Redis 的配置”时，你在 `kratos-layout` 里的标准操作流程是：
+		- **定义**：
+			- 打开 `internal/conf/config.proto`，在 `Bootstrap`（或者它包含的某个子 `message`）里添加上 Redis 的地址和端口字段。
+			- 文档中的 `Bootstrap` 消息（Message）是根结构，对应你整个配置文件的根。
+		- **生成**：
+			- 在项目根目录运行 `make config`。
+			- 你编写的 `.proto` 文件并不能被 Go 语言直接识别，需要借助工具将其转换为 Go 代码。
+			- `make config` 是 `Makefile` 里的一个快捷命令，它本质上是调用了 `protoc` 工具。
+			- **作用**：读取 `internal/conf` 目录下的 `.proto` 文件，并在**同一目录**中自动生成对应的 `config.pb.go` 文件。该文件是由 `proto` 定义生成的 Go 代码，包含了期望的配置结构体。
+			- **注意**：每当你修改 `.proto` 文件（例如新增配置项）后，必须重新执行一次 `make config`，以同步更新 `config.pb.go` 文件。
+		- **使用**：
+			- 在 `cmd/server/main.go` 里，Kratos 已经自动帮你把新配置加载到 `bc` 变量里了。
+			- 你只需要在 `data` 层（或其它地方）的 `New...` 函数中，从 `bc` (它会被依赖注入传进来) 中读取你新加的 Redis 字段（例如 `bc.Data.Redis.Addr`），然后用它来初始化你的 Redis 客户端。
 -
