@@ -49,4 +49,25 @@
 	  设备信息: {core-router-01 192.168.1.1 Huawei} // 没实现 fmt.Stringer 接口前
 	  设备信息: [Huawei] core-router-01 (192.168.1.1) // 实现了 fmt.Stringer 接口后
 	  ```
+- **注意：**
+	- **陷阱：无限递归**
+		- ```go
+		  // 错误示范！这会导致程序崩溃！
+		  func (d Device) String() string {
+		      // 错误点：在 String() 方法内部，使用了 fmt.Sprint(d)
+		      // fmt.Sprint(d) 会检查 d 是否是 Stringer
+		      // 它发现 "是！"，于是它调用 d.String() 来获取字符串
+		      // 于是，调用链变成了：
+		      // d.String() -> fmt.Sprint(d) -> d.String() -> fmt.Sprint(d) ...
+		      return fmt.Sprintf("Device: %s", fmt.Sprint(d)) 
+		  }
+		  
+		  // 同样，下面这个也是错误的：
+		  func (d Device) String() string {
+		      // fmt.Println(d) 同样会调用 d.String()
+		      return fmt.Sprintf("Device: %v", d) // %v 也会触发 String()
+		  }
+		  ```
+		- 上述代码会导致栈溢出，因为 `String()` 方法无限地调用了它自己。
+		- 在 `String()` 方法内部，千万不要使用 `fmt.Print`、`fmt.Sprint` 或 `fmt.Printf`来处理接收者本身，你应该只格式化接收者的字段。
 -
