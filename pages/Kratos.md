@@ -1,5 +1,7 @@
-Kratos 的概念
-heading:: true
+-
+- Kratos 的概念
+  heading:: true
+  collapsed:: true
 	- **API 优先的设计理念：**
 		- **核心思想：**“API 优先”强调在编写任何具体业务逻辑代码之前，首先设计应用程序接口（API）。这意味着我们首先要用一种与语言无关的方式来清晰地定义服务能提供哪些功能、需要什么数据、返回什么数据。
 		- **流程：**设计 API（`.proto` 文件）→ 生成代码 → 实现业务逻辑。
@@ -18,6 +20,7 @@ heading:: true
 	-
 - Kratos 项目的目录结构
   heading:: true
+  collapsed:: true
 	- 想写好 Kratos 项目，首先需要理解它的代码是如何组织的。
 	- Kratos 的目录结构遵循官方推荐的标准化工程架构，清晰且便于维护。
 	- `api`：
@@ -52,6 +55,7 @@ heading:: true
 		- `service` 接收请求，调用 `biz` 处理业务，`biz` 层则通过 `data` 层的方法操作数据库。
 - kratos 命令行工具
   heading:: true
+  collapsed:: true
 	- **安装：**`go install github.com/go-kratos/kratos/cmd/kratos/v2@latest`
 	- **创建项目：**
 		- 使用默认模板创建一个新的 Kratos 项目：`kratos new <项目名>`
@@ -91,11 +95,13 @@ heading:: true
 			- Kratos 会根据 `.proto` 中定义的服务名称，在 `internal/service` 目录下生成对应的 `.go` 文件（如 `todo.go`），其中包含服务方法的空实现，供你后续填充业务逻辑。
 - 如何编译 Kratos 项目
   heading:: true
-- 生成代码：go generate ./...
-- 编译：go build -o ./bin/ ./...
-- ./... 是当前目录下以及所有子目录的文件。
-- 运行：./bin/xxx -conf 指定配置文件
+  collapsed:: true
+	- 生成代码：go generate ./...
+	- 编译：go build -o ./bin/ ./...
+	- ./... 是当前目录下以及所有子目录的文件。
+	- 运行：./bin/xxx -conf 指定配置文件
 - **存根（Stub）：**
+  collapsed:: true
 	- 客户端存根和服务端骨架是一对孪生兄弟，都是由 API 定义（`.proto` 文件）自动生成的，它们共同构建了一个桥梁，让开发者可以忽略底层的网络细节，专注于业务逻辑的实现。
 	- **客户端存根：**
 		- 客户端存根是自动生成的一段代码，使得调用远程服务像调用本地函数一样简单。
@@ -121,11 +127,13 @@ heading:: true
 			- **返回结果**：处理完请求后，你的方法返回一个 `*v1.SayHelloReply` 结构体和 `error`。
 			- **序列化与发送**：框架接收到返回的 `*v1.SayHelloReply` 对象后，将其序列化成二进制数据流，并通过网络连接发送回客户端。如果返回了 `error`，框架会将其转换为标准的 gRPC 错误码。
 - **`UnimplementedXXXServer`：**
+  collapsed:: true
 	- `UnimplementedXXXServer` 是由 Go 代码生成工具（`protoc-gen-go-grpc`）自动创建的结构体。每当你定义一个 `service XXX` 时，工具会为其生成一个对应的 `UnimplementedXXXServer`。
 	- 它的作用是确保接口的向前兼容性，防止接口更新时导致旧的服务实现代码编译失败。
 	- 它自动实现了接口中的所有方法（默认返回错误，提示“该方法尚未实现”）。在服务代码中，将 `UnimplementedXXXServer` 嵌入到 `XXXService` 结构体中，使后者自动继承 `UnimplementedXXXServer` 中的所有方法。
 	- 这样，代码重新生成时，会自动为新增的方法提供默认实现。你无需担心接口更新导致编译失败，也无需你立刻去实现这些方法。
 - **Kratos 的开发流程：**
+  collapsed:: true
 	- **定义 API**：使用 Protobuf 定义服务的功能、输入数据和返回数据。
 	- **编写服务层（Service）代码**：
 		- 创建 Service 并实现 Protobuf 中定义的 API 接口（通过工具自动生成）。
@@ -143,16 +151,19 @@ heading:: true
 	- 执行 `wire` 命令，生成依赖注入代码。
 	- 采用“由内向外、自底向上（Bottom-Up）”的顺序，确保在编写每一层代码时，其依赖的底层组件已存在并可用。这样，你始终站在坚实的基础上，而不是在“空中楼阁”上写代码。就像盖房子，我们首先打好坚实的地基（Model, pkg），然后搭建承重墙（Data），接着构建核心房间（Biz），最后装修门面（Service）。
 - **Usecase 是什么：**
+  collapsed:: true
 	- Usecase（用例）表示某个特定的业务操作或任务。
 	- Usecase 层负责处理用户请求的具体业务逻辑，通常不涉及细节问题，而是专注于协调系统各个部分完成业务任务。
 	- Usecase 是核心业务逻辑层。当 Controller 层收到用户的注册请求后，会调用 `RegisterUserUsecase`。`RegisterUserUsecase` 负责处理用户注册的业务逻辑（如验证输入、保存数据），并通过 `UserRepo` 保存用户信息。
 	- 用例本身不负责操作的具体实现（例如如何查询商品、如何调用支付接口），它的任务是将这些操作组合起来，协调各个步骤的执行，确保整个流程顺畅。它像一个“指挥家”，作为业务流程的编排者，负责协调和组织操作，但并不实现具体操作。
 - **`cleanup` 函数：**
+  collapsed:: true
 	- `cleanup` 是一个专门用于清理资源的函数，在应用程序关闭时，它负责释放资源、关闭数据库连接、断开缓存客户端等，以防止资源泄漏。
 	- 将 `cleanup` 定义在函数内部并返回，而不是直接在外部定义，有以下几个原因：
 		- 使其能够直接访问函数内部的一些上下文信息，因为那些需要清理的资源通常是在函数内部初始化的。
 		- 允许外部控制执行时机并支持延迟执行：这样可以让调用者决定何时执行 `cleanup`，而不是在程序运行时立即执行，从而确保在合适的时机（例如应用退出时）释放资源。
 - **为什么要分层设计模型？**
+  collapsed:: true
 	- 不分层设计的弊端在于，所有层共用同一个模型，导致层与层之间耦合过高。一旦模型发生变动，所有层都需进行修改。此外，这种设计容易引发隐私泄露等风险，比如直接返回数据库层的模型，其中许多隐私字段未被妥善处理。
 	- **不分层设计：**
 		- ```go
@@ -217,6 +228,7 @@ heading:: true
 		  ```
 - [[Kratos 的日志]]
 - **Kratos 各层参数校验的最佳实践**
+  collapsed:: true
 	- 在 Kratos 项目中，每个层级的校验负责不同类型的参数。
 	- **服务层（Service Layer）**
 		- 服务层主要进行初步的、简单的校验，确保传入的数据符合基本要求，避免无效数据进入业务层，不涉及复杂逻辑或数据库查询。
@@ -265,6 +277,7 @@ heading:: true
 	- **数据层（Data Layer）**
 		- 数据层依赖数据库的约束条件来确保数据符合数据库的规则，避免不一致或错误数据进入系统。
 - **为啥 Biz 层能直接用 Model？这耦合能接受吗？**
+  collapsed:: true
 	- **问题背景：**
 		- 写代码的时候，我发现在 `biz` 层的代码里，直接就 `&model.Registry{...}` 这样去创建一个 `model` 结构体了。心里犯嘀咕：Kratos 这种分层架构，不是讲究解耦吗？这么直接引用，算不算一种不好的“耦合”？
 	- **Biz 层与 Model 层的耦合：一种必要的设计**
