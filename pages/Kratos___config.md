@@ -41,6 +41,117 @@
 				- **单个文件**：如 `"configs/config.yaml"`，只加载这一个文件。
 				- **一个目录**：如 `"configs/"`，会加载该目录下的所有文件。
 			- **合并行为**：若 `path` 为目录，Kratos 会将目录中所有文件的配置内容合并为一个 `map`。
+		- **从 nacos 读取配置：**
+			- **核心步骤：**
+				- **创建 Nacos 客户端：**使用 Nacos 官方 SDK 初始化一个客户端实例。
+				- **创建 Nacos 源：**基于上一步的客户端，并指定要读取的 `Data ID` 和 `Group`，生成一个 Kratos 的 Nacos 配置源。
+				- **添加配置源：**在 `cmd/server/main.go` 的 `config.New()` 中，将新创建的 `nacosSource` 实例添加进去。
+			- **示例代码：**
+			  collapsed:: true
+				- ```go
+				  package main
+				  
+				  import (
+				  	"log"
+				  	"time"
+				  
+				  	"github.com/nacos-group/nacos-sdk-go/clients"
+				  	"github.com/nacos-group/nacos-sdk-go/common/constant"
+				  	"github.com/nacos-group/nacos-sdk-go/vo"
+				  
+				  	knacos "github.com/go-kratos/kratos/contrib/config/nacos/v2"
+				  	kconfig "github.com/go-kratos/kratos/v2/config"
+				  )
+				  
+				  /*
+				  nacos 上的 test.yaml 配置：
+				  name: demo
+				  server:
+				    http:
+				      addr: ":8000"
+				  */
+				  
+				  type Server struct {
+				  	HTTP struct {
+				  		Addr string `json:"addr" yaml:"addr"`
+				  	} `json:"http" yaml:"http"`
+				  }
+				  type AppConf struct {
+				  	Name   string `json:"name" yaml:"name"`
+				  	Server Server `json:"server" yaml:"server"`
+				  }
+				  
+				  func main() {
+				  	// 1) Nacos 客户端
+				    
+				    	// 定义 Nacos Server 配置
+				  	sc := []constant.ServerConfig{
+				  		*constant.NewServerConfig(
+				  			"10.30.60.115",
+				  			8081,
+				  			constant.WithContextPath("/nacos"),
+				  			constant.WithScheme("http"),
+				  		),
+				  	}
+				    
+				      // 定义 Nacos Client 配置
+				  	cc := &constant.ClientConfig{
+				  		NamespaceId:         "",
+				  		Username:            "nacos",
+				  		Password:            "NTcxfz123nacos",
+				  		TimeoutMs:           5000,
+				  		NotLoadCacheAtStart: true,
+				  		LogDir:              "/tmp/nacos/log",
+				  		CacheDir:            "/tmp/nacos/cache",
+				  		LogLevel:            "debug",
+				  	}
+				    
+				      // 创建 Nacos 配置客户端
+				  	cli, err := clients.NewConfigClient(vo.NacosClientParam{
+				  		ClientConfig:  cc,
+				  		ServerConfigs: sc,
+				  	})
+				  	if err != nil {
+				  		log.Fatal(err)
+				  	}
+				  
+				  	// 2) 定义 Nacos 源（DataID 的扩展名决定解析格式）
+				  	src := knacos.NewConfigSource(
+				  		cli,
+				  		knacos.WithGroup("DEFAULT_GROUP"),
+				  		knacos.WithDataID("test.yaml"),
+				  	)
+				  
+				  	// 3) 创建 Kratos Config，并加载
+				  	c := kconfig.New(kconfig.WithSource(src))
+				  	defer c.Close()
+				  
+				  	if err := c.Load(); err != nil {
+				  		log.Fatal(err)
+				  	}
+				  
+				  	// 4) 扫描为结构体
+				  	var conf AppConf
+				  	if err := c.Scan(&conf); err != nil {
+				  		log.Fatal(err)
+				  	}
+				  	log.Printf("boot config: %+v", conf)
+				  
+				  	// 5) 监听某个顶层 Key 的变化（例如 "server"）
+				  	_ = c.Watch("server", func(key string, v kconfig.Value) {
+				  		var s Server
+				  		if err := v.Scan(&s); err == nil {
+				  			log.Printf("server changed: %+v", s)
+				  		}
+				  	})
+				  
+				  	// 6) 阻塞以观察变更
+				  	for {
+				  		time.Sleep(time.Second * 10)
+				  	}
+				  }
+				  
+				  ```
 	- **读取配置：**
 		- `c.Scan(&v)`：一次性把所有配置读取到一个 `struct` 结构体里。
 			- 你先定义一个与配置文件结构（如 JSON 或 YAML）相对应的 Go `struct`，Kratos 会自动将配置文件中的内容映射并填充到这个结构体中。
@@ -251,6 +362,8 @@
 	- 你可以传入多个 `config.WithSource`，比如同时从文件和配置中心加载。
 	- 这一步只是完成初始化，让 Kratos 知道应该从哪里获取配置数据。此时它只是“注册”了配置源，但还没有真正去打开或读取这些源。
 	- 在你调用 `c.Load()` 方法后，Kratos 才会真正地去遍历它注册的所有 `Source`，命令它们去执行 I/O 操作（即读取文件），然后把读到的内容加载到内存中，并进行合并。
+- `Config.close()`
+	- 调用 `c.Close()` 来统一关闭所有 Source，会逐一调用每个源的 `Watcher.Stop()`。
 - **Kratos 官方项目模板 `kratos-layout` 是如何组织和管理配置的？**
 	- Kratos 推荐使用 Protobuf 文件（`.proto`）来定义配置结构，而不是在 Go 代码中手动编写 `struct`。
 		- **统一解析：**你只需定义一次 `.proto` 文件，Kratos 就能自动解析 JSON、YAML、XML 等多种格式的配置文件，并将配置值映射到由 `proto` 生成的 Go 结构体中。
