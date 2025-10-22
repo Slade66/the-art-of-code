@@ -89,6 +89,8 @@
 			  }
 			  
 			  ```
+	- **服务发现**
+		-
 - **NewNamingClient 和 NewConfigClient 有什么不同？**
 	- **NewNamingClient：**
 		- 用途：Nacos 的"命名服务"（服务注册与发现），用于服务注册/发现。
