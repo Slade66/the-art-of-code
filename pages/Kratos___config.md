@@ -84,7 +84,7 @@
 				  func main() {
 				  	// 1) Nacos 客户端
 				    
-				    	// 定义 Nacos Server 配置
+				    	// 服务端连接配置，告诉 SDK 如何连接到 Nacos 服务器，解决 "连哪里" 的问题。
 				  	sc := []constant.ServerConfig{
 				  		*constant.NewServerConfig(
 				  			"10.30.60.115",
@@ -94,7 +94,8 @@
 				  		),
 				  	}
 				    
-				      // 定义 Nacos Client 配置
+				      // 客户端行为配置，控制客户端的行为（认证、超时、缓存、日志等），解决 "怎么连" 的问题。
+				      // 客户端行为（如认证、超时）只需定义一次，可以和不同的服务器配置组合，实现一个客户端连多个服务器。
 				  	cc := &constant.ClientConfig{
 				  		NamespaceId:         "",
 				  		Username:            "nacos",
