@@ -1,4 +1,5 @@
 - [[Kratos/config]]
+- [[Kratos/registry]]
 - Kratos 的概念
   heading:: true
   collapsed:: true
