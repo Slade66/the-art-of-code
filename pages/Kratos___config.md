@@ -43,7 +43,7 @@
 			- **合并行为**：若 `path` 为目录，Kratos 会将目录中所有文件的配置内容合并为一个 `map`。
 		- **从 nacos 读取配置：**
 			- **核心步骤：**
-				- **创建 Nacos 客户端：**使用 Nacos 官方 SDK 初始化一个客户端实例。
+				- **创建 Nacos 配置客户端：**使用 Nacos 官方 SDK 初始化一个客户端实例。
 				- **创建 Nacos 源：**基于上一步的客户端，并指定要读取的 `Data ID` 和 `Group`，生成一个 Kratos 的 Nacos 配置源。
 				- **添加配置源：**在 `cmd/server/main.go` 的 `config.New()` 中，将新创建的 `nacosSource` 实例添加进去。
 			- **示例代码：**
