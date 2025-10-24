@@ -145,7 +145,7 @@
 		- 在生成代码里，UnimplementedXXXServer 默认方法都是值接收者实现。
 		- 如果你把 `UnimplementedContainerLogServiceServer` 作为指针字段嵌入（例如 `*v1.Unimplemented...`），结构体的零值字段就是 `nil`。
 		- 当 gRPC 框架去调用默认方法时，Go 需要对嵌入字段调用值接收者方法，可这些方法是以值接收者定义的，因为方法是值接收者，Go 会尝试“自动解引用”指针接收者，让 `*ptr` 来调用，但字段是 `nil`，Go 在调用时会对 `nil` 指针做隐式解引用，最终导致 panic。（相当于显式写成 `(*ptr).GetContainerLogs` 时直接解引用了一个 `nil`）。
-		- 为避免这种隐蔽的崩溃，注册逻辑里专门做了检查：
+		- **为避免这种隐蔽的崩溃，注册逻辑里专门做了检查：**
 			- 生成代码在注册服务时会做一次检查，注册时通过接口断言把服务对象转换成一个包含 `testEmbeddedByValue()` 的接口并立即调用。
 			- ```go
 			  func RegisterContainerLogServiceServer(s grpc.ServiceRegistrar, srv ContainerLogServiceServer) {
@@ -160,14 +160,23 @@
 			  }
 			  ```
 			- 只有值嵌入时，这个方法才会存在且接收者不是 `nil`：你嵌入的匿名字段会在零值时自动构造出一个“空结构体值”，调用是安全的。
-			- 如果开发者用指针嵌入，断言虽然能通过，但字段是 `nil`，调用 `testEmbeddedByValue()` 时会因为底层指针为 `nil` 而 panic，从而在启动阶段就暴露问题，而不是等到真正收到 RPC 请求才崩溃。
+			- 如果开发者用指针嵌入，断言虽然能通过，但字段是 `nil`，调用 `testEmbeddedByValue()` 时会因为底层指针为 `nil` 而 panic，从而在启动阶段就暴露问题，从而避免在实际 RPC 调用时因为 nil 指针而产生更难排查的崩溃。
 			- 利用了 Go 接口的动态调用：把服务对象转成接口并立即调用方法；若是值嵌入，调用安全通过；若是指针嵌入且为 `nil`，则在注册时立刻 panic，督促开发者改用值嵌入。这确保默认未实现逻辑在运行时总是有一个有效的接收者实例，避免潜在的 `nil` 解引用崩溃。
 	- **获得自动的前向兼容**：
 	  collapsed:: true
 		- 当 `.proto` 文件中新增 RPC 方法时，重新生成的 `UnimplementedXXXServer` 会自动包含这些方法的默认实现（返回 `codes.Unimplemented`）。
-		- 只要你的服务结构体采用“值嵌入”方式，这些默认方法就会自动提升到服务结构体中。
+		- 只要你的服务结构体采用“值嵌入”方式，这些默认方法就会自动提升到服务结构体中，即使你还没来得及实现新方法，也能编过、跑起来且有可预期的返回。
 		- 这样一来，即使接口更新，也无需立刻修改代码就能继续通过编译，避免旧服务在接口变更时无法编译的问题。
 		- 唯一的缺点是，新增加的 RPC 方法会暂时返回“未实现”的错误，但服务仍可正常编译和部署。
+	- **mustEmbedUnimplementedContainerLogServiceServer 有什么用？**
+	  collapsed:: true
+		- **核心作用**：其唯一目的是劝导你嵌入 `UnimplementedContainerLogServiceServer` 结构体。
+		- 它本身是个空方法，不会被调用。
+		- 根据 Go 语言的规则，任何想实现接口的结构体都必须提供这个方法。它就像一个密码：
+			- 接口 `ContainerLogServiceServer` 说：“想实现我，就必须提供这个密码（方法）”。
+			- 编译器在检查你的代码时，会看你有没有提供这个“密码”。没有就报错。
+			- 而 `UnimplementedContainerLogServiceServer` 这个结构体天生就带着这个“密码”。所以你只要把它嵌入你的结构体，编译器就满意了。
+		- 通过增加“必须实现一个奇怪的空方法”这个小麻烦，并用方法名直接提示你应该怎么做，来引导你走上最简单且最正确的道路——即通过嵌入 `Unimplemented...` 结构体来自动满足这个要求。
 - **Kratos 的开发流程：**
   collapsed:: true
 	- **定义 API**：使用 Protobuf 定义服务的功能、输入数据和返回数据。
