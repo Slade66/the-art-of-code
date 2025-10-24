@@ -90,4 +90,6 @@
 - **登录 Registry 的流程**
   collapsed:: true
 	- 当 Go 应用调用 `cli.RegistryLogin(ctx, authConfig)` 时，它向本地 Docker daemon 发送 API 请求，由 Docker daemon 实际完成与 Docker Registry 的网络通信和认证。
+- **安装 Docker**
+	- **跟着做：**https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
 -
