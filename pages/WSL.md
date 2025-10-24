@@ -13,7 +13,7 @@ heading:: true
 	- `wsl --list --online`：列出可供安装的 Linux 发行版。
 	- `wsl --list --verbose`：查看所有已安装的 Linux 发行版、它们的状态以及运行的 WSL 版本（WSL 1 或 WSL 2）。
 	- `wsl --unregister <Distribution Name>`：注销并永久删除指定的发行版的所有数据、设置和软件。
-- ## WSL 设置代理
+- ## WSL 设置网络代理
 	- Windows 上的 Clash 开启 “局域网连接” 功能。
 	  logseq.order-list-type:: number
 	- 打开 WSL 设置，修改网络模式为 Mirrored。
