@@ -127,12 +127,47 @@
 			- **专注业务**：在方法内部，你得到的已经是处理好的类型安全的 Go 结构体，无需关心网络、协议或序列化，只需专注于实现核心的业务逻辑。
 			- **返回结果**：处理完请求后，你的方法返回一个 `*v1.SayHelloReply` 结构体和 `error`。
 			- **序列化与发送**：框架接收到返回的 `*v1.SayHelloReply` 对象后，将其序列化成二进制数据流，并通过网络连接发送回客户端。如果返回了 `error`，框架会将其转换为标准的 gRPC 错误码。
-- **`UnimplementedXXXServer`：**
-  collapsed:: true
-	- `UnimplementedXXXServer` 是由 Go 代码生成工具（`protoc-gen-go-grpc`）自动创建的结构体。每当你定义一个 `service XXX` 时，工具会为其生成一个对应的 `UnimplementedXXXServer`。
-	- 它的作用是确保接口的向前兼容性，防止接口更新时导致旧的服务实现代码编译失败。
-	- 它自动实现了接口中的所有方法（默认返回错误，提示“该方法尚未实现”）。在服务代码中，将 `UnimplementedXXXServer` 嵌入到 `XXXService` 结构体中，使后者自动继承 `UnimplementedXXXServer` 中的所有方法。
-	- 这样，代码重新生成时，会自动为新增的方法提供默认实现。你无需担心接口更新导致编译失败，也无需你立刻去实现这些方法。
+- **UnimplementedXXXServer**
+	- `UnimplementedXXXServer` 是由 Go 的代码生成工具 `protoc-gen-go-grpc` 自动生成的默认实现占位结构体。当你在 `.proto` 文件中定义一个 `service XXX` 并执行代码生成命令时，该工具会为该服务自动生成对应的 `UnimplementedXXXServer`。
+	- **提供默认的 “未实现” 行为：**
+	  collapsed:: true
+		- 它为 `.proto` 中定义的所有 gRPC 方法提供了默认实现，这些方法会返回一个“未实现”的错误，用于提示该功能尚未被实现。
+		- 通过将 `UnimplementedXXXServer` 嵌入到 `XXXService` 结构体中，`XXXService` 就能自动继承它的方法，从而获得基础的接口实现，避免手写占位实现。
+		- **示例：**
+			- ```go
+			  func (UnimplementedContainerLogServiceServer) GetContainerLogs(context.Context, *GetContainerLogsRequest) (*GetContainerLogsReply, error) {
+			  	return nil, status.Errorf(codes.Unimplemented, "method GetContainerLogs not implemented")
+			  }
+			  ```
+	- **为什么是“值嵌入”而不是“指针嵌入”？**
+	  collapsed:: true
+		- 之所以要求“值嵌入”而不是“指针嵌入”，是为了避免在运行时调用默认实现（那些返回 `codes.Unimplemented` 的方法）时因为底层指针是 `nil` 而触发 panic。
+		- 在生成代码里，UnimplementedXXXServer 默认方法都是值接收者实现。
+		- 如果你把 `UnimplementedContainerLogServiceServer` 作为指针字段嵌入（例如 `*v1.Unimplemented...`），结构体的零值字段就是 `nil`。
+		- 当 gRPC 框架去调用默认方法时，Go 需要对嵌入字段调用值接收者方法，可这些方法是以值接收者定义的，因为方法是值接收者，Go 会尝试“自动解引用”指针接收者，让 `*ptr` 来调用，但字段是 `nil`，Go 在调用时会对 `nil` 指针做隐式解引用，最终导致 panic。（相当于显式写成 `(*ptr).GetContainerLogs` 时直接解引用了一个 `nil`）。
+		- 为避免这种隐蔽的崩溃，注册逻辑里专门做了检查：
+			- 生成代码在注册服务时会做一次检查，注册时通过接口断言把服务对象转换成一个包含 `testEmbeddedByValue()` 的接口并立即调用。
+			- ```go
+			  func RegisterContainerLogServiceServer(s grpc.ServiceRegistrar, srv ContainerLogServiceServer) {
+			  	// If the following call pancis, it indicates UnimplementedContainerLogServiceServer was
+			  	// embedded by pointer and is nil.  This will cause panics if an
+			  	// unimplemented method is ever invoked, so we test this at initialization
+			  	// time to prevent it from happening at runtime later due to I/O.
+			  	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+			  		t.testEmbeddedByValue()
+			  	}
+			  	s.RegisterService(&ContainerLogService_ServiceDesc, srv)
+			  }
+			  ```
+			- 只有值嵌入时，这个方法才会存在且接收者不是 `nil`：你嵌入的匿名字段会在零值时自动构造出一个“空结构体值”，调用是安全的。
+			- 如果开发者用指针嵌入，断言虽然能通过，但字段是 `nil`，调用 `testEmbeddedByValue()` 时会因为底层指针为 `nil` 而 panic，从而在启动阶段就暴露问题，而不是等到真正收到 RPC 请求才崩溃。
+			- 利用了 Go 接口的动态调用：把服务对象转成接口并立即调用方法；若是值嵌入，调用安全通过；若是指针嵌入且为 `nil`，则在注册时立刻 panic，督促开发者改用值嵌入。这确保默认未实现逻辑在运行时总是有一个有效的接收者实例，避免潜在的 `nil` 解引用崩溃。
+	- **获得自动的前向兼容**：
+	  collapsed:: true
+		- 当 `.proto` 文件中新增 RPC 方法时，重新生成的 `UnimplementedXXXServer` 会自动包含这些方法的默认实现（返回 `codes.Unimplemented`）。
+		- 只要你的服务结构体采用“值嵌入”方式，这些默认方法就会自动提升到服务结构体中。
+		- 这样一来，即使接口更新，也无需立刻修改代码就能继续通过编译，避免旧服务在接口变更时无法编译的问题。
+		- 唯一的缺点是，新增加的 RPC 方法会暂时返回“未实现”的错误，但服务仍可正常编译和部署。
 - **Kratos 的开发流程：**
   collapsed:: true
 	- **定义 API**：使用 Protobuf 定义服务的功能、输入数据和返回数据。
