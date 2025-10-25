@@ -127,4 +127,5 @@
 	- `ss -lntp | grep 2375`
 - **注意：**
 	- 不要用镜像的 latest 标签，因为这个标签会变动，nacos 2.4 的启动命令和 3+ 版本的启动参数不一样，会出现启动 nacos 的命令以前能用，过段时间就失效了，因为 latest 标签指向了 3+。
+	- 把依赖的镜像找个仓库存着，不然可能镜像就被开发者移动或者删了。If you rely on any of these legacy images, we suggest pulling and storing them in your own container registry to ensure continued availability. Please note that this repository may be removed in the future.
 -
