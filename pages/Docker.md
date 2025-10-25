@@ -125,4 +125,6 @@
 		  ```
 	- `systemctl daemon-reload && sudo systemctl restart docker`
 	- `ss -lntp | grep 2375`
+- **注意：**
+	- 不要用镜像的 latest 标签，因为这个标签会变动，nacos 2.4 的启动命令和 3+ 版本的启动参数不一样，会出现启动 nacos 的命令以前能用，过段时间就失效了，因为 latest 标签指向了 3+。
 -

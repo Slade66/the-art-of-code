@@ -17,8 +17,11 @@ heading:: true
 			  --name nacos-standalone \
 			  -p 8848:8848 \
 			  -e MODE=standalone \
-			  nacos/nacos-server
+			  nacos/nacos-server:v2.4.0
 			  ```
+			- 容器启动后，您可以通过以下地址访问 Nacos 控制台：
+				- **URL**：`http://localhost:8848/nacos`
+				- **默认登录账号/密码**：`nacos` / `nacos`
 		- **添加依赖：**
 			- ```xml
 			  <dependency>
