@@ -1,0 +1,10 @@
+-
+- ## Linux 安装 Go
+	- **下载文件：**`wget https://go.dev/dl/go1.25.3.linux-amd64.tar.gz`
+	- **解压文件：**`tar -C /usr/local -xzf go1.25.3.linux-amd64.tar.gz`
+	- **配置 PATH 环境变量：**
+		- **编辑配置文件：**`~/.bashrc`
+			- `export PATH=$PATH:/usr/local/go/bin`
+	- **使配置立即生效：**`source $HOME/.profile`
+	- **验证安装：**`go version`
+-

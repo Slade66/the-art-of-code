@@ -1,6 +1,6 @@
 - **作用：**
-	- 该函数用于将 Docker 容器文件系统内特定路径（文件或目录）的内容复制到主机上。
-	- 它通过 Docker Engine API 获取内容，并将其封装在一个 TAR 归档格式的流中返回给调用者，同时返回该源路径的元数据。
+	- `CopyFromContainer` 的作用是将容器内指定路径（无论是单个文件还是整个目录）的内容一次性打包成 tar 流返回，用于将容器中的文件或目录结构完整复制到宿主机。
+	- 由于它会返回整个目录树，因此目录越大，网络传输和内存消耗也会相应增加。
 - **方法源码：**
 	- ```go
 	  func (cli *Client) CopyFromContainer(ctx context.Context, containerID, srcPath string) (io.ReadCloser, container.PathStat, error) {
