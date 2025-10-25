@@ -41,3 +41,4 @@
 	- **API 端点：** 此函数和 `ContainerStatPath` 共享同一个 API 端点 `/archive`。区别在于：
 		- `CopyFromContainer` 使用 **GET** 方法获取内容。
 		- `ContainerStatPath` 使用 **HEAD** 方法仅获取元数据。
+	- Docker 在 `CopyFromContainer` 函数中返回的 `container.PathStat` 信息，本质上就是从这个 TAR 归档流中的第一个头部块中解析出来的元数据。也就是由你通过 `srcPath` 参数请求的那个目标文件或目录自身的元数据头部。
