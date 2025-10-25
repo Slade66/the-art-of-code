@@ -14,7 +14,7 @@
 - [[func (*Client) ContainerExecStart]]
 - [[func (*Client) ContainerExecResize]]
 - [[func (*Client) ContainerExecInspect]]
-- [[func (*Client) ContainerStatPath]]
+- [[Docker/Docker Engine Go SDK/func (*Client) ContainerStatPath]]
 - [[func (*Client) CopyFromContainer]]
 - [[Docker/Docker Engine Go SDK/type Opt func(*Client)]]
 - [[func WithAPIVersionNegotiation()]]
