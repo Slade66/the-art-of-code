@@ -8,6 +8,7 @@
 - [[type ExecOptions]]
 - [[type ExecStartOptions]]
 - [[func NewClientWithOpts]]
+- [[func FromEnv]]
 - [[func (*Client) ContainerExecCreate]]
 - [[func (*Client) ContainerExecAttach]]
 - [[func (*Client) ContainerExecStart]]
