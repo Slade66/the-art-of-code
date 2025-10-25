@@ -95,21 +95,34 @@
 	  logseq.order-list-type:: number
 	- **跟着做：**https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
 	  logseq.order-list-type:: number
-- ## 配置 Docker 的网络代理
+- **配置 Docker 的网络代理：**
 	- `mkdir -p /etc/systemd/system/docker.service.d`
+	  logseq.order-list-type:: number
 	- `vim /etc/systemd/system/docker.service.d/http-proxy.conf`
+	  logseq.order-list-type:: number
 		- ```bash
 		  [Service]
 		  Environment="HTTP_PROXY=http://127.0.0.1:7897"
 		  Environment="HTTPS_PROXY=http://127.0.0.1:7897"
 		  Environment="NO_PROXY=localhost,127.0.0.1,::1,*.local,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
 		  ```
-	- `sudo systemctl daemon-reload && sudo systemctl restart docker`
+	- `systemctl daemon-reload && sudo systemctl restart docker`
+	  logseq.order-list-type:: number
 	- `docker info | grep -i proxy` 应显示：
+	  logseq.order-list-type:: number
 		- ```bash
 		  root@liyuze:~# docker info | grep -i proxy
 		   HTTP Proxy: http://127.0.0.1:7897
 		   HTTPS Proxy: http://127.0.0.1:7897
 		   No Proxy: localhost,127.0.0.1,::1,*.local,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
 		  ```
+- **开启 Docker 的远程访问：**
+	- `vim /etc/systemd/system/docker.service.d/override.conf`
+		- ```bash
+		  [Service]
+		  ExecStart=
+		  ExecStart=/usr/bin/dockerd -H fd:// -H tcp://127.0.0.1:2375
+		  ```
+	- `systemctl daemon-reload && sudo systemctl restart docker`
+	- `ss -lntp | grep 2375`
 -
