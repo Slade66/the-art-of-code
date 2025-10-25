@@ -95,4 +95,21 @@
 	  logseq.order-list-type:: number
 	- **跟着做：**https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
 	  logseq.order-list-type:: number
+- ## 配置 Docker 的网络代理
+	- `mkdir -p /etc/systemd/system/docker.service.d`
+	- `vim /etc/systemd/system/docker.service.d/http-proxy.conf`
+		- ```bash
+		  [Service]
+		  Environment="HTTP_PROXY=http://127.0.0.1:7897"
+		  Environment="HTTPS_PROXY=http://127.0.0.1:7897"
+		  Environment="NO_PROXY=localhost,127.0.0.1,::1,*.local,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+		  ```
+	- `sudo systemctl daemon-reload && sudo systemctl restart docker`
+	- `docker info | grep -i proxy` 应显示：
+		- ```bash
+		  root@liyuze:~# docker info | grep -i proxy
+		   HTTP Proxy: http://127.0.0.1:7897
+		   HTTPS Proxy: http://127.0.0.1:7897
+		   No Proxy: localhost,127.0.0.1,::1,*.local,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+		  ```
 -
