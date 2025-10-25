@@ -26,4 +26,29 @@
 		- `"program": "${workspaceFolder}/cmd/docker-panel"`：指向要调试的程序入口。决定“调哪个包/可执行文件”。
 			- `${workspaceFolder}` 会被替换成当前工作区根目录，这里相当于运行 `go build ./cmd/docker-panel` 再调试。
 		- `"cwd": "${workspaceFolder}"`：**current working directory**。运行调试进程时的当前工作目录。决定“从哪个目录启动它”。
+		- `"env"`：以键值对的形式设置环境变量。
+		- `envFile`：如果你有大量的环境变量，或想在代码库中共享环境配置，可以使用 `envFile` 属性指定一个 `.env` 文件来加载变量。
+		  collapsed:: true
+			- 首先，在你的项目根目录下创建一个文件（例如，命名为 `.env`）：
+				- ```bash
+				  DOCKER_HOST=tcp://192.168.1.5:2375
+				  DOCKER_API_VERSION=1.40
+				  ```
+			- 然后，在 `launch.json` 配置中引用它：
+				- ```json
+				  {
+				      "version": "0.2.0",
+				      "configurations": [
+				          {
+				              "name": "Debug with .env file",
+				              "type": "go",
+				              "request": "launch",
+				              "mode": "debug",
+				              "program": "${workspaceFolder}/cmd/docker-panel",
+				              "cwd": "${workspaceFolder}",
+				              "envFile": "${workspaceFolder}/.env"
+				          }
+				      ]
+				  }
+				  ```
 -
