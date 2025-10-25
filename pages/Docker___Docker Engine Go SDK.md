@@ -4,7 +4,7 @@
 	- `docker` 命令就是使用这个包来与 Docker 守护进程（daemon）通信的。你自己的 Go 应用程序也可以使用这个包来完成命令行界面（CLI）所能做的任何事情。
 - **这个包怎么用？**
 	- 你需要通过 [[func NewClientWithOpts]] 创建一个客户端对象，然后使用该对象提供的方法与 Docker Daemon 进行交互。
-	- [[func NewClientWithOpts]] 接受一组返回 [[type Opt]] 的配置函数（通常以 `WithXXX` 命名）。例如，你可以传入 `FromEnv` 选项，让客户端自动从环境变量（如 `DOCKER_HOST`）中读取配置。
+	- [[func NewClientWithOpts]] 接受一组返回 [[Docker/Docker Engine Go SDK/type Opt func(*Client)]] 的配置函数（通常以 `WithXXX` 命名）。例如，你可以传入 `FromEnv` 选项，让客户端自动从环境变量（如 `DOCKER_HOST`）中读取配置。
 - [[type ExecOptions]]
 - [[type ExecStartOptions]]
 - [[func NewClientWithOpts]]
@@ -15,6 +15,6 @@
 - [[func (*Client) ContainerExecInspect]]
 - [[func (*Client) ContainerStatPath]]
 - [[func (*Client) CopyFromContainer]]
-- [[type Opt]]
+- [[Docker/Docker Engine Go SDK/type Opt func(*Client)]]
 - [[func WithAPIVersionNegotiation()]]
 -

@@ -8,7 +8,7 @@
 - **参数：**
 	- 无
 - **返回值：**
-	- 返回一个 [[type Opt]] 类型的函数。
+	- 返回一个 [[Docker/Docker Engine Go SDK/type Opt func(*Client)]] 类型的函数。
 - **核心执行流程：**
 	- **设置协商标志：** 这个返回的匿名函数被调用时，它会将传入的 `Client` 结构体中的布尔字段 `c.negotiateVersion` 设置为 `true`。
 	- **触发首次协商：** 当客户端的任何 API 方法（如 `ContainerList`）在内部调用 `cli.checkVersion(ctx)` 时，会检查 `c.negotiateVersion` 是否为 `true`。
