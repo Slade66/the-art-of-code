@@ -1,5 +1,6 @@
 - [[Kratos/config]]
 - [[Kratos/registry]]
+- [[Kratos/错误处理]]
 - Kratos 的概念
   heading:: true
   collapsed:: true
@@ -128,6 +129,7 @@
 			- **返回结果**：处理完请求后，你的方法返回一个 `*v1.SayHelloReply` 结构体和 `error`。
 			- **序列化与发送**：框架接收到返回的 `*v1.SayHelloReply` 对象后，将其序列化成二进制数据流，并通过网络连接发送回客户端。如果返回了 `error`，框架会将其转换为标准的 gRPC 错误码。
 - **UnimplementedXXXServer**
+  collapsed:: true
 	- `UnimplementedXXXServer` 是由 Go 的代码生成工具 `protoc-gen-go-grpc` 自动生成的默认实现占位结构体。当你在 `.proto` 文件中定义一个 `service XXX` 并执行代码生成命令时，该工具会为该服务自动生成对应的 `UnimplementedXXXServer`。
 	- **提供默认的 “未实现” 行为：**
 	  collapsed:: true
@@ -339,5 +341,4 @@
 			- `biz` 层不直接调用 `data` 层的具体实现，而是通过调用 `data` 层提供的**接口**（如 `biz.RegistryRepo`）。
 			- 后厨（`biz` 层）完成一道菜（构建好 `model` 数据）后，需要将其存入仓库（数据库）。后厨不会直接去 MySQL 仓库，而是按下墙上的按钮（调用接口），喊道：“仓库管理员，来取货！”至于值班的管理员是 MySQL 还是 PostgreSQL，后厨并不关心，只要能把货存好就行。这样，哪怕我们把 MySQL 换成 PostgreSQL，后厨的工作流程也不会受影响。
 			  id:: 68947f29-67a0-4486-a6b7-fac1172ba3d1
-- [[Kratos 的错误处理]]
 -

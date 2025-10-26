@@ -108,52 +108,45 @@
 		  ```
 - **核心原则：错误应定义在协议文件（ `.proto` ）中，而非随处  `errors.New("xxx")`**
   collapsed:: true
-	- Kratos 认为，微服务之间传递的错误本质上也是一种 API 响应，因此应像正常响应一样，具备清晰、预先定义的结构。它将错误从单纯的失败信号提升为包含丰富结构化数据的可序列化契约。换言之，API 不仅要定义成功时的数据格式，也应明确失败时的返回内容。
-	- 为此，Kratos 建议将错误定义集中在统一的协议文件（如 `.proto`）中，作为系统的唯一真相来源（Single Source of Truth），并通过代码生成器为各语言自动生成错误常量和构造函数。
-	- 这样，无论系统包含多少服务、使用何种语言（Go、Java 等），都能共享统一的错误码与定义，实现跨服务、跨语言的一致性与可识别性，降低维护成本，避免因定义不一致造成的调试困难。
-- #### 在 .proto 中如何定义错误？
+	- **传统开发模式的弊端：**在传统的开发模式中，错误码和错误信息通常以常量或枚举的形式硬编码在服务端的代码中。客户端或其他服务需要通过查阅文档或直接复制代码来了解这些错误定义，这种方式非常脆弱且容易出错。
+	- **拥抱 API 优先的错误管理方法：**
+		- Kratos 框架中最具特色和威力的功能之一，便是其倡导的“API 优先”的错误管理方法。该方法将业务错误的定义提升到了与 API 请求和响应同等重要的地位，这种方法从根本上解决了微服务架构中错误契约管理混乱的难题。
+		- Kratos 认为，微服务之间传递的错误本质上也是一种 API 响应，因此应像正常响应一样，具备清晰、预先定义的结构。换言之，API 不仅要定义成功时的数据格式，也应明确失败时的返回内容。
+		- Kratos 将错误定义视为服务对外契约不可分割的一部分 。既然服务的接口（Service）、消息（Message）都是通过 `.proto` 文件来定义的，那么服务可能返回的业务错误（Error）也理应在同一个地方进行定义。
+		- Kratos 建议将错误定义集中在统一的协议文件（如 `.proto`）中，并通过代码生成器为各语言自动生成错误常量和构造函数。这样，无论系统包含多少服务、使用何种语言（Go、Java 等），都能共享统一的错误码与定义，实现跨服务、跨语言的一致性，降低维护成本，避免因定义不一致造成的调试困难。
+- **在 `.proto` 文件中定义 `ErrorReason`**
   collapsed:: true
-	- 在 `.proto` 里新建一个 `enum`，列出所有业务错误的名称（Reason）。
-	- ```proto
+	- 在 Kratos 中，定义业务错误的核心是创建一个名为 `ErrorReason` 的 Protobuf `enum`（枚举）类型。
+	- ```protobuf
 	  syntax = "proto3";
+	  
+	  package api.blog.v1;
 	  
 	  import "errors/errors.proto";
 	  
+	  option go_package = "your_project/api/blog/v1;v1";
+	  
 	  enum ErrorReason {
-	    option (errors.default_code) = 500; // 默认 HTTP 状态码
-	    IMAGE_BUILD_FAILED        = 0 [(errors.code) = 500]; // 镜像构建失败
-	    DOCKER_CONNECTION_FAILED  = 1 [(errors.code) = 502]; // 连接 Docker Daemon 失败
-	    HOST_NOT_FOUND            = 2 [(errors.code) = 404]; // 主机未找到
-	    INVALID_BUILD_ARGUMENT    = 3 [(errors.code) = 400]; // 无效的构建参数
+	    // 为所有错误设置一个默认的 HTTP 状态码为 500 (Internal Server Error)
+	    option (errors.default_code) = 500;
+	  
+	    // 为 USER_NOT_FOUND 单独指定 HTTP 状态码为 404 (Not Found)
+	    USER_NOT_FOUND = 0 [(errors.code) = 404];
+	  
+	    // 为 CONTENT_MISSING 单独指定 HTTP 状态码为 400 (Bad Request)
+	    CONTENT_MISSING = 1 [(errors.code) = 400];
 	  }
 	  ```
-- #### protoc 生成的产物
-  collapsed:: true
-	- 搭配 `protoc-gen-go-errors` 插件，`protoc` 会为每个枚举成员生成：
-		- 常量（Reason 名称）
-		- 带 HTTP 状态码的错误构造函数
-		- 判断函数（`IsXxx(err)`）
-	- **生成后的 Go 代码：**
-		- ```go
-		  const ReasonImageBuildFailed = "IMAGE_BUILD_FAILED"
-		  
-		  func ErrorImageBuildFailed(format string, args ...any) *errors.Error {
-		      return errors.New(500, ReasonImageBuildFailed, fmt.Sprintf(format, args...))
-		  }
-		  
-		  func IsImageBuildFailed(err error) bool {
-		      return errors.Reason(err) == ReasonImageBuildFailed
-		  }
+		- `option (errors.default_code) = 500;`：这个选项设置在 `enum` 的顶层，为该枚举中定义的所有错误原因指定一个默认的 HTTP 状态码。如果某个错误原因没有单独指定 `code`，它将使用这个默认值。
+		- `[(errors.code) = 404]`：这个选项附加在单个枚举值的后面，用于覆盖默认的 `code`。它为特定的 `reason` 指定了其对应的 HTTP 状态码。
+	- **使用 `protoc-gen-go-errors` 生成代码**
+		- 定义好包含 `ErrorReason` 的 `.proto` 文件后，可使用 `protoc` 编译器结合 Kratos 提供的专用插件 `protoc-gen-go-errors` 生成对应的 Go 代码：
+		- ```bash
+		  protoc --proto_path=./api \
+		         --proto_path=./third_party \
+		         --go_out=paths=source_relative:./api \
+		         --go-errors_out=paths=source_relative:./api \
+		         api/blog/v1/error_reason.proto
 		  ```
-	- **业务里用法：**
-		- ```go
-		  // 返回构建失败
-		  return nil, v1.ErrorImageBuildFailed("build failed on host %s", hostID)
-		  
-		  // 判断错误类型
-		  if v1.IsHostNotFound(err) {
-		      // 特殊处理
-		  }
-		  ```
--
+	-
 -
