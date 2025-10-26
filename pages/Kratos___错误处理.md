@@ -1,0 +1,159 @@
+- collapsed:: true
+  
+  **基于字符串的错误模型在分布式系统中的不足**
+	- 在分布式系统中，一个简单的错误字符串（如 `"record not found"`）虽然便于开发者理解，但对系统中的自动化组件（如 API 网关、服务网格、监控系统）几乎无用。因为这些组件需要可被机器解析的结构化信息，才能据此执行自动化策略。
+	- **在微服务架构中，这种局限性带来了多方面的挑战：**
+		- **自动化治理决策困难**：API 网关如何判断一个下游服务的失败是由于客户端请求错误（不应重试）还是临时的网络抖动（应该重试）？如果错误仅仅是一个字符串，网关将无法做出智能决策。
+		- **跨语言通信障碍**：微服务生态系统通常是多语言的。一个由 Go 服务产生的错误字符串，对于一个 Java 或 Python 服务来说，可能难以统一解析和处理，导致错误契约的脆弱性。
+		- **监控与告警的粒度问题**：如何对特定类型的业务错误（例如，“库存不足”）进行精确的监控和告警，而不是笼统地监控所有 500 内部服务器错误？基于字符串的错误聚合和分类极其困难且不可靠。
+- **Kratos 的错误：`errors.Error` 结构体**
+  collapsed:: true
+	- 一个 Kratos 的错误值示例：
+		- ```json
+		  {
+		    "code": 404,
+		    "reason": "USER_NOT_FOUND",
+		    "message": "user 'foo' not found",
+		    "metadata": {
+		      "user_id": "foo"
+		    }
+		  }
+		  ```
+	- 这个结构清晰地展示了 Kratos 错误模型的四个核心组件：`code`、`reason`、`message` 和 `metadata`。
+		- **Code**：整数类型，对应传输层的标准状态码（如 HTTP 404、500），用于标识错误的大类。它主要服务于机器和基础设施组件（如 API 网关、负载均衡器等），帮助它们根据统一规则执行重试、熔断等通用逻辑。Kratos 会确保该字段在 HTTP 与 gRPC 等协议间保持语义一致。
+		- **Reason**：字符串类型，表示业务层面的具体错误标识（如 `USER_NOT_FOUND`、`ORDER_EXPIRED`）。它比 Code 更精细，主要供客户端和开发者使用，可用于在代码中根据不同业务错误编写差异化的处理逻辑。
+		- **Message**：人类可读的错误描述（如 `"user 'foo' not found"`），用于在日志或界面上展示，帮助开发者或终端用户理解错误原因。由于内容可能随文案或上下文变化，不建议在程序逻辑中依赖它。
+		- **Metadata**：键值对集合（`map[string]string`），用于携带丰富的上下文信息，如请求 ID、追踪 ID、资源标识符、参数校验字段等。这些信息有助于日志分析、链路追踪和故障定位，是可观测性体系的重要补充。
+		- 一个 Kratos 风格的错误必须包含 code、reason、message。
+	- 这些字段旨在提供现代可观测性所需的关键信息，用于明确失败的类型（如瞬时性、永久性、客户端或服务端错误）、业务层的唯一标识符，以及错误发生时的系统上下文（例如关联的用户或资源 ID）。
+	- 一个 Kratos 错误对象，本质上就是一个预先打包好的、针对失败事件的结构化日志条目，使其能够被现代可观测性平台原生消费。
+	- **实现 `Unwrap` 接口**：`*errors.Error` 类型实现了标准的 `Unwrap() error` 方法 。这意味着你可以将一个底层错误（cause）包装进一个 Kratos 错误中，并且之后仍然可以使用标准的 `errors.Unwrap`、`errors.Is` 和 `errors.As` 函数来访问和检查这个被包装的错误。
+	- **添加底层原因**：通过 `WithCause(cause error)` 方法，可以为一个 Kratos 错误附加一个底层的错误原因 。这在将一个来自第三方库或标准库的错误（例如，数据库驱动返回的 `sql.ErrNoRows`）转换为一个具有业务含义的 Kratos 错误时非常关键。
+		- ```go
+		  import "database/sql"
+		  
+		  //... 在数据访问层...
+		  dbErr := sql.ErrNoRows // 模拟数据库返回错误
+		  
+		  if errors.Is(dbErr, sql.ErrNoRows) {
+		      // 将底层数据库错误包装成一个业务错误
+		      // 同时保留原始错误作为 cause
+		      kratosErr := errors.NotFound("USER_NOT_FOUND", "user not found").WithCause(dbErr)
+		      return kratosErr
+		  }
+		  ```
+		- 上层调用者既可以使用 `errors.Is(kratosErr, errors.NotFound("USER_NOT_FOUND", ""))` 来检查业务错误，也可以使用 `errors.Is(kratosErr, sql.ErrNoRows)` 来检查底层的数据库错误，实现了信息的完整保留。
+	- **使用 `WithMetadata` 丰富错误以增强可调试性**
+		- 通过这种方式，当这个错误最终被日志系统记录下来时，它将包含所有必要的上下文信息，使得开发者能够迅速定位问题，而无需在代码的多个地方手动记录这些信息。
+		- ```go
+		  func GetUser(ctx context.Context, userID string) (*User, error) {
+		      user, err := repo.FindUser(ctx, userID)
+		      if err!= nil {
+		          // 假设 repo.FindUser 返回一个 Kratos 错误
+		          // 在返回前，添加请求相关的元数据
+		          return nil, errors.FromError(err).WithMetadata(map[string]string{
+		              "request_user_id": userID,
+		              "trace_id": tracing.TraceID(ctx),
+		          })
+		      }
+		      return user, nil
+		  }
+		  ```
+- **Kratos 创建错误：**
+  collapsed:: true
+	- **基础构造函数**：`errors.New(code int, reason, message string)`
+		- 它接收一个状态码、一个业务原因和一个用户消息，并返回一个 `*errors.Error` 实例。
+		- ```go
+		  // 创建一个表示资源未找到的错误
+		  err := errors.New(404, "USER_NOT_FOUND", "user with id 123 not found")
+		  ```
+	- **格式化构造函数**：`errors.Newf(code int, reason, format string, a ...any)`
+		- 功能与 `errors.New` 类似，但允许像 `fmt.Sprintf` 一样格式化 `message` 字符串。
+		- ```go
+		  userID := 123
+		  err := errors.Newf(404, "USER_NOT_FOUND", "user with id %d not found", userID)
+		  ```
+	- **预定义辅助函数**：
+		- 为了提升代码可读性和开发效率，Kratos 的 `errors` 包预定义了一组与标准 HTTP 状态码对应的辅助函数，如 `errors.BadRequest()`、`errors.NotFound()`、`errors.InternalServer()` 等。
+		- 这些函数本质上是 `errors.New` 的快捷封装，内部已预置相应的 `code` 值（如 400、404、500 等），开发者只需传入 `reason` 和 `message` 即可快速创建结构化错误对象。
+		- 同时，包内还提供了对应的判断函数（如 `IsBadRequest()`、`IsNotFound()`），便于在错误处理逻辑中进行类型识别和分支控制。
+- **Kratos 检查错误：**
+  collapsed:: true
+	- 当从其他函数接收到一个 `error` 类型的返回值时，需要有方法来检查它是否是一个特定的 Kratos 错误。
+	- **`errors.FromError(err)`**
+		- Kratos 提供的工具函数，用于将任意 `error` 转换为 Kratos 定义的结构化错误，便于统一提取 `Code`、`Reason`、`Message` 等字段。
+		- **其行为如下：**
+			- 若 `err` 为 `nil`，则返回 `nil`。
+			- 若 `err` 已是 Kratos 错误，原样返回。
+			- 若为普通 `error`，则包装为新的 Kratos 错误，默认 `code=500`、`reason=""`、`message=err.Error()`。
+		- **示例：**
+			- ```go
+			  if e := errors.FromError(err); e != nil {
+			      if e.Reason == "USER_NOT_FOUND" && e.Code == 404 {
+			          // 针对用户未找到的特定处理逻辑
+			          log.Printf("User not found, metadata: %v", e.Metadata)
+			      }
+			  }
+			  ```
+	- **`errors.Is(err, target error)`**
+		- 可以先创建一个仅包含 `code` 和 `reason` 的临时“目标错误”，然后使用 `errors.Is` 判断 `err` 是否与其匹配。`errors.Is` 会自动遍历整个错误链，完成匹配检查。
+		- ```go
+		  // 创建一个目标错误用于比较
+		  target := errors.NotFound("USER_NOT_FOUND", "")
+		  
+		  if errors.Is(err, target) {
+		      // 确认这是一个用户未找到的错误
+		      // 这里的 err 可能是被包装过的，但 Is 依然能正确识别
+		  }
+		  ```
+- **核心原则：错误应定义在协议文件（ `.proto` ）中，而非随处  `errors.New("xxx")`**
+  collapsed:: true
+	- Kratos 认为，微服务之间传递的错误本质上也是一种 API 响应，因此应像正常响应一样，具备清晰、预先定义的结构。它将错误从单纯的失败信号提升为包含丰富结构化数据的可序列化契约。换言之，API 不仅要定义成功时的数据格式，也应明确失败时的返回内容。
+	- 为此，Kratos 建议将错误定义集中在统一的协议文件（如 `.proto`）中，作为系统的唯一真相来源（Single Source of Truth），并通过代码生成器为各语言自动生成错误常量和构造函数。
+	- 这样，无论系统包含多少服务、使用何种语言（Go、Java 等），都能共享统一的错误码与定义，实现跨服务、跨语言的一致性与可识别性，降低维护成本，避免因定义不一致造成的调试困难。
+- #### 在 .proto 中如何定义错误？
+  collapsed:: true
+	- 在 `.proto` 里新建一个 `enum`，列出所有业务错误的名称（Reason）。
+	- ```proto
+	  syntax = "proto3";
+	  
+	  import "errors/errors.proto";
+	  
+	  enum ErrorReason {
+	    option (errors.default_code) = 500; // 默认 HTTP 状态码
+	    IMAGE_BUILD_FAILED        = 0 [(errors.code) = 500]; // 镜像构建失败
+	    DOCKER_CONNECTION_FAILED  = 1 [(errors.code) = 502]; // 连接 Docker Daemon 失败
+	    HOST_NOT_FOUND            = 2 [(errors.code) = 404]; // 主机未找到
+	    INVALID_BUILD_ARGUMENT    = 3 [(errors.code) = 400]; // 无效的构建参数
+	  }
+	  ```
+- #### protoc 生成的产物
+  collapsed:: true
+	- 搭配 `protoc-gen-go-errors` 插件，`protoc` 会为每个枚举成员生成：
+		- 常量（Reason 名称）
+		- 带 HTTP 状态码的错误构造函数
+		- 判断函数（`IsXxx(err)`）
+	- **生成后的 Go 代码：**
+		- ```go
+		  const ReasonImageBuildFailed = "IMAGE_BUILD_FAILED"
+		  
+		  func ErrorImageBuildFailed(format string, args ...any) *errors.Error {
+		      return errors.New(500, ReasonImageBuildFailed, fmt.Sprintf(format, args...))
+		  }
+		  
+		  func IsImageBuildFailed(err error) bool {
+		      return errors.Reason(err) == ReasonImageBuildFailed
+		  }
+		  ```
+	- **业务里用法：**
+		- ```go
+		  // 返回构建失败
+		  return nil, v1.ErrorImageBuildFailed("build failed on host %s", hostID)
+		  
+		  // 判断错误类型
+		  if v1.IsHostNotFound(err) {
+		      // 特殊处理
+		  }
+		  ```
+-
+-
