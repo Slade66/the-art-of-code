@@ -6,4 +6,5 @@
 - [[The Go Programming Language/Standard library/fmt]]
 - [[The Go Programming Language/Standard library/flag]]
 - [[The Go Programming Language/Standard library/tar]]
+- [[The Go Programming Language/Standard library/errors]]
 -
