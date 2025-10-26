@@ -45,11 +45,11 @@
 	- 当函数调用 `panic` 时，会依次触发以下事件：
 		- **立即终止执行**：当前函数的执行会即刻停止，后续代码不再运行。
 		- **执行 `defer` 语句**：
-			- 该函数中所有被延迟（`defer`）的调用会按后进先出的顺序立即执行。
+			- 该函数中所有被延迟（`defer`）的调用会按后进先出的顺序立即执行。这为资源清理（如关闭文件、释放锁）提供了一个机会。
 			- 这是 `panic` 与 `os.Exit` 的核心区别 —— 后者会直接终止程序，不会执行 `defer`。
 		- **沿调用栈向上“冒泡”**：`panic` 状态会传递给调用者，重复执行“中断”和“执行 Defer”的过程，并沿着当前 goroutine 的调用栈逐层向上蔓延。
 		- **程序崩溃**：若 “恐慌” 状态蔓延至 goroutine 调用栈顶端仍未被处理，程序就会崩溃，此时会打印 `panic` 传入的值和完整栈追踪信息，并以非零状态码退出。
-	- **`panic` 的“冒泡”之旅：**
+	- **示例：`panic` 的“冒泡”之旅**
 		- 当一个函数中发生了 `panic`，正常的“函数返回”流程就被打断了，取而代之的是“栈解退”的冒泡过程。
 		- ```go
 		  package main
@@ -101,108 +101,76 @@
 		  	/path/to/your/program.go:28 +0x7d
 		  ... (其他信息)
 		  ```
-		- **第 1 站：`functionB` (恐慌的源头)**
-			- 程序执行到 `functionB` 里的 `panic("...")`。
-			  logseq.order-list-type:: number
-			- `functionB` 的正常执行立即停止。`fmt.Println("离开 functionB")` 这行代码被跳过。
-			  logseq.order-list-type:: number
-			- 系统开始“解退”`functionB` 的栈帧。在离开之前，它会检查 `functionB` 中有没有 `defer` 语句。
-			  logseq.order-list-type:: number
-			- 发现 `defer fmt.Println("清理 functionB...")`，于是执行它。屏幕上打印出 `清理 functionB...`。
-			  logseq.order-list-type:: number
-			- `functionB` 执行完毕，`panic` “冒泡”到它的调用者——`functionA`。
-			  logseq.order-list-type:: number
-		- **第 2 站：`functionA` (恐慌的传播)**
-			- `functionA` 在调用 `functionB()` 的地方接收到了这个 `panic`。
-			- `functionA` 的正常执行也立即停止。`fmt.Println("离开 functionA")` 被跳过。
-			- 系统开始解退 `functionA` 的栈帧，并检查它的 `defer` 语句。
-			- 发现 `defer fmt.Println("清理 functionA...")`，执行它。屏幕上打印出 `清理 functionA...`。
-			- `functionA` 执行完毕，`panic` 继续“冒泡”到它的调用者——`main`。
-		- **第 3 站：`main` (最后一站)**`
-			- main` 函数在调用 `functionA()` 的地方接收到 `panic`。`
-			  logseq.order-list-type:: number
-			- main` 的执行也停止，`fmt.Println("离开 main")` 被跳过。
-			  logseq.order-list-type:: number
-			- 系统解退 `main` 的栈帧，检查 `defer`。
-			  logseq.order-list-type:: number
-			- 发现 `defer fmt.Println("清理 main...")`，执行它。屏幕上打印出 `清理 main...`。
-			  logseq.order-list-type:: number
-		- **终点：程序崩溃**
-			- `main` 是这个 goroutine 的顶层函数，`panic` 已经“冒泡”到顶了，并且没有被“处理”。
-			- 程序崩溃。它会打印出 `panic` 的值以及完整的栈追踪信息。
 	- **何时应该使用 `panic`？**
-		- 在 Go 的设计哲学中，`error` 是处理预期错误的标准方式，而 `panic` 仅用于真正的异常情况。
-		- 始终避免使用 `panic` 处理普通错误，这类错误应通过返回 `error` 来处理。`panic` 的合理使用场景仅限于程序遇到不可恢复的严重错误，导致继续运行无意义时，此时应使用它 “快速失败”。典型场景包括关键配置文件加载失败、必要依赖服务不可用等。
-- **`recover` 函数：**
+		- 始终避免使用 `panic` 处理普通错误，这类错误应通过返回 `error` 来处理，而 `panic` 仅用于真正的异常情况。
+		- `panic` 的合理使用场景仅限于程序遇到不可恢复的严重错误，导致继续运行无意义时，此时应使用它 “快速失败”。在这些情况下，让程序快速失败并打印出详细的堆栈跟踪信息，比让其在一种未知的、可能已损坏的状态下继续运行要安全得多。
+		- 典型场景包括关键配置文件加载失败、必要依赖服务不可用等。
+- **可恢复错误 vs. 不可恢复错误**
   collapsed:: true
+	- **`error`**：用于表示**可预期的、可恢复的**失败。这些是程序正常运行过程中可能发生的情况，例如文件未找到、网络请求超时、用户输入格式错误等 。`error` 是函数签名的一部分，它明确告知调用者该函数可能会失败，并期望调用者对其进行处理。
+	- **`panic`**：用于表示**异常的、通常是不可恢复的**运行时错误。`panic` 的出现通常意味着程序进入了一个意料之外的、严重损坏的状态，以至于无法安全地继续执行。典型的例子包括空指针解引用、数组越界访问、并发访问 map 时的竞态条件等。这些情况往往表明程序中存在一个缺陷。
+- **`recover` 函数：**
 	- `panic` 的冒泡行为是可以阻止的。`recover()` 函数可以在 `defer` 中捕获一个正在“冒泡”的 `panic`，从而“戳破”这个气泡，使程序从恐慌状态中恢复，避免崩溃并继续运行。
-	- `recover()` 必须在 `defer` 语句中调用才能生效。
+	- **`recover()` 必须在 `defer` 语句中调用才能生效。**
 		- 为什么？因为当 `panic` 发生时，正常的代码执行流程会立即停止，只有 `defer` 中的任务会继续执行。因此，`defer` 函数是唯一能在 `panic` 发生后、程序崩溃前进行干预的地方。
 	- 如果在没有 `panic` 的情况下调用 `recover()`，或在 `defer` 之外调用它，它不会起任何作用，并会返回 `nil`。
 	- 如果成功捕获 `panic`，`recover` 会返回传给 `panic` 的值。
-	- 处理了下层 `panic` 的函数，自己也无法从发生 `panic` 的那个调用点继续向后执行。
+	- 捕获了 `panic` 的函数，自己也无法从发生 `panic` 的那个调用点继续向后执行，只能从那返回。
+	- **`recover` 的主要应用场景：**
+		- `recover` 的主要惯用场景是在一个长期运行的应用程序（如 Web 服务器）中充当“安全网”。
+		- 一个典型的例子是在 HTTP 服务器的中间件中使用 `recover`。
+		- 如果某个具体的请求处理器（handler）因为一个未预料到的 bug 而发生了 `panic`，这个中间件可以捕获该 `panic`，记录详细的错误日志，向客户端返回一个 `500 Internal Server Error` 响应，然后让服务器继续处理其他正常的请求。
+		- 这样，单个请求的失败就不会导致整个服务进程崩溃，从而提高了服务的整体健壮性。
+		- ```go
+		  func main() {
+		      http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		          defer func() {
+		              if r := recover(); r!= nil {
+		                  log.Printf("panic recovered: %v", r)
+		                  http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		              }
+		          }()
+		  
+		          // 可能会发生 panic 的业务逻辑
+		          //...
+		      })
+		      http.ListenAndServe(":8080", nil)
+		  }
+		  ```
 	- **示例：**
 		- ```go
 		  package main
 		  
-		  import (
-		  	"fmt"
-		  	"time"
-		  )
+		  import "fmt"
 		  
-		  // 第 3 层：这个函数会触发 panic
-		  func panickingFunction() {
-		  	fmt.Println(" [3] 进入了会 panic 的函数... ")
-		  
-		  	// 触发 panic
-		  	panic("发生了一个本不该发生的错误")
-		  
-		  	// --- 关键点 1 ---
-		  	// panic 一旦触发，当前函数的执行就已停止。
-		  	// 下面这行代码是永远、永远不会被执行的。
-		  	fmt.Println(" [3] panic 之后（这行代码永远不会执行）")
+		  func main() {
+		  	fmt.Println("main 开始")
+		  	f1()
+		  	fmt.Println("main 结束")
 		  }
 		  
-		  // 第 2 层：这个函数负责调用并恢复(recover) panic
-		  func recoveringFunction() {
-		  	// 使用 defer 来设置一个“安全网”
+		  func f1() {
+		  	// 用 defer 包裹 recover
 		  	defer func() {
-		  		fmt.Println(" [2] defer 安全网已启动...")
-		  
-		  		// 调用 recover() 来捕获 panic
-		  		if r := recover(); r != nil {
-		  			fmt.Printf(" [2] 成功捕获到 panic！值为: %v\n", r)
-		  			fmt.Println(" [2] panic 已被处理，程序将从这里恢复并正常返回。")
+		  		if err := recover(); err != nil {
+		  			fmt.Println("捕获到 panic：", err)
 		  		}
 		  	}()
-		  
-		  	fmt.Println(" [2] 准备调用会 panic 的函数... ")
-		  	panickingFunction() // 调用第 3 层函数
-		  
-		  	// --- 关键点 2 ---
-		  	// 当 panickingFunction() 发生 panic 时，执行流会立即跳转到本函数的 defer 代码块。
-		  	// 因此，本函数的正常流程也被中断了，下面这行代码同样不会被执行。
-		  	fmt.Println(" [2] 调用 panickingFunction() 之后（这行也不会执行）")
+		  	fmt.Println("f1 开始")
+		  	f2()
+		  	fmt.Println("f1 结束")
 		  }
 		  
-		  // 第 1 层：主函数，调用我们的“恢复函数”
-		  func main() {
-		  	fmt.Println(" [1] 程序开始... ")
-		  
-		  	recoveringFunction()
-		  
-		  	// --- 关键点 3 ---
-		  	// 因为 recoveringFunction 内部成功处理了 panic，
-		  	// 所以 panic 没有“冒泡”到 main 函数。
-		  	// main 函数会认为 recoveringFunction 只是一个正常返回的函数调用。
-		  	// 因此，这里的代码会继续执行。
-		  	fmt.Println(" [1] recoveringFunction 已返回，程序继续执行...")
-		  	time.Sleep(1 * time.Second)
-		  	fmt.Println(" [1] 程序正常结束。")
+		  func f2() {
+		  	fmt.Println("f2 开始")
+		  	panic("出了点问题！")
+		  	fmt.Println("f2 结束")
 		  }
+		  
 		  ```
 - [[type error interface]]
 - **自定义错误类型：**
+  collapsed:: true
 	- **步骤：**
 		- **第 1 步：自定义类型（装数据）**
 			- 创建一个你自己的新类型（通常是一个 `struct`，`int` 或 `float64` 等也可以），用来作为“容器”装载你希望错误携带的任何上下文数据（比如 `UserID`、`ErrorCode` 等）。
