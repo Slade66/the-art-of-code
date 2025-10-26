@@ -1,4 +1,4 @@
-- **`errors.New`：创建简单的静态字符串错误**
+## **`errors.New`：创建简单的静态字符串错误**
 	- **源代码：**
 		- ```go
 		  // New returns an error that formats as the given text.
@@ -43,7 +43,7 @@
 		  	}
 		  }
 		  ```
-- `errors.Is`：
+- ## `errors.Is`
 	- **函数签名：**`func Is(err, target error) bool`
 	- 此函数用于检查错误链中是否存在一个错误与 `target` 错误值相等。
 	- `errors.Is` 会沿着 `err` 的 `Unwrap` 链进行遍历，如果链中的任何一个错误等于 `target`，则返回 `true` 。
@@ -55,7 +55,7 @@
 		- ```go
 		  if errors.Is(err, io.ErrUnexpectedEOF) {... } // 即使 err 被包装，也能正确判断
 		  ```
-- `errors.As`：
+- ## `errors.As`
 	- **函数签名：**`func As(err error, target any) bool`
 	- 此函数用于检查错误链中是否存在一个错误的类型可以赋值给 `target`。
 	- 它是对类型断言 `if e, ok := err.(*MyError)` 的现代化替代方案。
@@ -72,4 +72,85 @@
 		     ...
 		  }
 		  ```
+- ## `errors.Join`：合并多个错误
+	- 它能够将多个 `error` 合并成一个单一的 `error` 值。
+	- 这个功能在需要执行多个独立子任务且希望报告所有失败的场景中非常有用，例如，同时关闭多个资源。
+	- 它其实就是一个结构体，里面包含了一个错误类型的切片字段。
+	- `errors.Is` 和 `errors.As` 能够检查合并后的错误中包含的每一个独立的错误。
+	- **源代码：**
+	- **示例代码：**
+		- ```go
+		  func Join(errs ...error) error {
+		  	n := 0
+		  	for _, err := range errs {
+		  		if err != nil {
+		  			n++
+		  		}
+		  	}
+		  	if n == 0 {
+		  		return nil
+		  	}
+		  	e := &joinError{
+		  		errs: make([]error, 0, n),
+		  	}
+		  	for _, err := range errs {
+		  		if err != nil {
+		  			e.errs = append(e.errs, err)
+		  		}
+		  	}
+		  	return e
+		  }
+		  
+		  type joinError struct {
+		  	errs []error
+		  }
+		  
+		  func (e *joinError) Error() string {
+		  	// Since Join returns nil if every value in errs is nil,
+		  	// e.errs cannot be empty.
+		  	if len(e.errs) == 1 {
+		  		return e.errs[0].Error()
+		  	}
+		  
+		  	b := []byte(e.errs[0].Error())
+		  	for _, err := range e.errs[1:] {
+		  		b = append(b, '\n')
+		  		b = append(b, err.Error()...)
+		  	}
+		  	// At this point, b has at least one byte '\n'.
+		  	return unsafe.String(&b[0], len(b))
+		  }
+		  
+		  func (e *joinError) Unwrap() []error {
+		  	return e.errs
+		  }
+		  ```
+		-
+			- ```go
+			  package main
+			  
+			  import (
+			  	"errors"
+			  	"fmt"
+			  	"io"
+			  )
+			  
+			  func f1() error {
+			  	return io.EOF
+			  }
+			  
+			  func f2() error {
+			  	return io.ErrShortWrite
+			  }
+			  
+			  func main() {
+			  	err1 := f1()
+			  	err2 := f2()
+			  	errAll := errors.Join(err1, err2)
+			  
+			  	fmt.Println(errAll)
+			  	fmt.Println(errors.Is(errAll, io.EOF))
+			  }
+			  
+			  ```
 -

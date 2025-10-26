@@ -202,16 +202,76 @@
 		  }
 		  ```
 - [[type error interface]]
-- **自定义 `error` 的步骤：**
-  collapsed:: true
-	- **第 1 步：自定义类型（装数据）**
-		- 创建一个你自己的新类型（通常是一个 `struct`，`int`、`float64` 等也可以），用来作为“容器”装载你希望错误携带的任何上下文数据（比如 `UserID`、`ErrorCode` 等）。
-	- **第 2 步：实现 `error` 接口的方法（变 `error`）**
-		- 一个类型能被当作 `error` 使用的唯一条件是：它必须实现 `Error() string` 方法。
-		- 为你的新类型添加一个名为 `Error() string` 的方法。这个方法必须返回一个字符串，用来描述这个错误“错在了哪里”。
-		- 一旦你做了这一步，Go 就正式承认你的类型是一个合法的 `error` 了。
-	- **第 3 步：返回实例（用起来）**
-		- 在你的函数中，当特定错误发生时，创建这个新类型的实例（比如 `&MyError{UserID: 404}`），并把它作为 `error` 类型返回。
+- **自定义错误类型：**
+	- **步骤：**
+		- **第 1 步：自定义类型（装数据）**
+			- 创建一个你自己的新类型（通常是一个 `struct`，`int` 或 `float64` 等也可以），用来作为“容器”装载你希望错误携带的任何上下文数据（比如 `UserID`、`ErrorCode` 等）。
+			- 通过定义一个实现了 `error` 接口的 `struct`，我们可以创建出能够携带丰富上下文信息的错误 。
+		- **第 2 步：实现 `error` 接口的方法（变 `error`）**
+			- 一个类型能被当作 `error` 使用的唯一条件是：它必须实现 `Error() string` 方法。
+			- 为你的新类型添加一个名为 `Error() string` 的方法。这个方法必须返回一个字符串，用来描述这个错误“错在了哪里”。
+			- 一旦你做了这一步，Go 就正式承认你的类型是一个合法的 `error` 了。
+		- **第 3 步：返回实例（用起来）**
+			- 在你的函数中，当特定错误发生时，创建这个新类型的实例（比如 `&MyError{UserID: 404}`），并把它作为 `error` 类型返回。
+	- **示例代码：**
+		- **自定义结构体类型的错误：**
+			- ```go
+			  package main
+			  
+			  import "fmt"
+			  
+			  type ValidationError struct {
+			      Field   string
+			      Message string
+			  }
+			  
+			  func (e *ValidationError) Error() string {
+			      return fmt.Sprintf("validation failed on '%s': %s", e.Field, e.Message)
+			  }
+			  
+			  func validateEmail(email string) error {
+			      if email == "" {
+			          return &ValidationError{Field: "email", Message: "cannot be empty"}
+			      }
+			      //... 更多验证逻辑
+			      return nil
+			  }
+			  ```
+		- **给错误类型加上状态码：**
+			- 在真实世界的应用中，错误通常需要携带机器可读的数据（内部错误码），以便程序能够根据错误内容做出自动化决策。这种模式常用于对内部错误进行分类，便于监控和告警。
+			- ```go
+			  type AppError struct {
+			      Code    int
+			      Message string
+			  }
+			  
+			  func (e *AppError) Error() string {
+			      return fmt.Sprintf("code %d: %s", e.Code, e.Message)
+			  }
+			  
+			  const (
+			      ErrCodeInvalidInput = 1001
+			      ErrCodeNotFound     = 1002
+			  )
+			  ```
+		- **为自定义类型实现 `Unwrap`：**
+			- 为了让自定义错误类型能够完全融入 Go 1.13+ 的错误处理生态，如果它内部包装了另一个错误，就应该为其实现 `Unwrap` 方法。
+			- 通过实现 `Unwrap`，我们允许 `errors.Is` 和 `errors.As` 函数“看穿”我们的自定义错误，检查其内部包装的错误链。如果没有这个方法，错误链在我们的自定义类型处就会中断，导致上层调用者无法检查到底层原因。
+			- ```go
+			  type RequestError struct {
+			      StatusCode int
+			      Err        error // 底层错误
+			  }
+			  
+			  func (r *RequestError) Error() string {
+			      return fmt.Sprintf("status %d: %v", r.StatusCode, r.Err)
+			  }
+			  
+			  // 实现 Unwrap 方法，直接返回底层的错误
+			  func (r *RequestError) Unwrap() error {
+			      return r.Err
+			  }
+			  ```
 - [[The Go Programming Language/Standard library/errors]]
 - **哨兵错误（Sentinel Error）**
   collapsed:: true
