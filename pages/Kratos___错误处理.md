@@ -117,36 +117,95 @@
 - **在 `.proto` 文件中定义 `ErrorReason`**
   collapsed:: true
 	- 在 Kratos 中，定义业务错误的核心是创建一个名为 `ErrorReason` 的 Protobuf `enum`（枚举）类型。
-	- ```protobuf
-	  syntax = "proto3";
-	  
-	  package api.blog.v1;
-	  
-	  import "errors/errors.proto";
-	  
-	  option go_package = "your_project/api/blog/v1;v1";
-	  
-	  enum ErrorReason {
-	    // 为所有错误设置一个默认的 HTTP 状态码为 500 (Internal Server Error)
-	    option (errors.default_code) = 500;
-	  
-	    // 为 USER_NOT_FOUND 单独指定 HTTP 状态码为 404 (Not Found)
-	    USER_NOT_FOUND = 0 [(errors.code) = 404];
-	  
-	    // 为 CONTENT_MISSING 单独指定 HTTP 状态码为 400 (Bad Request)
-	    CONTENT_MISSING = 1 [(errors.code) = 400];
-	  }
-	  ```
+	- **代码示例：**
+		- ```protobuf
+		  syntax = "proto3";
+		  
+		  package api.blog.v1;
+		  
+		  import "errors/errors.proto";
+		  
+		  option go_package = "your_project/api/blog/v1;v1";
+		  
+		  enum ErrorReason {
+		    // 为所有错误设置一个默认的 HTTP 状态码为 500 (Internal Server Error)
+		    option (errors.default_code) = 500;
+		  
+		    // 为 USER_NOT_FOUND 单独指定 HTTP 状态码为 404 (Not Found)
+		    USER_NOT_FOUND = 0 [(errors.code) = 404];
+		  
+		    // 为 CONTENT_MISSING 单独指定 HTTP 状态码为 400 (Bad Request)
+		    CONTENT_MISSING = 1 [(errors.code) = 400];
+		  }
+		  ```
 		- `option (errors.default_code) = 500;`：这个选项设置在 `enum` 的顶层，为该枚举中定义的所有错误原因指定一个默认的 HTTP 状态码。如果某个错误原因没有单独指定 `code`，它将使用这个默认值。
 		- `[(errors.code) = 404]`：这个选项附加在单个枚举值的后面，用于覆盖默认的 `code`。它为特定的 `reason` 指定了其对应的 HTTP 状态码。
 	- **使用 `protoc-gen-go-errors` 生成代码**
-		- 定义好包含 `ErrorReason` 的 `.proto` 文件后，可使用 `protoc` 编译器结合 Kratos 提供的专用插件 `protoc-gen-go-errors` 生成对应的 Go 代码：
-		- ```bash
-		  protoc --proto_path=./api \
-		         --proto_path=./third_party \
-		         --go_out=paths=source_relative:./api \
-		         --go-errors_out=paths=source_relative:./api \
-		         api/blog/v1/error_reason.proto
-		  ```
-	-
+		- 定义好包含 `ErrorReason` 的 `.proto` 文件后，可使用 `protoc` 编译器结合 Kratos 提供的专用插件 `protoc-gen-go-errors` 生成对应的 Go 代码。
+		- 代码生成后，会在指定的输出目录下创建一个 `xxx_errors.pb.go` 文件。这个文件包含了以下类型的辅助函数：
+			- **错误检查函数**：为每个错误原因生成一个 `IsXXX` 函数。
+			- **错误创建函数**：为每个错误原因生成一个 `ErrorXXX` 函数，用于创建对应的 `*errors.Error` 实例。
+		- 在业务逻辑代码中，可以这样使用这些生成的函数：
+			- ```go
+			  package biz
+			  
+			  import "your_project/api/blog/v1"
+			  
+			  func (uc *BlogUsecase) GetArticle(ctx context.Context, id int64) (*Article, error) {
+			      //...
+			      if articleNotFound {
+			          // 使用生成的创建函数来返回一个标准的 Kratos 错误
+			          // "article with id %d not found" 将成为 message
+			          // reason 会是 "USER_NOT_FOUND"
+			          // code 会是 404 (根据.proto 定义)
+			          return nil, v1.ErrorUserNotFound("article with id %d not found", id)
+			      }
+			      //...
+			  }
+			  
+			  // 在上层调用代码中
+			  article, err := usecase.GetArticle(ctx, 1)
+			  if err!= nil {
+			      // 使用生成的检查函数，代码清晰、类型安全且不会因为字符串拼写错误而出错
+			      if v1.IsUserNotFound(err) {
+			          // Handle user not found case
+			      }
+			  }
+			  ```
+- **分层架构中错误处理的最佳实践**
+  collapsed:: true
+	- 在靠近错误源头的底层，保持错误的原始性；在中间的业务层，进行错误的转换和上下文添加；在最顶层的应用边界，进行错误的最终处理（如日志记录和响应生成）。
+	- **数据层 ( `data` )：传递原始驱动错误**
+		- 数据层负责与外部数据源（如数据库、缓存、第三方 API）进行交互。在 Kratos 的标准项目布局中，这一层对应于 `data` 包 。
+		- 这一层的核心原则是**直接返回**由底层驱动或客户端库产生的原始错误，**不要进行任何包装或转换** 。例如，如果使用 GORM 操作数据库，当查询不到记录时，就应该直接返回 `gorm.ErrRecordNotFound`。
+		- 数据层应该保持业务无关性。它的任务是忠实地报告数据操作的结果。在这一层进行错误包装会过早地引入业务上下文，使得这个数据访问组件难以在其他业务场景中复用。保持错误的原始性，将解释错误的权力交给了上层的调用者。
+	- **业务逻辑层 ( `biz` )：关键的转换点**
+		- 业务逻辑层是应用核心业务规则的所在地，对应于 Kratos 布局中的 `biz` 包 。
+		- 它应该捕获来自 `data` 层的、与实现细节相关的特定错误（如 `gorm.ErrRecordNotFound`），并将其**转换并包装**成一个对上层有意义的、领域特定的 Kratos 业务错误（如 `api.ErrorUserNotFound(...)`）。在转换时，应使用 `WithCause` 方法保留原始的底层错误，以便于深度调试。
+		- 经过 `biz` 层的处理后，应用的其他部分（如 `service` 层和 API handler）只需关心定义在 `.proto` 文件中的、标准化的业务错误，而完全无需了解底层使用的是 GORM、`database/sql` 还是其他任何数据存储技术。
+	- **服务层 ( `service` )：协调与传递**
+		- 服务层负责编排对 `biz` 层的调用，处理数据传输对象（DTO）与领域对象（DO）之间的转换，并为 API 接口准备数据。
+		- 通常情况下，`service` 层只需将从 `biz` 层接收到的 Kratos 错误**直接向上传递**。在某些复杂的业务流程中，`service` 层也可以在传递错误之前，使用 `WithMetadata` 为其添加更多与当前请求或业务流程相关的上下文信息。
+		- `service` 层的主要职责是流程编排，而不是定义新的业务错误。它作为 `biz` 层和传输层之间的桥梁，确保错误信息能够被完整地传递。
+	- **传输边界 (API Handlers)：最终处理与响应**
+		- 这一层是应用的边界，负责处理传入的 HTTP 请求或 gRPC 调用，调用 `service` 层，并最终生成响应。
+		- 这是错误流程中**唯一应该“处理”错误**的地方。API handler 在收到 `service` 层返回的 `error` 后，应该做的仅仅是**将这个 `error` 直接 `return`**。框架的 `ErrorEncoder`（对于 HTTP）或 gRPC 服务器的内置机制会接管后续的一切，包括日志记录（通常在中间件或拦截器中完成）和生成最终的协议响应。
+		- 一个错误应该只被记录一次，而记录的最佳位置就在应用的入口/出口处。如果在底层或业务层记录日志，当一个错误经过多个函数调用栈时，会导致日志的重复和混乱，给问题排查带来巨大干扰。
+	- **示例：**
+		- **HTTP Handler (传输层)**：接收到 `GET /users/123` 请求，解析出 `userID` 为 "123"，然后调用 `service.GetUser(ctx, 123)`。
+		  logseq.order-list-type:: number
+		- **Service Layer (`service`)**：调用 `biz.GetUser(ctx, 123)`。
+		  logseq.order-list-type:: number
+		- **Biz Layer (`biz`)**：调用 `data.FindUserByID(ctx, 123)`。
+		  logseq.order-list-type:: number
+		- **Data Layer (`data`)**：执行数据库查询，例如 `db.First(&user, 123)`。GORM 未找到记录，返回 `gorm.ErrRecordNotFound`。`data` 层的方法直接 `return nil, gorm.ErrRecordNotFound`。
+		  logseq.order-list-type:: number
+		- **Biz Layer (`biz`)**：接收到 `gorm.ErrRecordNotFound`。代码执行 `if errors.Is(err, gorm.ErrRecordNotFound)` 判断，条件成立。然后，它创建一个业务错误并返回：`return nil, v1.ErrorUserNotFound("user with id %d not found", 123).WithCause(err)`。
+		  logseq.order-list-type:: number
+		- **Service Layer & Handler (传输层)**：`service` 层接收到这个 Kratos 错误，并直接将其返回。HTTP handler 也同样直接 `return err`。
+		  logseq.order-list-type:: number
+		- **Middleware/Interceptor (传输层)**：位于 handler 之前的日志中间件捕获到这个返回的错误。它调用 `errors.FromError(err)`，提取出 `reason`、`message`、`metadata` 和 `cause`，并将这些结构化信息记录到日志中。
+		  logseq.order-list-type:: number
+		- **`ErrorEncoder` (传输层)**：框架的 `ErrorEncoder` 最后被调用。它接收到这个 Kratos 错误，从中读取 `Code` (404)，并设置 HTTP 响应状态码为 404。然后，它将整个 `*errors.Error` 对象序列化为 JSON，写入 HTTP 响应体，发送给客户端。
+		  logseq.order-list-type:: number
 -
