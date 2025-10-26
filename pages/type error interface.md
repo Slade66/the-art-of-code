@@ -6,8 +6,7 @@
 	  	Error() string
 	  }
 	  ```
-- **作用：**
-	- `Error()` 方法的作用就是：当发生了错误，就调用这个方法来获取失败的原因，它会返回一个字符串，用文字清楚地描述“到底出了什么错”。
+	- `Error()` 方法的作用就是：当发生了错误，就调用这个方法来获取失败的原因，它会返回一个字符串，用文字清楚地描述“到底出了什么错”。这意味着任何类型，只要能将自身描述为字符串，就可以被当作一个错误来处理。
 - **示例：**
 	- ```go
 	  package main
@@ -57,7 +56,11 @@
 	  }
 	  ```
 	- **定义：**创建一个 `struct`（如 `UserNotFoundError`）来存放需要的额外信息（例如 `UserID`）。
+	  logseq.order-list-type:: number
 	- **实现：**为该 `struct` 添加 `Error() string` 方法，在其中使用 `fmt.Sprintf` 拼接清晰的错误信息。
+	  logseq.order-list-type:: number
 	- **返回：**在函数（如 `GetUserNameFromDB`）中，当发生错误时，执行 `return "", &UserNotFoundError{...}`。
+	  logseq.order-list-type:: number
 	- **检查：**调用方（如 `main` 函数）无需关心具体的错误类型，只需按照惯例检查 `if err != nil` 即可。
+	  logseq.order-list-type:: number
 -

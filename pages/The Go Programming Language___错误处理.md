@@ -181,8 +181,9 @@
 		  	fmt.Println(" [1] 程序正常结束。")
 		  }
 		  ```
-- [[type error interface]]
+- **`error` 接口：**[[type error interface]]
 - **自定义 `error` 的步骤：**
+  collapsed:: true
 	- **第 1 步：自定义类型（装数据）**
 		- 创建一个你自己的新类型（通常是一个 `struct`，`int`、`float64` 等也可以），用来作为“容器”装载你希望错误携带的任何上下文数据（比如 `UserID`、`ErrorCode` 等）。
 	- **第 2 步：实现 `error` 接口的方法（变 `error`）**
@@ -191,4 +192,22 @@
 		- 一旦你做了这一步，Go 就正式承认你的类型是一个合法的 `error` 了。
 	- **第 3 步：返回实例（用起来）**
 		- 在你的函数中，当特定错误发生时，创建这个新类型的实例（比如 `&MyError{UserID: 404}`），并把它作为 `error` 类型返回。
+- **异常机制的弊端：**
+  collapsed:: true
+	- **栈解旋（Stack Unwinding）的成本：**
+		- 基于异常的错误处理在“成功路径”（即没有错误发生时）上通常性能开销很小。但在异常被抛出时，会触发一个名为“栈解旋”的复杂且昂贵的过程。
+		- 每个函数对应一个“栈帧”（存局部变量、返回地址、defer 等）。
+		- 当程序执行到某个函数内部发生异常时，运行时会从当前函数（栈顶）开始，一层层往上回溯调用栈，逐层弹出栈帧，查找异常处理器，执行每层的清理代码（defer / finally / 析构函数）并销毁局部变量，如果没有 recover，最终整个栈都被弹空，程序退出。
+		- 这个过程可能比一次简单的函数返回慢上百倍甚至千倍。
+		- **执行过程：**
+			- `main → A → B → C (panic)`
+			- panic 发生后运行时做的事：
+				- 执行 C 的 defer → 销毁 C
+				  logseq.order-list-type:: number
+				- 执行 B 的 defer → 销毁 B
+				  logseq.order-list-type:: number
+				- 执行 A 的 defer → 销毁 A
+				  logseq.order-list-type:: number
+				- 到 main，被 recover 捕获（或程序崩溃）
+				  logseq.order-list-type:: number
 -
