@@ -1,2 +1,3 @@
-- [[SQL]]
-- [[Coding]]
+- [[LeetCode/SQL]]
+- [[LeetCode/Coding]]
+-
