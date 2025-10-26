@@ -4,4 +4,5 @@
 - [[2469. Convert the Temperature]]
 - [[1323. Maximum 69 Number]]
 - [[2413. Smallest Even Multiple]]
+- [[1768. Merge Strings Alternately]]
 -
