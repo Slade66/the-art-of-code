@@ -1,4 +1,5 @@
 - **Go 语言的错误处理方式：**
+  collapsed:: true
 	- 在 Go 中，错误处理不依赖 `try...catch` 这样的异常捕获机制。
 	- Go 语言通过返回值显式传递错误信息，通常将 `error` 类型的值作为函数的最后一个返回值，用于表示可能发生的错误。
 	- Go 强制程序员在每个潜在的故障点进行有意识的决策，通过将错误作为显式的返回值，Go 强制开发者在每个可能出错的地方直面失败的可能性，这种明确性是构建健壮、可维护系统的关键，从而构建出更可靠的软件。
@@ -20,6 +21,24 @@
 		  // 成功了！
 		  // ...继续使用 value...
 		  ```
+- **异常机制的弊端：**
+  collapsed:: true
+	- **栈解旋（Stack Unwinding）的成本：**
+		- 基于异常的错误处理在“成功路径”（即没有错误发生时）上通常性能开销很小。但在异常被抛出时，会触发一个名为“栈解旋”的复杂且昂贵的过程。
+		- 每个函数对应一个“栈帧”（存局部变量、返回地址、defer 等）。
+		- 当程序执行到某个函数内部发生异常时，运行时会从当前函数（栈顶）开始，一层层往上回溯调用栈，逐层弹出栈帧，查找异常处理器，执行每层的清理代码（defer / finally / 析构函数）并销毁局部变量，如果没有 recover，最终整个栈都被弹空，程序退出。
+		- 这个过程可能比一次简单的函数返回慢上百倍甚至千倍。
+		- **执行过程：**
+			- `main → A → B → C (panic)`
+			- panic 发生后运行时做的事：
+				- 执行 C 的 defer → 销毁 C
+				  logseq.order-list-type:: number
+				- 执行 B 的 defer → 销毁 B
+				  logseq.order-list-type:: number
+				- 执行 A 的 defer → 销毁 A
+				  logseq.order-list-type:: number
+				- 到 main，被 recover 捕获（或程序崩溃）
+				  logseq.order-list-type:: number
 - **`panic` 函数：**
   collapsed:: true
 	- `panic` 是 Go 的一个内置函数，它会中断程序的正常执行流程。你可以把它想象成一颗“手榴弹”💣，一旦拉响（被调用），它就会立即引爆当前的任务（goroutine），除非被特殊机制“拆除”（`recover`）。
@@ -182,7 +201,7 @@
 		  	fmt.Println(" [1] 程序正常结束。")
 		  }
 		  ```
-- **`error` 接口：**[[type error interface]]
+- [[type error interface]]
 - **自定义 `error` 的步骤：**
   collapsed:: true
 	- **第 1 步：自定义类型（装数据）**
@@ -193,22 +212,53 @@
 		- 一旦你做了这一步，Go 就正式承认你的类型是一个合法的 `error` 了。
 	- **第 3 步：返回实例（用起来）**
 		- 在你的函数中，当特定错误发生时，创建这个新类型的实例（比如 `&MyError{UserID: 404}`），并把它作为 `error` 类型返回。
-- **异常机制的弊端：**
+- [[The Go Programming Language/Standard library/errors]]
+- **哨兵错误（Sentinel Error）**
   collapsed:: true
-	- **栈解旋（Stack Unwinding）的成本：**
-		- 基于异常的错误处理在“成功路径”（即没有错误发生时）上通常性能开销很小。但在异常被抛出时，会触发一个名为“栈解旋”的复杂且昂贵的过程。
-		- 每个函数对应一个“栈帧”（存局部变量、返回地址、defer 等）。
-		- 当程序执行到某个函数内部发生异常时，运行时会从当前函数（栈顶）开始，一层层往上回溯调用栈，逐层弹出栈帧，查找异常处理器，执行每层的清理代码（defer / finally / 析构函数）并销毁局部变量，如果没有 recover，最终整个栈都被弹空，程序退出。
-		- 这个过程可能比一次简单的函数返回慢上百倍甚至千倍。
-		- **执行过程：**
-			- `main → A → B → C (panic)`
-			- panic 发生后运行时做的事：
-				- 执行 C 的 defer → 销毁 C
-				  logseq.order-list-type:: number
-				- 执行 B 的 defer → 销毁 B
-				  logseq.order-list-type:: number
-				- 执行 A 的 defer → 销毁 A
-				  logseq.order-list-type:: number
-				- 到 main，被 recover 捕获（或程序崩溃）
-				  logseq.order-list-type:: number
+	- 哨兵错误是指在包级别定义的、可导出的错误变量，用于表示特定的错误。
+	- **示例：**
+		- ```go
+		  var EOF = errors.New("EOF") // 它表示“输入流已经读到末尾”，即再也没有数据可读了。
+		  
+		  // 调用方这样用：
+		  
+		  package main
+		  
+		  import (
+		  	"fmt"
+		  	"io"
+		  	"strings"
+		  )
+		  
+		  func main() {
+		  	r := strings.NewReader("abc")
+		  	buf := make([]byte, 2)
+		  
+		  	for {
+		  		n, err := r.Read(buf)
+		  		if err != nil {
+		  			if err == io.EOF {
+		  				fmt.Println("读完了")
+		  				break
+		  			}
+		  			fmt.Println("发生错误：", err)
+		  			break
+		  		}
+		  		fmt.Printf("读取到 %d 字节：%s\n", n, string(buf[:n]))
+		  	}
+		  }
+		  
+		  ```
+	- **为什么可以这样用？**
+		- `errors.New("EOF")` 返回的是一个固定的 `error` 对象（在内存中有唯一地址）。
+		- 所以当标准库返回 `io.EOF` 时，调用方拿到的 `err` 实际上就是同一个对象的引用，因此调用方可以直接用 `==` 来判断，比较的是同一个对象。
+		- 这种写法成立的前提是：包内始终返回的就是同一个变量 `io.EOF`，而不是一个新建的错误对象。
+		- 如果标准库每次都用 `errors.New("EOF")` 新建一个错误，那么即使错误信息一样，`==` 也会判断为 `false`，因为是不同对象。
+	- **哨兵错误的隐患与缺点：**
+		- **包耦合（依赖关系）变强：**
+			- 为了检查 ErrUserNotFound，调用者必须导入 user 包。大量使用哨兵错误会让很多包相互依赖，甚至可能引发循环导入问题。
+		- **限制实现演进（向后兼容问题）：**
+			- 哨兵错误通常只是一个字符串，不能携带额外信息（比如哪个用户 ID 未找到）。这使得调用方无法根据更多上下文作更细粒度的决策。
+			- 一旦一个函数承诺返回某个特定的哨兵错误值，它就很难在未来改变其实现以返回一个包含更多上下文信息的、更丰富的错误类型（例如一个自定义结构体），因为这样做会破坏那些依赖 `err == pkg.ErrSomething` 检查的客户端代码。
+-
 -
