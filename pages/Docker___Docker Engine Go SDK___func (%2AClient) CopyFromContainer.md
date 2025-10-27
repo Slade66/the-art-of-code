@@ -34,11 +34,10 @@
 	- `srcPath string`：容器内源文件或目录的路径。
 - **返回值：**
 	- `io.ReadCloser`：TAR 归档流。包含容器内路径内容的读取器。调用者必须负责关闭此读取器以释放资源。
-	- `container.PathStat`：源路径的文件状态信息。
+	- `container.PathStat`：表示源路径的元数据信息，实际来源于 TAR 归档流的第一个头部块，即由 `srcPath` 参数指定的文件或目录的头部数据。它用于描述源路径的类型（文件或目录）、权限、时间戳等属性。
 - **注意：**
 	- **返回格式：**无论是复制单个文件还是一个目录，Docker API 返回的内容始终是一个 TAR（Tape Archive）归档流。调用者需要使用 Go 的 `archive/tar` 包来处理和解压这个流。
-	- **元数据作用：**返回的 `container.PathStat` 元数据至关重要。它告诉主机程序源路径是文件还是目录，以及它的权限、时间戳等。
 	- **API 端点：** 此函数和 `ContainerStatPath` 共享同一个 API 端点 `/archive`。区别在于：
 		- `CopyFromContainer` 使用 **GET** 方法获取内容。
 		- `ContainerStatPath` 使用 **HEAD** 方法仅获取元数据。
-	- Docker 在 `CopyFromContainer` 函数中返回的 `container.PathStat` 信息，本质上就是从这个 TAR 归档流中的第一个头部块中解析出来的元数据。也就是由你通过 `srcPath` 参数请求的那个目标文件或目录自身的元数据头部。
+	- **始终打包并顺序传输完整文件：**daemon 端会把容器内的路径打成一个 tar 流并“从头开始顺序写出”。服务器会把全量发给你，它不会只返回文件的一段，也没有 Range/offset 的能力。因此，你只能从头读到尾。
