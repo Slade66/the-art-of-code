@@ -73,7 +73,7 @@ heading:: true
 	- **布尔类型（Boolean Type）：**
 		- **bool**：布尔类型，用于表示 `true` 或 `false`。
 	- **字符串类型（String Type）：**
-		- [[Go 的 string]]
+		- [[The Go Programming Language/字符串]]
 	- **字节类型（Byte Type）：**
 		- **byte**：是 `uint8` 的别名。通常用来表示原始的字节数据，比如处理文件或网络流。
 	- **字符类型（Character Type）：**
