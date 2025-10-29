@@ -61,10 +61,10 @@ heading:: true
 		- `repeated`，表示数组/列表
 		- `message`，嵌套结构体
 		- `enum`，枚举类型
-	- **`go_package` 选项：**
-		- **作用：**
-			- **分号前：**定义其它 Go 程序 `import` 此包时使用的路径。这个路径必须是从你的 Go module 根目录开始的绝对路径。
-			- **分号后：**写入到生成的 `.pb.go` 文件顶部的包声明 `package PACKAGE_NAME`。一个非常好的实践是在名称后加上 `pb` 后缀，以明确表示这是一个 Protobuf 生成的包。
+	- **`go_package` 选项：用于指定生成的 Go 代码的包信息**
+		- **这个选项分为两部分（用分号分隔）：**
+			- **分号前（导入路径）：**定义其它 Go 程序 `import` 此包时使用的路径。这个路径必须是从你的 Go module 根目录开始的绝对路径。
+			- **分号后（包名）：**写入到生成的 `.pb.go` 文件顶部的包声明 `package PACKAGE_NAME`。一个非常好的实践是在名称后加上 `pb` 后缀，以明确表示这是一个 Protobuf 生成的包。
 		- **示例：**
 			- ```proto
 			  option go_package = "github.com/my-org/my-project/gen/go/user;userpb";
@@ -72,6 +72,10 @@ heading:: true
 			- 当 `protoc` 处理这个文件时，它知道：
 				- 这个包的完整导入路径是 `github.com/my-org/my-project/gen/go/user`。
 				- 生成的 `user.pb.go` 文件应该包含 `package userpb`。
+		- **最佳实践：**
+			- 将不同的服务放在不同的包中：
+				- 不要这样：`option go_package = "user-service/api/rbac/v1;v1";`
+				- 而是这样：`option go_package = "user-service/api/rbac/v1/permission;permissionpb";`
 	- **字段编号的作用：**
 		- 如果不用字段编号，像 JSON 一样，虽然对人类友好，但机器解析会更慢，因为需要扫描字符串来匹配字段名，而且数据中还要携带完整的字段名，导致占用更多空间。
 		- Protobuf 仅传输字段编号和值，不传字段名，解析时根据编号映射到对应的字段名，既提升了解析效率，又减少了传输体积。
@@ -246,4 +250,5 @@ heading:: true
 		- **方案二：由客户端进行适配**
 			- 如果字段确实可能是非常大的数，必须使用 `int64`，那么将其序列化为字符串是符合规范的行为。
 			- 此时，应由 API 的消费者（例如前端的 JavaScript 代码）负责处理这种字符串格式的数字。前端拿到 `"total": "2"` 这类数据时，应使用 `parseInt()` 或 `Number()` 将其转换为数字再进行后续处理。
+-
 -

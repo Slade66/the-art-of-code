@@ -51,4 +51,19 @@
 				      ]
 				  }
 				  ```
+	- **最小调试运行示例：**
+		- ```json
+		  {
+		      "version": "0.2.0",
+		      "configurations": [
+		          {
+		              "name": "Launch User Service",
+		              "type": "go",
+		              "request": "launch",
+		              "mode": "debug",
+		              "program": "${workspaceFolder}/cmd/user-service"
+		          }
+		      ]
+		  }
+		  ```
 -

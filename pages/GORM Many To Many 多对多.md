@@ -71,4 +71,14 @@
 	  // 2. 在 'post_tags' 连接表中插入两条记录 (post.ID, tagGo.ID) 和 (post.ID, tagGorm.ID)
 	  db.Create(&post)
 	  ```
+- **GORM 多对多关联结构体标签：**
+	- ```
+	  Users []User `gorm:"many2many:user_menus;foreignKey:Uid;joinForeignKey:MenuUid;References:Uid;joinReferences:UserUid"`
+	  ```
+		- `many2many:user_menus` - 指定中间表名称为 `user_menus`
+		- `foreignKey:Uid` - Menu 表的外键字段是 `Uid`（Menu.Uid）
+		- `joinForeignKey:MenuUid` - 中间表中引用 Menu 的字段名是 `MenuUid`
+		- `References:Uid` - User 表的参考字段是 `Uid`（User.Uid）
+		- `joinReferences:UserUid` - 中间表中引用 User 的字段名是 `UserUid`
+	-
 -
