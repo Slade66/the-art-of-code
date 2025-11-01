@@ -75,4 +75,10 @@
 		- `go help`：列出所有可用的 Go 命令以及简短的描述。
 		- `go help <command>`：查看某个命令的详细帮助信息。
 		- `go help <command> <subcommand>`：查看某个子命令的帮助信息。
+- **创建一个 Go 的新项目：**
+	- ```bash
+	  go version
+	  mkdir myproject && cd myproject
+	  go mod init github.com/你的用户名/myproject
+	  ```
 -

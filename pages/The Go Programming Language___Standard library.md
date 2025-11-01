@@ -1,5 +1,4 @@
 - [[strconv]]
-- [[strings]]
 - [[io]]
 - [[context]]
 - [[net/http]]
@@ -7,4 +6,6 @@
 - [[The Go Programming Language/Standard library/flag]]
 - [[The Go Programming Language/Standard library/tar]]
 - [[The Go Programming Language/Standard library/errors]]
+- [[The Go Programming Language/Standard library/strings]]
+-
 -
