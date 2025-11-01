@@ -7,4 +7,5 @@
 - [[1768. Merge Strings Alternately]]
 - [[389. Find the Difference]]
 - [[28. Find the Index of the First Occurrence in a String]]
+- [[242. Valid Anagram]]
 -
