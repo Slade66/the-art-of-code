@@ -22,12 +22,11 @@
 			- **如果是 Cookie：**把 `Set-Cookie` 里的 `key=value` 键值对，添加到 Apifox 的 `Cookie` 管理中。
 			- **CSRF 令牌：**如果是 Cookie 鉴权，经常会伴随 `X-CSRF-Token` 或 `X-Token` 这种 Header。这个 Token 通常也在登录响应中，或者在主页的 HTML `<meta>` 标签里。你必须把它也加到 Apifox 的 Header 中。
 - **阶段三：抓接口**
-  collapsed:: true
 	- **目标：**
 		- 搞清楚“做什么操作 = 调用哪个 API”，以及搞懂这个 API 的端点、参数和响应结构。
 		- **产出：**把所有 API 固化为能调通、详细的 Apifox 文档。
 	- **步骤：**
-		- **核心思路：**在浏览器 F12 的 Network 页签下，每当你在页面上做一件事（加载、点击、切换、保存），就去观察新出现的 API 请求，然后立刻导入到 Apifox 中进行复现。
+		- **核心思路：**在浏览器 F12 的 Network 页签下，每当你在页面上做一件事（加载、点击、切换、保存），就去观察新出现的 API 请求，然后立刻导入到 Apifox 中进行记录和复现，然后慢慢分析。
 		- 打开 F12 -> Network 页签。
 		  logseq.order-list-type:: number
 		- 在过滤器 (Filter) 里，勾选 `Fetch/XHR`。这会帮你过滤掉所有图片、CSS、JS 等静态资源，只看 API 请求。
@@ -42,7 +41,8 @@
 			- **导入：**
 				- 在 F12 的 Network 面板，右键点击一个你分析好的请求 -> `Copy` -> `Copy as cURL (bash)`。
 				- 在 Apifox 中，点击“导入” -> “cURL”，粘贴即可。它会自动帮你填好所有 Headers、Body、Params。
-				- 点“发送”看能不能拿到一样的 JSON 响应。
+				- 点“发送”，确保它 100% 能返回 `200 OK` 像网页一样的 JSON 响应。
+				- 把这个请求保存好，我们称之为 “黄金请求”。
 			- **编写文档：**
 				- 为每个 API 编写“人类可读”的名称（如：“获取当前告警列表”）。
 				- 为 Request Body 和 Response Body 的每个 JSON 字段添加中文注释。
@@ -83,5 +83,10 @@
 						- 筛选：`?status=active&level=critical`
 						- 排序：`?sort_by=time&order=desc`
 					- **复现关键：**测试这些 URL 参数的组合，看返回的 `Response Body` 是否符合预期。
-				-
+		- **具体分析每个参数和响应：**
+		  logseq.order-list-type:: number
+		  collapsed:: true
+			- **是否必选参数：“逐个剔除” 法**
+				- 取消勾选一个参数，再次发送请求。如果返回 400，则是必选参数。如果返回 200，则是可选参数。
+			- **有效值范围：点一遍 UI 界面的每个不同选项，看看请求中传递的参数有什么不同。**
 -
