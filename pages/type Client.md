@@ -17,4 +17,25 @@
 		- **复用连接池：**`http.Client` 内部的 `Transport` 会维护一个 TCP 连接池，用于缓存和复用已有连接。如果每次请求都新建一个 `Client`，这些连接将无法复用，请求就必须重复执行 TCP 握手和（在 HTTPS 中的）TLS 握手，进而显著增加延迟并降低系统性能。
 		- 因此，正确的做法是在应用程序启动时只创建一个 `http.Client` 实例，然后在所有需要发起 HTTP 请求的地方复用它。
 	- **超时机制：**`Client` 的 `Timeout` 字段设置的是从开始请求到读取完响应体的**总时间**，它控制从请求开始到响应体完全读取结束的整个过程。如果在读取 `Response.Body` 的过程中超时，读取操作会被中断。如果只需要设置单个阶段（如连接建立）的超时，应通过自定义 `Transport` 来实现。
-	-
+	- **默认 Transport 会走代理：**
+		- 不设置 `Transport` 时，`http.Client` 使用的是 `http.DefaultTransport`，其 `Proxy` 默认为 `http.ProxyFromEnvironment`。也就是说它会读取环境变量 `HTTP_PROXY/HTTPS_PROXY/NO_PROXY`，把请求转发到代理。
+		- **自定义 Transport 关闭了代理：**
+			- 当你写 `Transport: &http.Transport{}`（即使里面什么都不写），这个 Transport 的 `Proxy` 默认是 `nil`，因此不会再读取环境代理，而是直连目标地址。
+		- **克隆默认 Transport，但禁用代理：**
+			- 保留默认的各种设置，不用从零配置 `Transport`，只关闭代理，这样比直接 `&http.Transport{}` 更安全，不会影响全局的 `DefaultTransport`。
+			- ```go
+			  t := http.DefaultTransport.(*http.Transport).Clone()
+			  t.Proxy = nil // 禁用代理
+			  client := &http.Client{Transport: t}
+			  ```
+			- **为什么要类型断言？**
+				- 因为 `http.DefaultTransport` 是 `RoundTripper` 接口类型的变量，接口上没有 `Clone` 方法，`Clone` 方法定义在 `*Transport` 上，这个接口装的是 `&Transport{...}` 结构体指针，于是先要把这个接口断言回具体的类型，才能调用 `Clone` 方法。
+			- **为什么断言的时候写的是 `*http.Transport` 而不是 `&http.Transport`？**
+				- 因为类型断言要写“具体类型”，不是“值表达式”。
+				- 类型断言的语法要求是：`x.(T)`
+				- `&http.Transport` 不是类型，而是一个取地址运算符的表达式。
+				- `&Transport{}` 创建的是一个值，类型是 `*Transport`，所以 `DefaultTransport` 的动态类型是 `*Transport`。
+				- 类型断言时我们要告诉 Go：“请从接口里还原出里面装的那个具体类型（*Transport）。”
+				- 所以写成：`http.DefaultTransport.(*http.Transport)`
+				- 如果你写 `(&http.Transport)`，Go 会以为你在取地址、不是在指明类型。
+-
