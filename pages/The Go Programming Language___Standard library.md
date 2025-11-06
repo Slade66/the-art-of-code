@@ -9,4 +9,5 @@
 - [[The Go Programming Language/Standard library/strings]]
 - [[The Go Programming Language/Standard library/os]]
 - [[encoding/json]]
+- [[time]]
 -

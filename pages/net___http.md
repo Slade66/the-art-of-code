@@ -25,6 +25,7 @@
 - [[type Transport]]
 - **注意：**
 	- **生产环境请勿使用 `http.DefaultClient`：**
+		- `DefaultClient` 是 `Get`、`Head`、`Post` 等快捷请求的默认客户端。
 		- 在生产环境的应用中，绝不能直接使用 `http.Get` 这类便捷函数或 `http.DefaultClient`。
 		- 原因在于 `http.DefaultClient` 默认没有设置超时，如果远端服务器迟迟不响应，请求会一直阻塞，导致 goroutine 泄露，最终可能耗尽系统资源。
 		- 正确的做法是创建并配置自己的 `http.Client` 实例。
