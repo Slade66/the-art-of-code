@@ -11,4 +11,5 @@
 - [[encoding/json]]
 - [[time]]
 - [[math/rand]]
+- [[bytes]]
 -
