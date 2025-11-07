@@ -41,6 +41,7 @@
 			- `http` / `https`：最常见的 Web 服务。
 			- `grpc` / `grpcs`：用于 gRPC 协议的微服务。
 			- `tcp` / `udp` / `tls`：代理数据库（如 MySQL）、消息队列等非 HTTP 协议的服务。
+			- 默认值为 `http`。
 		- `name`：一个可选的、人类可读的描述性字符串，为 Upstream 提供一个方便记忆和识别的名称。
 		  collapsed:: true
 			- `name` 和 `id` 的区别：
