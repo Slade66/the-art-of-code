@@ -5,6 +5,7 @@
 	- **作用：**`t.Format()` 就是把一个 `time.Time` 对象（一个复杂的时间数据）变成一个人类可读的、特定格式的字符串。
 	- **参数：**
 		- `layout string`：格式化模板字符串。
+		  collapsed:: true
 			- 它告诉 `Format` 方法如何排列和显示时间 `t` 的各个组成部分（年、月、日、时、分、秒等）。
 			- **Go 语言格式化时间的特殊性：**
 				- 在 Go 语言中，你不能像在其他语言（如 Python、Java）中那样使用抽象的占位符（如 `%Y`, `%m`, `%d`）。Go 采用了一种非常独特的、基于参考时间的方式来定义 `layout` 字符串。
@@ -33,4 +34,32 @@
 					- `15` 对应小时
 					- `04` 对应分钟
 				- 因此，你的输入 `layout` 字符串是：`2006年01月02日 15:04`。
+- `func Sleep(d Duration)`
+	- **作用：**Sleep 会让当前的 goroutine 暂停执行，至少持续时间为 `d`。如果传入的时间是负数或 0，Sleep 会立即返回，不会产生任何延迟。
+- `type Duration int64`
+	- **作用：**是 Go 语言中用来表示时间段的基本类型。它以纳秒为单位来计数，`Duration` 变量存储的数值就是这个时间段包含的纳秒数。
+	- **注意：**
+		- 最大的 `Duration` 约等于 290 年。虽然这对大多数应用来说已经足够，但在涉及极长时间跨度的计算时需要注意这个上限。
+	- **代码示例：**
+		- ```go
+		  import (
+		      "fmt"
+		      "time"
+		  )
+		  
+		  func main() {
+		      // 1. 使用常量创建
+		      oneMinute := 1 * time.Minute
+		      halfSecond := 500 * time.Millisecond
+		      
+		      fmt.Printf("一分钟: %v\n", oneMinute)          // 输出: 1m0s
+		      fmt.Printf("半秒: %v\n", halfSecond)            // 输出: 500ms
+		      
+		      // 2. 从字符串解析
+		      d, err := time.ParseDuration("-1.5h") // 负数也可以
+		      if err == nil {
+		          fmt.Printf("解析结果: %v\n", d) // 输出: -1h30m0s
+		      }
+		  }
+		  ```
 -
