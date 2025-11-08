@@ -33,4 +33,54 @@
 		  }
 		  
 		  ```
+- `func Printf(format string, a ...any) (n int, err error)`
+	- **作用：**`fmt.Printf` 函数的工作方式是接收一个格式字符串，其中包含占位符（称为格式说明符），然后将后面的参数按照这些占位符的指示进行格式化输出。
+	- **格式说明符：**
+		- `%v`：值（Value）。Go 语言中默认、最通用的格式，会以最易读的方式打印值。
+		- `%T`：类型。打印变量的类型。
+		- `%d`：十进制整数。
+		- `%f`：浮点数（默认输出所有小数位）。
+		- `%s`：字符串。
+		- `%t`：布尔值。
+		- `%p`：指针地址。
+	- **控制精度的修饰符：**
+		- **浮点数精度：** `.Nf` 表示保留 $N$ 位小数。
+			- `%.2f`：保留两位小数。
+			- **示例：** `fmt.Printf("Pi is approx: %.2f\n", 3.14159)` $\rightarrow$ `Pi is approx: 3.14`
+		- **字符串截断：** `.Ns` 表示最多打印 $N$ 个字符。
+			- **示例：** `fmt.Printf("Long string: %.5s\n", "HelloWorld")` $\rightarrow$ `Long string: Hello`
+	- **控制宽度的修饰符：**
+		- 最小字段宽度：在 `%` 与类型说明符之间添加数字 `W`，表示最小宽度。如果输出内容长度不足 `W`，则在**左侧填充空格**，实现右对齐。
+		- 左对齐：在宽度数字前添加**负号** `-`，表示输出**左对齐**。
+	- **代码示例：**
+		- ```go
+		  package main
+		  
+		  import "fmt"
+		  
+		  func main() {
+		  	// 各种格式说明符
+		  	fmt.Printf("值 %%v: %v\n", 42)
+		  	fmt.Printf("类型 %%T: %T\n", 3.14)
+		  	fmt.Printf("十进制整数 %%d: %d\n", 42)
+		  	fmt.Printf("浮点数 %%f: %f\n", 3.14159265)
+		  	fmt.Printf("字符串 %%s: %s\n", "world")
+		  	fmt.Printf("布尔值 %%t: %t\n", true)
+		  	var a int
+		  	fmt.Printf("指针地址 %%p: %p\n", &a)
+		  
+		  	fmt.Println()
+		  
+		  	// 控制精度
+		  	fmt.Printf("保留两位小数 %.2f\n", 3.14159)
+		  	fmt.Printf("字符串截断 %.5s\n", "HelloWorld")
+		  
+		  	fmt.Println()
+		  
+		  	// 控制宽度
+		  	fmt.Printf("右对齐 |%6d|\n", 42)
+		  	fmt.Printf("左对齐 |%-6d|\n", 42)
+		  }
+		  
+		  ```
 -
