@@ -5,118 +5,113 @@
 		- **调试与排错**：这是最基本的功能。当线上服务出现问题时，日志是我们回溯问题的唯一途径。详尽的日志能够帮助我们了解程序执行的逻辑、变量的值以及错误发生的环节。
 		- **监控与告警**：通过分析日志流，我们可以监控服务的压力状况。例如，可以统计单位时间内的系统性能，当指标异常升高时，自动触发告警，提醒开发人员介入。
 		- **审计与分析**：日志可以记录关键的用户行为或系统事件，如用户登录、下单等操作，供事后审计或数据分析，帮助了解业务的增长情况。
-- **Go 的标准库提供了两个主要的日志包：**
+- ## Go 的标准库的两个主要的日志包
   collapsed:: true
-	- **`log`**：这是 Go 早期版本就有的传统日志包，功能简单，主要用于输出自由格式的文本日志。
-	- **`log/slog`**：这是 Go 1.21 版本新增的现代化日志包，专门用于输出结构化日志，如 JSON 格式。
-- **`slog` 包：**
-  collapsed:: true
-	- **为什么需要结构化日志？**
-		- 假设你需要在成千上万条日志中查找所有“用户 ID 为 123”且“操作失败”的记录。
-		- **文本日志**：`[ERROR] User 123 failed to update profile.` 你需要用复杂的正则表达式去匹配，这样既低效又容易出错。
-		- **结构化日志（JSON）**：`{"level":"ERROR", "msg":"update profile failed", "user_id":123}`。你可以直接用专门的日志工具解析并查询 `user_id == 123 && level == "ERROR"`，操作既快速又精准。
-	- **级别（Level）**：`slog` 支持日志级别（如 `Debug`、`Info`、`Warn`、`Error`），你可以设置最低级别，低于该级别的日志将不会被输出。
-	- **`slog` 的三大核心组件：**
-		- **`Logger`（记录器）**：最终调用的对象，提供 `.Info()`、`.Warn()`、`.Error()` 等方法。
-		- **`Handler`（处理器）**：决定日志的格式（如 `JSON`）和输出位置。
-		- **`Attr`（属性）**：一个键值对（Key-Value Pair），是结构化数据的基本单元。
-	- **示例：**
-		- ```go
-		  // 1. 创建一个 Handler，使用 JSON 格式并输出到标准错误
-		  jsonHandler := slog.NewJSONHandler(os.Stderr, nil)
-		  // 2. 基于该 Handler 创建一个 Logger
-		  myslog := slog.New(jsonHandler)
-		  // 3. 使用 Logger 记录日志
-		  myslog.Info("hi there") // 使用 Info 级别记录一条简单的消息。
-		  myslog.Info("hello again", "key", "val", "age", 25) // 除了基本消息，还附带了两对键值对属性
-		  ```
-- **`log` 包：**
-  collapsed:: true
-	- **缺点：**
-		- **难以解析**：纯文本日志不适合机器处理。
-		- **缺乏级别**：没有 `Info`、`Warning`、`Error` 等级别的区分。
-	- **基本用法：**
-		- `Println()` / `Printf()`：用于记录普通信息，打印日志后程序继续执行。
-		- `Fatalf()`：打印日志后，会调用 `os.Exit(1)`，导致程序立即退出。
-		- `Panicf()`：打印日志后，会触发一个 `panic`。
-	- **配置：**
-		- **输出目标：**
-			- 默认情况下，标准日志记录器将日志输出到标准错误流（`os.Stderr`），并自动添加日期和时间。你可以通过 `log.SetOutput()` 将日志重定向到任何实现了 `io.Writer` 接口的对象，例如文件或内存中的变量。
+	- **`slog` 包：**
+		- 这是 Go 1.21 版本新增的现代化日志包，专门用于输出结构化日志，如 JSON 格式。
+		- **级别（Level）**：`slog` 支持日志级别（如 `Debug`、`Info`、`Warn`、`Error`），你可以设置最低级别，低于该级别的日志将不会被输出。
+		- **`slog` 的三大核心组件：**
+			- **`Logger`（记录器）**：最终调用的对象，提供 `.Info()`、`.Warn()`、`.Error()` 等方法。
+			- **`Handler`（处理器）**：决定日志的格式（如 `JSON`）和输出位置。
+			- **`Attr`（属性）**：一个键值对（Key-Value Pair），是结构化数据的基本单元。
+		- **示例：**
 			- ```go
-			  package main
-			  
-			  import (
-			  	"bytes"
-			  	"log"
-			  	"os"
-			  )
-			  
-			  func main() {
-			  	// 将日志输出重定向到文件
-			  	file, _ := os.OpenFile("logfile.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-			  	defer file.Close()
-			  	log.SetOutput(file)
-			  	log.Println("This is a log message written to the file.")
-			  
-			  	// 将日志输出重定向到内存中的缓冲区
-			  	var buf bytes.Buffer
-			  	log.SetOutput(&buf)
-			  	log.Println("This is a log message written to memory.")
-			  
-			  	// 打印内存中的日志内容
-			  	log.Println("Logged content:", buf.String())
-			  }
-			  
+			  // 1. 创建一个 Handler，使用 JSON 格式并输出到标准错误
+			  jsonHandler := slog.NewJSONHandler(os.Stderr, nil)
+			  // 2. 基于该 Handler 创建一个 Logger
+			  myslog := slog.New(jsonHandler)
+			  // 3. 使用 Logger 记录日志
+			  myslog.Info("hi there") // 使用 Info 级别记录一条简单的消息。
+			  myslog.Info("hello again", "key", "val", "age", 25) // 除了基本消息，还附带了两对键值对属性
 			  ```
-		- **格式标志：**
-			- 你可以通过 `log.SetFlags()` 来控制每条日志开头的前缀信息，如日期、时间、文件名和代码行号等。
-			- **示例：**
+	- **`log` 包：**
+		- 这是 Go 早期版本就有的传统日志包，功能简单，主要用于输出自由格式的文本日志。
+		- **缺点：**
+			- **难以解析**：纯文本日志不适合机器处理。
+			- **缺乏级别**：没有 `Info`、`Warning`、`Error` 等级别的区分。
+		- **基本用法：**
+			- `Println()` / `Printf()`：用于记录普通信息，打印日志后程序继续执行。
+			- `Fatalf()`：打印日志后，会调用 `os.Exit(1)`，导致程序立即退出。
+			- `Panicf()`：打印日志后，会触发一个 `panic`。
+		- **配置：**
+			- **输出目标：**
+				- 默认情况下，标准日志记录器将日志输出到标准错误流（`os.Stderr`），并自动添加日期和时间。你可以通过 `log.SetOutput()` 将日志重定向到任何实现了 `io.Writer` 接口的对象，例如文件或内存中的变量。
 				- ```go
-				  log.SetFlags(log.LstdFlags | log.Lmicroseconds)
-				  log.Println("with micro")
-				  // 2023/08/22 10:45:16.904141 with micro
+				  package main
 				  
-				  log.SetFlags(log.LstdFlags | log.Lshortfile)
-				  log.Println("with file/line")
-				  // 2023/08/22 10:45:16 logging.go:40: with file/line
+				  import (
+				  	"bytes"
+				  	"log"
+				  	"os"
+				  )
+				  
+				  func main() {
+				  	// 将日志输出重定向到文件
+				  	file, _ := os.OpenFile("logfile.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+				  	defer file.Close()
+				  	log.SetOutput(file)
+				  	log.Println("This is a log message written to the file.")
+				  
+				  	// 将日志输出重定向到内存中的缓冲区
+				  	var buf bytes.Buffer
+				  	log.SetOutput(&buf)
+				  	log.Println("This is a log message written to memory.")
+				  
+				  	// 打印内存中的日志内容
+				  	log.Println("Logged content:", buf.String())
+				  }
+				  
 				  ```
-				- `log.LstdFlags` 是 `log.Ldate | log.Ltime` 的简写，表示“日期+时间”。
-				- `| log.Lmicroseconds`：按位或操作符 `|` 用于在标准标志的基础上增加微秒级的精度。
-				- `| log.Lshortfile`：在标准标志的基础上增加输出日志的文件名和行号，这对调试非常有用。
-		- **自定义 Logger：**
-			- 除了使用全局标准日志记录器，你还可以通过 `log.New()` 创建自己的日志记录器实例。这使你能够将不同模块的日志输出到不同的位置或使用不同的格式。
-			- ```go
-			  mylog := log.New(os.Stdout, "my:", log.LstdFlags)
-			  mylog.Println("from mylog")
-			  // my:2023/08/22 10:45:16 from mylog
-			  
-			  mylog.SetPrefix("ohmy:")
-			  mylog.Println("from mylog")
-			  // ohmy:2023/08/22 10:45:16 from mylog
-			  ```
-			- 第一个参数 `os.Stdout` 指定了输出目标为标准输出。
-			- 第二个参数 `"my:"` 设置了固定的前缀。
-			- 第三个参数 `log.LstdFlags` 指定了日志的格式。
-			- `mylog.SetPrefix()` 允许动态修改记录器的前缀。
+			- **格式标志：**
+				- 你可以通过 `log.SetFlags()` 来控制每条日志开头的前缀信息，如日期、时间、文件名和代码行号等。
+				- **示例：**
+					- ```go
+					  log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+					  log.Println("with micro")
+					  // 2023/08/22 10:45:16.904141 with micro
+					  
+					  log.SetFlags(log.LstdFlags | log.Lshortfile)
+					  log.Println("with file/line")
+					  // 2023/08/22 10:45:16 logging.go:40: with file/line
+					  ```
+					- `log.LstdFlags` 是 `log.Ldate | log.Ltime` 的简写，表示“日期+时间”。
+					- `| log.Lmicroseconds`：按位或操作符 `|` 用于在标准标志的基础上增加微秒级的精度。
+					- `| log.Lshortfile`：在标准标志的基础上增加输出日志的文件名和行号，这对调试非常有用。
+			- **自定义 Logger：**
+				- 除了使用全局标准日志记录器，你还可以通过 `log.New()` 创建自己的日志记录器实例。这使你能够将不同模块的日志输出到不同的位置或使用不同的格式。
+				- ```go
+				  mylog := log.New(os.Stdout, "my:", log.LstdFlags)
+				  mylog.Println("from mylog")
+				  // my:2023/08/22 10:45:16 from mylog
+				  
+				  mylog.SetPrefix("ohmy:")
+				  mylog.Println("from mylog")
+				  // ohmy:2023/08/22 10:45:16 from mylog
+				  ```
+				- 第一个参数 `os.Stdout` 指定了输出目标为标准输出。
+				- 第二个参数 `"my:"` 设置了固定的前缀。
+				- 第三个参数 `log.LstdFlags` 指定了日志的格式。
+				- `mylog.SetPrefix()` 允许动态修改记录器的前缀。
 - ## 日志的级别
+  collapsed:: true
 	- **日志级别的概念与作用：**日志级别（Log Level）用于区分日志的重要性和紧急程度，是描述问题严重性的标准语言。该概念源自 20 世纪 80 年代的 syslog 协议，现已成为日志系统的行业标准，帮助我们高效筛选和处理日志信息。
 	- **日志级别的过滤机制：**日志框架可根据级别过滤输出。当设置为 `INFO` 时，仅记录 `INFO` 及以上级别（如 `WARN`、`ERROR`、`FATAL`）的日志，忽略较低的 `DEBUG` 和 `TRACE`。这种机制便于在开发环境启用详细日志，在生产环境减少输出，以兼顾调试效率与性能。
 	- **什么时候打印日志？打印什么级别的日志？**
 		- 如果你怀疑这个地方要不要打日志（将来这里出问题了，有日志会不会方便点？），那就打上，宁愿多打一些日志，也不要偷懒不打。
 	- **不要耦合某个日志库，总是使用自己定义的接口（适配器模式），便于之后替换日志库的实现。**
-	- **DEBUG**：调试信息，开发时使用。用于输出开发和调试过程中需要的详细信息。记录与第三方交互（数据库、缓存、RPC等）的请求和响应。记录业务流程的中间结果。
+	- **DEBUG**：调试信息，开发时使用。用于输出开发和调试过程中需要的详细信息。记录与第三方交互（数据库、缓存、RPC等）的请求和响应。记录业务流程的中间结果。追踪执行流程、变量的内部值。生产环境通常关闭。
 		- 比喻：像程序员在检查电路，用放大镜看每一根线。用来调试代码逻辑、查看变量值等。
 		- ```go
 		  log.Debug("连接数据库参数：host=127.0.0.1, port=3306")
 		  数据库查询结果: {id: 1, name: "item"}	
 		  ```
-	- **INFO**：普通运行信息。表示系统的正常运行状态。记录应用程序正常运行时的例行操作和重要事件。
+	- **INFO**：普通运行信息。用于记录“正常业务流程的里程碑”（例如：服务启动成功，操作成功完成）。
 		- 比喻：像正常汇报进度，“任务完成到哪一步”。
 		- ```go
 		  log.Info("用户登录成功：user_id=123")
 		  应用启动成功，监听端口 8080 或 用户 123 登录成功。
 		  ```
-	- **WARN**：警告，表明发生了预期之外的情况或潜在问题，可能有问题但应用仍能继续运行。少数这种情况是可以接受的，频繁出现不行。
+	- **WARN**：警告，表明发生了预期之外的情况或潜在问题，可能有问题但应用仍能继续运行。少数这种情况是可以接受的，频繁出现不行。系统可以继续运行，但可能不是最优或存在隐患。
 		- 比喻：车子还能开，但油快没了，需要注意。说明有点异常，但不会影响整体功能。
 		- ```go
 		  log.Warn("缓存未命中，改为从数据库读取")
@@ -135,4 +130,25 @@
 		  log.Fatal("数据库连接失败，程序即将退出")
 		  关键配置文件缺失，应用无法启动 或 内存耗尽，程序即将终止
 		  ```
+- ## 记录日志的原则
+  collapsed:: true
+	- ### 优先使用结构化的日志
+		- 设想你需要在成千上万条日志中查找所有“用户 ID 为 123”且“操作失败”的记录：
+			- **文本日志**：`[ERROR] User 123 failed to update profile.` 你需要用复杂的正则表达式去匹配，这样既低效又容易出错。
+			- **结构化日志（JSON）**：`{"level":"ERROR", "msg":"update profile failed", "user_id":123}`。你可以直接用专门的日志工具解析并查询 `user_id == 123 && level == "ERROR"`，操作既快速又精准。
+		- 在记录日志时，应使用键值对形式（例如 `zap.String("key", "value")`），而非传统的字符串拼接（如 `fmt.Sprintf("File %s has count %d", f, n)`）。
+		- **优势**：结构化日志便于日志系统（如 Loki、Elastic Stack）进行**索引、查询和聚合**。例如，搜索“所有 `count` 大于 100 的事件”在结构化日志中可以直接通过查询语句实现，而无需依赖复杂的文本匹配。
+	- ### 底层库不打日志
+		- 底层库的职责是返回带有充分上下文信息的错误（例如使用 `fmt.Errorf("...: %w", err)` 包装原始错误），而不应自行打印日志。至于如何处理该错误——例如是否记录日志或采取补救措施——应由上层的业务逻辑层来决定。
+	- ### 避免重复或多余的日志
+		- 当上层接收到底层返回的错误时，应只记录一次具有业务意义的日志，而不重复记录底层的错误信息。
+		- 错误应在“最合适的层”被记录一次即可，避免在不同层级重复输出相同的日志，以免造成信息冗余并干扰问题定位。
+	- ### 边界打点
+		- 日志应记录在系统的关键交互边界上，也就是系统与外部世界或不同模块之间发生数据交换与状态变化的地方。
+		- 常见的打点位置包括：
+			- **接收外部输入时** (用户/API/文件读取的**开始**)。
+			- **产生外部输出时** (写入文件/数据库/发送网络响应的**结束**)。
+			- **关键状态发生变化时** (例如：任务状态变更、用户权限修改)。
+			- **程序生命周期关键点** (启动完成、配置加载、程序正常/异常退出)。
+			- **函数返回 `error` 时** (上层决定是否记录，并添加**业务上下文**)。
 -
