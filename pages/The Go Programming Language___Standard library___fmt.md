@@ -34,6 +34,7 @@
 		  
 		  ```
 - `func Printf(format string, a ...any) (n int, err error)`
+  collapsed:: true
 	- **作用：**`fmt.Printf` 函数的工作方式是接收一个格式字符串，其中包含占位符（称为格式说明符），然后将后面的参数按照这些占位符的指示进行格式化输出。
 	- **格式说明符：**
 		- `%v`：值（Value）。Go 语言中默认、最通用的格式，会以最易读的方式打印值。
@@ -83,4 +84,34 @@
 		  }
 		  
 		  ```
+- `func Scan(a ...any) (n int, err error)`
+  collapsed:: true
+	- **作用：**
+		- `Scan` 从**标准输入（stdin）**读取文本，并将读取到的**以空格分隔**的值依次存入提供的参数变量中。
+		- 换行符会被当作空格处理。
+		- 它返回成功读取的项数 `n`。
+		- 如果成功读取的数量少于参数个数，`err` 会说明原因（例如输入格式不对或输入提前结束）。
+	- **代码示例：**
+		- ```go
+		  package main
+		  
+		  import "fmt"
+		  
+		  func main() {
+		      var name string
+		      var age int
+		      fmt.Print("请输入名字和年龄（用空格分隔）：")
+		      n, err := fmt.Scan(&name, &age)
+		      if err != nil {
+		          fmt.Println("输入出错：", err)
+		          return
+		      }
+		      fmt.Printf("成功读取 %d 个值：名字=%s, 年龄=%d\n", n, name, age)
+		  }
+		  
+		  ```
+	- **注意：**
+		- `fmt.Scan` 会在遇到空格或换行时分割输入。如果你需要读取整行（包括空格），用 `bufio.NewReader(os.Stdin)` 更合适。
+		- `fmt.Scan` 只会读取**刚好够参数数量**的数据，后面的数据**不会被丢弃**，而是**留在输入缓冲区中**，下一次再调用 `fmt.Scan` 时，会从那儿继续读取。
+		- 输入不足时，程序会等待更多输入。
 -

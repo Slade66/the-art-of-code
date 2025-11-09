@@ -8,6 +8,7 @@
 	- **多余字段：**JSON 中出现结构体未定义的字段时，这些字段会被自动忽略。
 	- **大数字的麻烦：**如果 JSON 里有一个非常非常大的整数，你把它读成小数（`float64`），可能会丢失精度。
 - `func Unmarshal(data []byte, v any) error`
+  collapsed:: true
 	- **作用：**将接收到的、格式化的 JSON 文本数据，自动解析并填充到你指定的 Go 语言变量（通常是结构体、切片或 Map）中，使其成为 Go 语言中可以方便操作的数据结构。
 	- **参数：**
 		- `data []byte`：必须是包含有效的 JSON 编码数据的字节切片。
@@ -52,6 +53,7 @@
 		  }
 		  ```
 - `func Marshal(v any) ([]byte, error)`
+  collapsed:: true
 	- **作用：**将 Go 语言中的值（变量、结构体、切片、Map 等）转换为其对应的 JSON 编码格式的字节切片。
 	- **参数：**
 		- `v any`：任何 Go 语言的值（变量或结构体实例）。
@@ -64,4 +66,11 @@
 			- `json:"-"`：忽略该字段，不参与 JSON 编码或解码。
 			- `json:",omitempty"`：当字段值为空（如 `false`、`0`、`nil` 或零长度的切片、Map、字符串）时，省略该字段。
 			- `json:",omitzero"`：当字段值为零值，或字段类型实现了 `IsZero()` 方法且返回 `true` 时，省略该字段。
+- `func MarshalIndent(v any, prefix, indent string) ([]byte, error)`
+  collapsed:: true
+	- **作用：**
+		- `MarshalIndent` 与 `Marshal` 类似，但会为 JSON 输出添加缩进和换行。
+		- `prefix` 会出现在每一行的最前面；
+		- `indent` 会根据 JSON 的层级重复，用于表示缩进；
+		- 这样可以让 JSON 输出更加易读，尤其适合打印调试或日志输出。
 -
