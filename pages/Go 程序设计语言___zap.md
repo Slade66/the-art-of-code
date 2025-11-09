@@ -18,8 +18,16 @@
 			  defer logger.Sync() // 刷新缓冲区
 			  
 			  ```
-		- `defer logger.Sync()` 保证程序退出前将日志写入，在程序退出前调用 `Sync()` 是一个好习惯。
-		- 更高级的配置（如日志输出到多个文件、发送到消息队列等）需要直接使用 `go.uber.org/zap/zapcore`。
+		- **`defer logger.Sync()`：**
+			- Zap 的日志器底层是异步写入的，也就是说日志先写入内存缓冲区，不是立即落盘（或打印）。
+			- 保证程序退出前将缓冲区里的日志刷新（flush）到输出（文件、控制台等），在程序退出前调用 `Sync()` 是一个好习惯，保证最后那几条日志不会因为程序退出而丢失。
+		- **`zap.NewDevelopment()` vs `zap.NewProduction()`**
+			- `zap.NewDevelopment()`
+				- 调试用，看日志像平时的 `fmt.Println` 一样直观，更易读的文本格式（人看得懂），默认 Debug 级别（输出详细信息）。
+				- `2025-11-09T14:03:21.123+0800 DEBUG main.go:10 Something happened`
+			- `zap.NewProduction()`
+				- 上线后用，输出 JSON 给日志收集系统（如 ELK、Prometheus、Grafana Loki 等），结构化 JSON 格式（机器解析友好），默认 Info 级别（跳过调试信息）。
+				- `{"level":"info","ts":1731138201.123,"caller":"main.go:10","msg":"Something happened"}`
 	- **设置全局日志器**
 		- **痛点：**如果不设置全局日志器，你每次都要在每个组件、函数之间显式传递 `logger`。
 		- **办法：**
