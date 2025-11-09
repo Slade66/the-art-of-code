@@ -114,4 +114,7 @@
 		- `fmt.Scan` 会在遇到空格或换行时分割输入。如果你需要读取整行（包括空格），用 `bufio.NewReader(os.Stdin)` 更合适。
 		- `fmt.Scan` 只会读取**刚好够参数数量**的数据，后面的数据**不会被丢弃**，而是**留在输入缓冲区中**，下一次再调用 `fmt.Scan` 时，会从那儿继续读取。
 		- 输入不足时，程序会等待更多输入。
+- `func Fprintf(w io.Writer, format string, a ...any) (n int, err error)`
+  collapsed:: true
+	- **作用：**`Fprintf` 按照格式说明符格式化内容，并将结果写入 `w`。它返回已写入的字节数，以及可能遇到的写入错误。
 -
