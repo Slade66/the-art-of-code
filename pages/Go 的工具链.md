@@ -115,7 +115,6 @@
 		- `go help <command>`：查看某个命令的详细帮助信息。
 		- `go help <command> <subcommand>`：查看某个子命令的帮助信息。
 - **创建一个 Go 的新项目：**
-  collapsed:: true
 	- ```bash
 	  go version
 	  mkdir myproject && cd myproject
