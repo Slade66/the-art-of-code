@@ -51,19 +51,6 @@
 				      ]
 				  }
 				  ```
-	- **最小调试运行示例：**
-		- ```json
-		  {
-		      "version": "0.2.0",
-		      "configurations": [
-		          {
-		              "name": "Launch User Service",
-		              "type": "go",
-		              "request": "launch",
-		              "mode": "debug",
-		              "program": "${workspaceFolder}/cmd/user-service"
-		          }
-		      ]
-		  }
-		  ```
+- ## Dev Containers
+	- 把你的开发环境（如：语言 SDK／工具链／依赖库）“装进”一个 Docker 容器里，而你通过 VS Code 像平常那样编辑、调试代码 —— 但背后运行的其实是在这个容器里，而 不是 直接在你的机器本地。
 -
