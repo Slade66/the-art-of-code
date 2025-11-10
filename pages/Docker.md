@@ -28,7 +28,11 @@
 		  collapsed:: true
 			- **作用：**用于获取 Docker 对象（容器、镜像、网络、卷等）的详细配置信息，结果以 JSON 数组的格式返回。
 			- **注意：**
-				- 可以将 `docker inspect` 的原始 JSON 输出通过管道 (`|`) 传递给 `jq` 工具进行查询和过滤。
+				- 一定要将 `docker inspect` 的原始 JSON 输出通过管道 (`|`) 传递给 `jq` 工具进行语法高亮和过滤。
+					- ```grep
+					  docker inspect alert-nginx | jq '.[0].Mounts'
+					  ```
+					- 在 `jq '.[0].Mounts'` 中，第一个点号（`.`）代表 `jq` 中当前输入的整个 JSON 数据流（即 `docker inspect` 输出的数组）。
 				- 使用 `-s` 或 `--size` 可以显示容器文件系统的大小（`SizeRw`）。
 				- 您可以同时检查多个对象，它们的结果会包含在同一个 JSON 数组中。
 			- **示例：**
