@@ -6,6 +6,7 @@
 	- 常用命令
 	  heading:: true
 		- `docker run`
+		  collapsed:: true
 			- 从镜像创建容器并立即运行。
 			- **语法：**
 				- ```bash
@@ -23,6 +24,18 @@
 			- `IMAGE`
 				- 指定你希望运行的镜像。
 				- 如果本地不存在该镜像，Docker 会自动从默认仓库 Docker Hub 下载。
+		- `docker inspect`
+		  collapsed:: true
+			- **作用：**用于获取 Docker 对象（容器、镜像、网络、卷等）的详细配置信息，结果以 JSON 数组的格式返回。
+			- **注意：**
+				- 可以将 `docker inspect` 的原始 JSON 输出通过管道 (`|`) 传递给 `jq` 工具进行查询和过滤。
+				- 使用 `-s` 或 `--size` 可以显示容器文件系统的大小（`SizeRw`）。
+				- 您可以同时检查多个对象，它们的结果会包含在同一个 JSON 数组中。
+			- **示例：**
+				- ```bash
+				  docker inspect -s my-container
+				  docker inspect my-image:latest
+				  ```
 - 踩坑经验
   heading:: true
 	- [[连接不上 Docker 中的 MySQL 服务]]
