@@ -180,6 +180,7 @@
 		  docker logout
 		- 登出指定的私有仓库
 		  docker logout my-registry.company.com:5000
+	-
 - [[Docker 的仓库管理]]
 - [[Docker 的镜像管理]]
 - [[容器（Container）]]

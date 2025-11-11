@@ -147,8 +147,9 @@
 					- `internal`：确保只有 Nginx 内部重定向能访问这个 URI
 					- `root`：定义了静态资源的起点，用于指定一个目录路径，Nginx 在处理静态文件请求时，会从这个目录开始查找文件。
 						- 当 Nginx 收到请求时，会根据以下规则构建文件路径：最终文件路径=root 路径+请求的 URI
-			- `location`：定义了 Nginx 应该对匹配到 URI 的所有请求执行什么操作。
+			- `location`：定义了 Nginx 应该对匹配到 URI 的请求执行什么操作。
 				- **修饰符：**
+				  collapsed:: true
 					- | **Modifier** | **名称** | **匹配行为** | **优先级** |
 					  | ---- | ---- | ---- |
 					  | **`=`** | 精确匹配 (Exact Match) | 匹配 URI 必须完全一致，且匹配成功后立即停止搜索。 | 最高 (Step 1) |
@@ -157,6 +158,7 @@
 					  | **`~*`** | 不区分大小写的正则匹配 (Case-insensitive Regex) | 使用不区分大小写的正则表达式进行匹配。按配置顺序评估。 | 中 (Step 4) |
 					  | **(None)** | 前缀匹配 (Prefix Match) | 执行最长前缀匹配。但搜索会继续到正则匹配阶段。 | 最低 (Step 2/5) |
 				- `proxy_pass`：它负责将客户端的请求转发到指定的后端服务器（Upstream）。
+				  collapsed:: true
 					- `proxy_pass` 是否带斜杠会影响请求 URI 的拼接方式：
 						- 带斜杠：会去掉 `location` 匹配的部分，用新路径替换。
 							- ```nginx
@@ -168,6 +170,14 @@
 							  location /api/ { proxy_pass http://backend; }
 							  # /api/users → http://backend/api/users
 							  ```
+				- `proxy_buffering`：用于控制 Nginx 是否缓存上游服务器（被代理服务）的响应数据。
+				  collapsed:: true
+					- **开启缓冲时**，Nginx 会先将上游返回的数据读入内存（或临时文件），待积累到一定量后再转发给客户端。可以理解为服务员先把菜全部端到自己手边，再慢慢端给客人。
+					- **关闭缓冲时**，Nginx 会实时转发上游返回的数据，一边接收一边传给客户端，不会将其存入内存或临时文件。就像服务员从厨师手里接过菜后立即送到客人手中，不作等待。
+				- `proxy_set_header`：用于在 Nginx 将客户端请求转发给上游服务器时，设置或修改要发送的请求头。
+				  collapsed:: true
+					- 它通常用于传递客户端的真实信息（如 IP、Host、协议等），或为特定功能（如 WebSocket 升级、身份验证）添加必要的头字段，使上游服务能够正确识别请求来源和上下文。
+					- 语法：`proxy_set_header <Header-Name> <Value>;`
 - ## Nginx 的原理
 	- **转发请求的流程**
 	  collapsed:: true

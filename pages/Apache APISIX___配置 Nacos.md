@@ -50,7 +50,7 @@
 		  {
 		    "uri": "/user/*",
 		    "upstream": {
-		      "service_name": "user-service",
+		      "service_name": "user-service.http",
 		      "type": "roundrobin",
 		      "discovery_type": "nacos"
 		    }
