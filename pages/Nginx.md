@@ -156,22 +156,24 @@
 					  | **`~`** | 区分大小写的正则匹配 (Case-sensitive Regex) | 使用区分大小写的正则表达式进行匹配。按配置顺序评估。 | 中 (Step 4) |
 					  | **`~*`** | 不区分大小写的正则匹配 (Case-insensitive Regex) | 使用不区分大小写的正则表达式进行匹配。按配置顺序评估。 | 中 (Step 4) |
 					  | **(None)** | 前缀匹配 (Prefix Match) | 执行最长前缀匹配。但搜索会继续到正则匹配阶段。 | 最低 (Step 2/5) |
-				- `proxy_pass`：用于将请求转发到你在 `http` 块中定义的 `upstream` 组。
-					- ```nginx
-					  # 匹配所有 /alert/ 开头的请求
-					  location /alert/ {
-					      # 转发到 upstream 'alert'，并保持 /alert/ 部分不变
-					      proxy_pass http://alert/; 
-					      # 假设客户端请求 /alert/status 
-					      # 后端接收到的URI仍然是 /alert/status
-					  }
-					  
-					  # 匹配所有 /api/ 开头的请求
-					  location /api/ {
-					      # 转发到 upstream 'user'，并用后面地址的路径替换 /api/
-					      proxy_pass http://user; 
-					      # 假设客户端请求 /api/login
-					      # 后端接收到的URI是 /login (注意：/api/ 被删除了)
-					  }
-					  ```
+				- `proxy_pass`：它负责将客户端的请求转发到指定的后端服务器（Upstream）。
+					- `proxy_pass` 是否带斜杠会影响请求 URI 的拼接方式：
+						- 带斜杠：会去掉 `location` 匹配的部分，用新路径替换。
+							- ```nginx
+							  location /api/ { proxy_pass http://backend/; }
+							  # /api/users → http://backend/users
+							  ```
+						- 不带斜杠：会保留 `location` 匹配的部分，直接追加到后端地址后。
+							- ```nginx
+							  location /api/ { proxy_pass http://backend; }
+							  # /api/users → http://backend/api/users
+							  ```
+- ## Nginx 的原理
+	- **转发请求的流程**
+	  collapsed:: true
+		- 当 Nginx 接收到与某个 `location` 匹配的请求时，会触发 `proxy_pass`，并执行以下操作：
+			- **连接后端：** 建立与 `proxy_pass` 指定的后端服务器的连接。
+			- **发送请求：** 将客户端的请求（包含请求头、请求体等）转发给后端服务器。
+			- **接收响应：** 获取后端服务器返回的响应数据。
+			- **返回客户端：** 将响应内容（可能经过 Nginx 处理或修改）再返回给客户端。
 -
