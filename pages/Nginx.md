@@ -150,7 +150,7 @@
 			- `location`：它决定了请求 URI 如何匹配到特定的配置块，进而决定应该对匹配到 URI 的请求执行什么处理。
 				- **匹配符：**
 					- `=`：精确匹配。优先级最高。匹配 URI 必须完全一致，且匹配成功后立即停止搜索。
-					- `^~`：前缀停止匹配。优先级高。执行最长前缀匹配，如果匹配上这个前缀，就不再去匹配正则表达式。
+					- `^~`：前缀停止匹配。优先级次高。执行最长前缀匹配，如果匹配上，就停止搜索，不再去匹配正则表达式。
 					  collapsed:: true
 						- **例子：**
 							- 用户访问了这个地址：`http://example.com/static/js/main.js`
@@ -174,6 +174,10 @@
 					- `~`：区分大小写的正则匹配，按配置顺序评估。优先级中。
 					- `~*`：不区分大小写的正则匹配。按配置顺序评估。优先级中。
 					- **无修饰符，直接写路径：**前缀匹配。执行最长前缀匹配。只要请求路径以 `/xxx` 开头，就算匹配成功。但搜索会继续到正则匹配阶段。优先级低。
+					  collapsed:: true
+						- `location / {...}`
+							- 它匹配任何以 `/` 开头的请求 URI。
+							- 这是一个兜底配置，因为所有的 URL 都是以 `/` 开头的（例如 `/index.html`, `/api/user`, `/images/logo.png`），所以，当所有其他更具体的 `location` 块都未能命中时，Nginx 就会自动落到这个 `location /` 块来处理请求。
 					- **注意：**
 						- 如果将一个范围宽泛的正则匹配放在前面，它可能会阻止后续更精确的匹配生效。
 						- 正则表达式的计算通常比简单的前缀匹配消耗更多的 CPU 资源。
@@ -205,6 +209,43 @@
 				  collapsed:: true
 					- 它通常用于传递客户端的真实信息（如 IP、Host、协议等），或为特定功能（如 WebSocket 升级、身份验证）添加必要的头字段，使上游服务能够正确识别请求来源和上下文。
 					- 语法：`proxy_set_header <Header-Name> <Value>;`
+				- `root`：它将客户端请求的 URI 完整地追加到 root 定义的路径后面，形成最终要查找的文件系统路径。
+				  collapsed:: true
+					- **例子：**
+						- ```nginx
+						  location / { # 兜底王
+						    root /usr/share/nginx/html;
+						  }
+						  ```
+						- 请求 `/index.html` 时，路径匹配到 `/`，Nginx 随后从 `/usr/share/nginx/html/index.html` 读取对应的文件。
+				- `index`：定义了 Nginx 在处理一个以斜杠 `/` 结尾的请求（即请求一个目录而不是文件）时，应该尝试查找的默认文件名。当请求指向一个目录时，应该用哪个文件来响应。
+				  collapsed:: true
+					- `index` 指令可以接受一个或多个文件名。Nginx 会按照它们在指令中出现的顺序，在请求目录中逐一查找。
+					- **内部重定向机制：**
+						- 当 Nginx 成功通过 `index` 找到一个文件时，它不会直接发送这个文件。相反，它会默默地执行一个内部重定向：
+							- 如果请求 `/blog/`，Nginx 找到了 `/blog/index.html`。
+							- Nginx 会在内部将请求重写为 `/blog/index.html`。
+							- 这个新请求 (`/blog/index.html`) 会重新进入 `location` 匹配流程。
+						- 巧妙地将目录请求导向到合适的文件处理 `location` 块，实现网站默认主页功能。
+						- **例子：**
+							- ```nginx
+							  location / {
+							      root /var/www/html;
+							      index index.php index.html;
+							  }
+							  
+							  location ~ \.php$ {
+							      # ... PHP FastCGI 配置，专门处理 .php 文件
+							  }
+							  ```
+							- 如果请求 `/`，Nginx 找到 `index.php`，然后将请求内部重定向到 `/index.php`。这个新请求 `/index.php` 就会成功命中第二个 `location` 块，从而被 PHP 解释器处理。完美！
+				- `try_files`：指示 Nginx 按顺序尝试访问一系列指定的文件或 URI，一旦找到可用项就停止继续查找；若全部尝试失败，则执行最后一个参数指定的操作。
+					- `$uri` 与 `$uri/` 的区别：`$uri` 用于查找文件，而 `$uri/` 用于查找目录，并会触发 `index` 指令在该目录下继续查找指定文件。
+					- 当最后一个参数是 URI（如 `/index.html` 或 `@named_location`）时，Nginx 会执行一次内部重定向，新的 URI 将重新进入 `location` 匹配流程。
+					- 如果最后一个参数是 `=code`（如 `=404` 或 `=500`），Nginx 会直接返回对应的 HTTP 状态码，并终止后续处理。
+	- **相同的指令，在不同的层级有什么区别？**
+		- **`server` 级别：** 如果在 `server` 块中定义，它将是整个站点的默认根目录。
+		- **`location` 级别：** 如果在 `location` 块中重新定义 `root`，它会**覆盖** `server` 级别或更高层级的设置，只对该 `location` 块内的请求生效。
 - ## Nginx 的原理
 	- **转发请求的流程**
 	  collapsed:: true
