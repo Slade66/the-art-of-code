@@ -3,12 +3,10 @@
   collapsed:: true
 	- **作用**：快速编译并立刻执行 Go 程序。
 	- **流程**：
-	  collapsed:: true
 		- 在后台先调用 `go build`，生成一个临时的可执行文件（存在临时目录）。
 		- 立刻执行这个二进制文件。
 		- 执行完毕后，临时的二进制文件会被自动删除。
 	- **例子**：
-	  collapsed:: true
 		- ```bash
 		  go run main.go
 		  ```
@@ -17,7 +15,6 @@
   collapsed:: true
 	- **作用**：把 Go 源代码编译成可执行文件，但不自动运行。
 	- **适用于**：
-	  collapsed:: true
 		- 你想保存这个可执行文件（不只是跑一次而已）。
 		- 可执行文件可以直接分发给用户执行，即使用户的系统中没有安装 Go 环境。
 - `go get`
@@ -115,6 +112,7 @@
 		- `go help <command>`：查看某个命令的详细帮助信息。
 		- `go help <command> <subcommand>`：查看某个子命令的帮助信息。
 - **创建一个 Go 的新项目：**
+  collapsed:: true
 	- ```bash
 	  go version
 	  mkdir myproject && cd myproject

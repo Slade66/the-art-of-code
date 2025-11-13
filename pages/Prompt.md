@@ -5,4 +5,9 @@
 - 代码规范
 	- 给出重构代码的建议，使它符合风格，提高可读性。
 	- 请为下面的函数生成符合 Go Doc 规范的注释。
+- 要解决这个问题，我需要学习哪些知识点？它们属于什么模块？给我列出来，我要把它们分而治之、逐个攻破。
+- ```plaintext
+  [Container networking] [refers to] [the ability] [for containers to connect to and communicate with [each other], and [with non-Docker network services]].
+  (      主语      )   (   谓语   )   ( 核心宾语 ) (          详细说明能力的内容和对象           )
+  ```
 -
