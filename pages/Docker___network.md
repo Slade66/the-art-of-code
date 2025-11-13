@@ -75,12 +75,14 @@ collapsed:: true
 			  ```
 			- 例如你怀疑某个容器的网络有问题，可以新建一个“诊断容器”共享它的网络，然后在里面用 `ping`, `nslookup`, `curl` 等命令测试网络。
 - ## Overlay
-  collapsed:: true
 	- **使容器能跨主机通信：**
 		- 普通的 bridge 网络只能让同一主机上的容器通信；Overlay 网络则像在多台主机上“铺了一层虚拟的交换机”，不管容器在哪台机器上，只要连到这个网络里，就能像在同一个局域网中一样通信。
 		- Overlay 网络驱动会在多个 Docker 守护进程所在的主机之间，创建一个“分布式网络”。这个网络“覆盖”（overlay）在每台主机自己的本地网络之上，使得连接到该网络的容器，即使分布在不同主机上，也能相互通信。
 	- 要实现 Overlay 网络通信，Docker 要求处于 Swarm 模式。
 	- Overlay 网络内的容器可以直接通过 Docker 内置的 DNS 服务 相互通信。也就是说它们可以通过容器名互相访问。
+	- **注意：**
+		- overlay 只能访问对方的 overlay IP，不可能访问对方的 bridge IP。
+		- 在分布式场景下：所有要互通的容器，都应该共用同一个 overlay 网络。
 	- **场景：**
 		- 分布式服务通信。
 		- 想象一下，你有几台电脑（不同主机），每台电脑上都运行着几个 Docker 容器。如果这些容器要“像在同一个局域网里一样”相互通信，就需要 **Overlay 网络**。
@@ -92,35 +94,29 @@ collapsed:: true
 		- 解封包后送到正确的容器。
 	- **配置（多主机独立容器通信（非 Swarm 服务））：**
 		- **每个主机上需要开放的端口：**
-		  collapsed:: true
 			- **为什么要开放这些端口？**
 				- 不同主机上的 Docker 守护进程需要互相交换信息、建立隧道、同步容器的网络状态，因此必须开放特定端口。
 			- `2377/tcp`：Swarm 控制平面的默认端口
 			- `4789/udp`：Overlay 网络数据传输的默认端口，真正传输数据包
 			- `7946/tcp`, `7946/udp`：节点之间通信所使用的端口，用于节点相互发现与同步
 		- **在机器 A 上初始化 Swarm：**
-		  collapsed:: true
 			- ```bash
 			  docker swarm init
 			  ```
 		- **将机器 B 加入 Swarm：**
-		  collapsed:: true
 			- ```bash
 			  docker swarm join --token <your_token> <your_ip_address>:2377
 			  ```
 			- 在机器 B 上执行上一步输出的 join 命令，将其作为 worker 节点加入 Swarm。
 		- **机器 A 创建一个 attachable 的 overlay 网络：**
-		  collapsed:: true
 			- ```bash
 			  docker network create -d overlay --attachable my-attachable-overlay
 			  ```
 			- `-d overlay` 表示使用 Overlay 驱动；
 			- `--attachable` 默认情况下，Overlay 网络只给 Swarm 服务 使用。这个参数表示该网络允许独立容器和 Swarm 服务 都能连接上； 如果没有这个选项，那么只有 Swarm 服务才能使用这个网络。
 		- **把机器 B 加入机器 A 创建的 overlay 网络：**
-		  collapsed:: true
 			- 将容器加入到 Overlay 网络后，它就能和该网络中的其他容器通信，而无需在各 Docker 主机上手动配置路由。前提是这些主机已经加入同一个 Swarm。
 	- **加密 Overlay 网络通信：**
-	  collapsed:: true
 		- 使用 `--opt encrypted` 参数来加密在 Overlay 网络中传输的应用数据。
 		- 这会在 VXLAN（Virtual Extensible LAN）层启用 IPsec 加密。
 		- 这种加密机制会带来一定的性能损耗，在正式生产环境使用前先测试性能。

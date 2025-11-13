@@ -187,6 +187,7 @@
 - [[Docker Desktop]]
 - [[Docker/Docker Engine Go SDK]]
 - [[Docker/network]]
+- [[Docker/Docker Swarm]]
 - ## 安装和配置 Docker
   collapsed:: true
 	- **安装 Docker**
