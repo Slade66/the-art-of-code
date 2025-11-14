@@ -1,7 +1,9 @@
 - **现状：** 目前配置网关路由需要开发人员或运维手动编写 JSON 并调用 APISIX Admin API。
 - **痛点：**
 	- **门槛高：**APISIX 的配置很多很复杂，不熟悉 APISIX Admin API 的人无法操作，`proxy_rewrite` 插件中的正则表达式 (`regex_uri`) 很难写。
-- **目标：** 构建一个图形化界面（GUI），将复杂的 APISIX 配置逻辑屏蔽在后端，让用户通过简单的表单填写变量，即可完成微服务路由的上线和管理，由后端负责组装那近百行的 JSON 配置。
+- **目标：**
+	- 构建一个图形化界面（GUI），将复杂的 APISIX 配置逻辑屏蔽在后端，让用户通过简单的表单填写变量，即可完成微服务路由的上线和管理，由后端负责组装那近百行的 JSON 配置。
+	- 这个服务本质上是一个“配置生成器”和“Admin API 的调用方”。它将简化的前端表单数据转换为 APISIX Admin API 所需的复杂 JSON 结构然后发起 HTTP 调用。
 - **调用方：**
 	- **主要用户：运维工程师和后端开发工程师**
 		- **特征：**了解后端部署的微服务，但不懂 APISIX。
@@ -37,6 +39,7 @@
 	- **JWT Payload 结构变更导致 Lua 脚本的难维护问题**
 		- **问题：**开启了 `jwt-auth` 的路由上硬编码了 Payload 字段提取逻辑（Lua 脚本），如果 JWT 的字段变了（比如 `sub` 变成了 `user_id`），所有已经创建的 Route 都会失效。
 		- **策略：**把“从 JWT Payload 取字段、写到请求头”的逻辑，从每个 Route 的 `serverless-post-function` 中抽出来，将这段 Lua 逻辑做成一个 APISIX 的全局插件，而不是挂载在每个 Route 上，这样一来，JWT Payload 结构变更时，只需要改一处映射配置，无需改任何 Route、无需大面积改 Lua 脚本。
+		- **决策：**最后再搞，先写死吧。后续在前端的 textarea 改 Lua 脚本。
 	- **ClickHouse 的表结构变更导致难维护问题**
 		- **问题：**Route 配置中 `log_format` 必须与 ClickHouse 的 `CREATE TABLE` 严格对应。如果以后想多记录一个字段，需要同时修改 ClickHouse 表结构和所有的 Route 的配置。
 		- **策略：**
@@ -44,4 +47,8 @@
 			- 用 **Global Rule 或 Plugin Config** 集中配置连接信息（endpoint、database、logtable…），Route 只做简单“是否启用”的绑定，不要每个 Route 写一坨完整配置。
 			- 需要开发网关记录字段和 clickhouse 表结构同步更新的功能。
 		- **决议：**直接定死数据结构，这个几乎不改。
+- **开发计划：**
+	- **阶段 一（能上线服务）：** 只实现 proxy-rewrite
+	- **阶段二（能认证和鉴权）：**jwt-auth、payload 字段注入请求头、forward-auth，依赖 RBAC 服务
+	- **阶段三（能记录）：**clickhouse-logger
 -
