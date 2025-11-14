@@ -6,6 +6,7 @@ heading:: true
   heading:: true
 	- **作用：**在 `.proto` 文件中使用特殊的语法（接口定义语言）来定义数据结构和服务接口。它就像是一张“合同”，告诉客户端和服务端要怎么通信、数据格式是怎样的。
 	- **例子：**
+	  collapsed:: true
 		- ```protobuf
 		  syntax = "proto3";
 		  
@@ -39,12 +40,14 @@ heading:: true
 		  }
 		  ```
 	- **package 关键字**
+	  collapsed:: true
 		- `package api.apisix.v1;`，这是 protobuf 的包名声明。
 		- 用于定义一个逻辑命名空间，用来给 service / message 起全局唯一的名字、避免冲突。
 			- 比如你有 `service Apisix`，它的完整名字是 `api.apisix.v1.Apisix`。
 			- 将来 RPC 方法路径会是 `/api.apisix.v1.Apisix/CreateApisix` 这样。
 			- 不同 `.proto` 文件里可以都有 `message Request`，但因为包名不同（比如 `api.apisix.v1` vs `api.user.v1`），不会冲突。
 	- **`repeated` 字段：**
+	  collapsed:: true
 		- `repeated` 字段在 Go 中会生成一个对应类型的切片。
 		- ```proto
 		  message Article {
@@ -54,10 +57,13 @@ heading:: true
 		  ```
 		- 生成的 Go `struct` 中会有一个 `Tags` 字段，会被导出（首字母大写），类型为 `[]string`。
 	- **`optional` 关键字：**
+	  collapsed:: true
 		- 使用 `optional` 关键字后，生成的 Go `struct` 字段会是一个指针类型。这样，你就可以通过检查指针是否为 `nil` 来判断字段是否被显式设置。
 	- **消息类型的嵌套：**
+	  collapsed:: true
 		- 在 Go 中，如果一个 `message` 字段引用了另一个 `message`，那么生成的 `struct` 字段会是一个指向被引用 `struct` 的指针。
 	- **`go_package` 选项：用于指定生成的 Go 代码的包信息**
+	  collapsed:: true
 		- **这个选项分为两部分（用分号分隔）：**
 			- **分号前（导入路径）：**定义其它 Go 程序 `import` 此包时使用的路径。这个路径必须是从你的 Go module 根目录开始的绝对路径。这也是 Go 代码的生成路径。
 			- **分号后（包名）：**写入到生成的 `.pb.go` 文件顶部的包声明 `package PACKAGE_NAME`。一个非常好的实践是在名称后加上 `pb` 后缀，以明确表示这是一个 Protobuf 生成的包。
@@ -72,14 +78,9 @@ heading:: true
 			- 将不同的服务放在不同的包中：
 				- 不要这样：`option go_package = "user-service/api/rbac/v1;v1";`
 				- 而是这样：`option go_package = "user-service/api/rbac/v1/permission;permissionpb";`
-	- **字段编号的作用：**
-		- 如果不用字段编号，像 JSON 一样，虽然对人类友好，但机器解析会更慢，因为需要扫描字符串来匹配字段名，而且数据中还要携带完整的字段名，导致占用更多空间。
-		- Protobuf 仅传输字段编号和值，不传字段名，解析时根据编号映射到对应的字段名，既提升了解析效率，又减少了传输体积。
-		- **不能随便更改字段编号：**
-			- 如果随意更改字段编号，旧数据在反序列化时会将值映射到错误的字段，导致数据错乱，甚至程序崩溃。字段编号一旦确定，就必须保持不变，否则旧数据将无法正确解析。
-			- **正确的做法是：**字段名可以修改，字段编号不能更改；若要删除字段，应保留原编号，避免重复使用。
 - `protoc` 编译器
   heading:: true
+  collapsed:: true
 	- 使用 `protoc` 编译器可以将 `.proto` 文件编译为对应语言（如 C++、Java、Python、Go 等）的代码，生成的代码可以直接导入并使用。
 	- **安装 `protoc` 编译器：**
 	  id:: 686c8e4e-cbc7-4781-9575-a77cbc8d2372
@@ -123,6 +124,7 @@ heading:: true
 				  print(p2)
 				  ```
 		- **Go：**
+		  collapsed:: true
 			- **安装 `protoc-gen-go`：**
 				- Google 将各语言的代码生成逻辑拆分为独立的语言插件。`protoc` 本身不直接生成 Go 代码，它需要通过插件来完成：
 					- **`protoc-gen-go`：**用于解析 `.proto` 文件并生成对应的 `.pb.go` 源代码，包含 Go 的数据结构和序列化/反序列化方法。
@@ -249,5 +251,24 @@ heading:: true
 		- **方案二：由客户端进行适配**
 			- 如果字段确实可能是非常大的数，必须使用 `int64`，那么将其序列化为字符串是符合规范的行为。
 			- 此时，应由 API 的消费者（例如前端的 JavaScript 代码）负责处理这种字符串格式的数字。前端拿到 `"total": "2"` 这类数据时，应使用 `parseInt()` 或 `Number()` 将其转换为数字再进行后续处理。
--
+- ## Protobuf message 字段命名规范
+  collapsed:: true
+	- **字段名用小写下划线风格：**`string uri_prefix = 1;`
+	- **布尔值用 is/has/can/enable 之类前缀：**
+		- ✅ `bool enabled = 3;`
+		- ✅ `bool is_default = 4;`
+		- ✅ `bool has_timeout = 5;`
+	- **重复字段用复数：**
+		- ✅ `repeated string tags = 6;`
+		- ✅ `repeated UpstreamNode upstream_nodes = 7;`
+	- **字段序号是“协议稳定性”，不要随便改！**
+		- **字段编号的作用：**
+			- Protobuf 仅传输字段编号和值，不传字段名，解析时根据编号映射到对应的字段名，既提升了解析效率，又减少了传输体积。
+			- 只要客户端和服务端对字段映射达成一致 —— 序号 1 对应字段 A、序号 2 对应字段 B，就能实现互通。而客户端与服务器使用的是同一份 Protobuf 文件，因此这份一致性自然成立。
+			- 如果不用字段编号，像 JSON 一样，虽然对人类友好，但机器解析会更慢，因为需要扫描字符串来匹配字段名，而且数据中还要携带完整的字段名，导致占用更多空间。
+		- **更改字段序号的问题：**如果随意更改字段编号，旧数据在反序列化时会将值映射到错误的字段，导致数据错乱，甚至程序崩溃。
+		- **不要：**
+			- 不要修改已有字段的编号。
+			- 不要用已删除字段的旧号码给新字段。
+		- 可以用 `reserved` 标记不用的编号。
 -
