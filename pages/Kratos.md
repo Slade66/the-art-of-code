@@ -87,6 +87,39 @@
 				- `.pb.go`：包含消息类型和服务接口的 Go 实现及其序列化方法；
 				- `_grpc.pb.go`：包含客户端可调用的接口定义，以及服务端需要实现的接口；
 				- `_http.pb.go`：仅当 `.proto` 文件中声明了 HTTP 映射（`google.api.http`）时才会生成，包含 HTTP 路由相关代码。
+			- **生成的代码：**
+				- ```proto
+				  syntax = "proto3";
+				  
+				  package api.apisix.v1;
+				  
+				  option go_package = "user-service/api/apisix/v1;v1";
+				  option java_multiple_files = true;
+				  option java_package = "api.apisix.v1";
+				  
+				  service Apisix {
+				  	rpc CreateApisix (CreateApisixRequest) returns (CreateApisixReply);
+				  	rpc UpdateApisix (UpdateApisixRequest) returns (UpdateApisixReply);
+				  	rpc DeleteApisix (DeleteApisixRequest) returns (DeleteApisixReply);
+				  	rpc GetApisix (GetApisixRequest) returns (GetApisixReply);
+				  	rpc ListApisix (ListApisixRequest) returns (ListApisixReply);
+				  }
+				  
+				  message CreateApisixRequest {}
+				  message CreateApisixReply {}
+				  
+				  message UpdateApisixRequest {}
+				  message UpdateApisixReply {}
+				  
+				  message DeleteApisixRequest {}
+				  message DeleteApisixReply {}
+				  
+				  message GetApisixRequest {}
+				  message GetApisixReply {}
+				  
+				  message ListApisixRequest {}
+				  message ListApisixReply {}
+				  ```
 	- **通过 proto 文件生成 Service 模板代码：**
 		- `kratos proto server` 命令用于根据 `.proto` 文件生成服务端代码的模板，包括接口定义和方法的空实现，便于你在其中编写具体的业务逻辑。
 		- `-t` 参数（target）用于指定生成代码的目标目录，Kratos 会将模板文件输出到该目录下。
@@ -95,13 +128,6 @@
 			  kratos proto server api/bubble/v1/todo.proto -t internal/service
 			  ```
 			- Kratos 会根据 `.proto` 中定义的服务名称，在 `internal/service` 目录下生成对应的 `.go` 文件（如 `todo.go`），其中包含服务方法的空实现，供你后续填充业务逻辑。
-- 如何编译 Kratos 项目
-  heading:: true
-  collapsed:: true
-	- 生成代码：go generate ./...
-	- 编译：go build -o ./bin/ ./...
-	- ./... 是当前目录下以及所有子目录的文件。
-	- 运行：./bin/xxx -conf 指定配置文件
 - **存根（Stub）：**
   collapsed:: true
 	- 客户端存根和服务端骨架是一对孪生兄弟，都是由 API 定义（`.proto` 文件）自动生成的，它们共同构建了一个桥梁，让开发者可以忽略底层的网络细节，专注于业务逻辑的实现。
