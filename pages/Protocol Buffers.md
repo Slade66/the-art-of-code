@@ -38,6 +38,12 @@ heading:: true
 		    string message = 1;
 		  }
 		  ```
+	- **package 关键字**
+		- `package api.apisix.v1;`，这是 protobuf 的包名声明。
+		- 用于定义一个逻辑命名空间，用来给 service / message 起全局唯一的名字、避免冲突。
+			- 比如你有 `service Apisix`，它的完整名字是 `api.apisix.v1.Apisix`。
+			- 将来 RPC 方法路径会是 `/api.apisix.v1.Apisix/CreateApisix` 这样。
+			- 不同 `.proto` 文件里可以都有 `message Request`，但因为包名不同（比如 `api.apisix.v1` vs `api.user.v1`），不会冲突。
 	- **`repeated` 字段：**
 		- `repeated` 字段在 Go 中会生成一个对应类型的切片。
 		- ```proto
@@ -51,19 +57,9 @@ heading:: true
 		- 使用 `optional` 关键字后，生成的 Go `struct` 字段会是一个指针类型。这样，你就可以通过检查指针是否为 `nil` 来判断字段是否被显式设置。
 	- **消息类型的嵌套：**
 		- 在 Go 中，如果一个 `message` 字段引用了另一个 `message`，那么生成的 `struct` 字段会是一个指向被引用 `struct` 的指针。
-	- **字段的类型：**
-		- `int32`，32 位整数
-		- `int64`，64 位整数
-		- `string`，字符串
-		- `bool`，布尔值
-		- `float`，单精度浮点数
-		- `double`，双精度浮点数
-		- `repeated`，表示数组/列表
-		- `message`，嵌套结构体
-		- `enum`，枚举类型
 	- **`go_package` 选项：用于指定生成的 Go 代码的包信息**
 		- **这个选项分为两部分（用分号分隔）：**
-			- **分号前（导入路径）：**定义其它 Go 程序 `import` 此包时使用的路径。这个路径必须是从你的 Go module 根目录开始的绝对路径。
+			- **分号前（导入路径）：**定义其它 Go 程序 `import` 此包时使用的路径。这个路径必须是从你的 Go module 根目录开始的绝对路径。这也是 Go 代码的生成路径。
 			- **分号后（包名）：**写入到生成的 `.pb.go` 文件顶部的包声明 `package PACKAGE_NAME`。一个非常好的实践是在名称后加上 `pb` 后缀，以明确表示这是一个 Protobuf 生成的包。
 		- **示例：**
 			- ```proto
@@ -95,6 +91,7 @@ heading:: true
 		  logseq.order-list-type:: number
 	- **编译 & 使用：**
 		- **Python：**
+		  collapsed:: true
 			- **生成 Python 代码：**`protoc --python_out=. person.proto`
 				- 生成的文件以 `_pb2.py` 结尾，这是 Google 官方的命名约定，用于表示通过 Protobuf 编译器自动生成的 Python 模块，可直接导入使用。
 				- `pb` 代表 Protocol Buffer
@@ -203,6 +200,7 @@ heading:: true
 				  }
 				  ```
 - **在 proto 文件中添加 HTTP 注解以启用 HTTP 支持：**
+  collapsed:: true
 	- 主要目的是使同一个 `.proto` 定义能够同时生成 gRPC 服务端/客户端代码以及 HTTP/JSON 反向代理网关，从而让 gRPC 服务能够通过 HTTP RESTful API 访问。
 	- 你可以在 `.proto` 文件中定义 gRPC 服务，并在服务的方法（RPC）上使用特殊的 `option` 添加 HTTP 注解，指明该 RPC 如何映射到 HTTP/JSON 接口。在你的 Go 应用中，同时启动 gRPC 服务和 HTTP 反向代理。当 HTTP 请求到来时，反向代理会将其转换为 gRPC 请求并发送给 gRPC 服务，随后将 gRPC 服务的响应转换为 HTTP/JSON 格式返回给客户端。
 	- **在 `.proto` 文件中，添加 `google.api.http` 选项：**
@@ -235,6 +233,7 @@ heading:: true
 		  }
 		  ```
 - **为什么在 `.proto` 文件中定义的是 `int64` 类型，返回的却是字符串？**
+  collapsed:: true
 	- 这不是 Bug。将 `int64` 序列化为 JSON 字符串是 Protobuf 的标准做法，目的是避免在 JavaScript 中出现精度丢失。
 	- **问题原因：**
 		- 为了确保数据在不同系统间的兼容性和完整性，Kratos 的 HTTP Server（即 gRPC-Gateway 实现）会对某些类型的数据进行转换。
