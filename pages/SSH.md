@@ -19,10 +19,17 @@
 					- ```bash
 					  ssh-copy-id user@remote_host
 					  ```
+			- **启用密钥登录：**
+			  logseq.order-list-type:: number
+				- ```bash
+				  vim /etc/ssh/sshd_config
+				  PubkeyAuthentication yes
+				  sudo systemctl restart ssh
+				  ```
 			- **在开发机上通过 SSH 连接目标服务器的用户：**
 			  logseq.order-list-type:: number
 				- ```bash
-				  ssh user1@your_server_ip
+				  ssh -i A:/Users/liyuz/.ssh/xiaoji youruser@1.2.3.4
 				  ```
 				- 如果配置正确，会直接登录而无需输入密码。
 		- **注意：**

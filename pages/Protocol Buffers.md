@@ -63,7 +63,6 @@ heading:: true
 	  collapsed:: true
 		- 在 Go 中，如果一个 `message` 字段引用了另一个 `message`，那么生成的 `struct` 字段会是一个指向被引用 `struct` 的指针。
 	- **`go_package` 选项：用于指定生成的 Go 代码的包信息**
-	  collapsed:: true
 		- **这个选项分为两部分（用分号分隔）：**
 			- **分号前（导入路径）：**定义其它 Go 程序 `import` 此包时使用的路径。这个路径必须是从你的 Go module 根目录开始的绝对路径。这也是 Go 代码的生成路径。
 			- **分号后（包名）：**写入到生成的 `.pb.go` 文件顶部的包声明 `package PACKAGE_NAME`。一个非常好的实践是在名称后加上 `pb` 后缀，以明确表示这是一个 Protobuf 生成的包。
@@ -80,7 +79,6 @@ heading:: true
 				- 而是这样：`option go_package = "user-service/api/rbac/v1/permission;permissionpb";`
 - `protoc` 编译器
   heading:: true
-  collapsed:: true
 	- 使用 `protoc` 编译器可以将 `.proto` 文件编译为对应语言（如 C++、Java、Python、Go 等）的代码，生成的代码可以直接导入并使用。
 	- **安装 `protoc` 编译器：**
 	  id:: 686c8e4e-cbc7-4781-9575-a77cbc8d2372
@@ -262,6 +260,7 @@ heading:: true
 		- ✅ `repeated string tags = 6;`
 		- ✅ `repeated UpstreamNode upstream_nodes = 7;`
 	- **字段序号是“协议稳定性”，不要随便改！**
+	  collapsed:: true
 		- **字段编号的作用：**
 			- Protobuf 仅传输字段编号和值，不传字段名，解析时根据编号映射到对应的字段名，既提升了解析效率，又减少了传输体积。
 			- 只要客户端和服务端对字段映射达成一致 —— 序号 1 对应字段 A、序号 2 对应字段 B，就能实现互通。而客户端与服务器使用的是同一份 Protobuf 文件，因此这份一致性自然成立。

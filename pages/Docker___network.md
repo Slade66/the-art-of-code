@@ -117,6 +117,7 @@ collapsed:: true
 		- **把机器 B 加入机器 A 创建的 overlay 网络：**
 			- 将容器加入到 Overlay 网络后，它就能和该网络中的其他容器通信，而无需在各 Docker 主机上手动配置路由。前提是这些主机已经加入同一个 Swarm。
 	- **加密 Overlay 网络通信：**
+	  collapsed:: true
 		- 使用 `--opt encrypted` 参数来加密在 Overlay 网络中传输的应用数据。
 		- 这会在 VXLAN（Virtual Extensible LAN）层启用 IPsec 加密。
 		- 这种加密机制会带来一定的性能损耗，在正式生产环境使用前先测试性能。

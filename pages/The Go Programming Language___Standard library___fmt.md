@@ -117,4 +117,7 @@
 - `func Fprintf(w io.Writer, format string, a ...any) (n int, err error)`
   collapsed:: true
 	- **作用：**`Fprintf` 按照格式说明符格式化内容，并将结果写入 `w`。它返回已写入的字节数，以及可能遇到的写入错误。
+- `func Sprintf(format string, a ...any) string`
+  collapsed:: true
+	- **作用：**`Sprintf` 会根据格式说明符进行格式化处理，并返回生成的字符串。
 -

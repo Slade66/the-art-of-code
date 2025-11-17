@@ -10,7 +10,7 @@
 	  ```
 	- **`Transport RoundTripper`：**这是执行单个 HTTP 事务（请求-响应）的底层机制。`Client` 的大部分高级功能（如连接池、连接保持）都由 `Transport` 实现。如果此字段为 `nil`，则会使用全局默认的 `http.DefaultTransport`。
 	- **`CheckRedirect func(req *Request, via []*Request) error`：**一个函数，用于定义客户端如何处理 HTTP 重定向。如果为 `nil`，客户端将采用默认策略，即最多跟随 10 次重定向。你可以通过自定义这个函数来阻止重定向或实现更复杂的逻辑。
-	- **`Timeout time.Duration`：**为整个 HTTP 请求设置一个总的超时时间。这个超时覆盖了从建立连接、发送请求、等待响应到读取完响应体的全部过程。如果值为 `0`，则表示没有超时限制。
+	- **`Timeout time.Duration`：**为整个 HTTP 请求设置一个总的超时时间。这个超时覆盖了从建立连接、发送请求、跟随重定向、等待响应到读取完响应体的全部过程。如果值为 `0`，则表示没有超时限制。
 - **注意：**
 	- 使用 `http.Client` 最重要的一个最佳实践：**创建一次，全局复用**。
 		- **并发安全**：`http.Client` 是并发安全的，这意味着你可以在多个 goroutine 中同时安全地使用同一个实例。

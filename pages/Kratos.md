@@ -57,6 +57,7 @@
 		- `service` 接收请求，调用 `biz` 处理业务，`biz` 层则通过 `data` 层的方法操作数据库。
 - kratos 命令行工具
   heading:: true
+  collapsed:: true
 	- **安装：**`go install github.com/go-kratos/kratos/cmd/kratos/v2@latest`
 	- **创建项目：**
 		- 使用默认模板创建一个新的 Kratos 项目：`kratos new <项目名>`
@@ -305,9 +306,9 @@
 	- **服务层（Service Layer）**
 		- 服务层主要进行初步的、简单的校验，确保传入的数据符合基本要求，避免无效数据进入业务层，不涉及复杂逻辑或数据库查询。
 		- **语法校验：**
-			- 检查字符串是否为空。
-			- 检查整数是否在合理范围内。
-			- 检查邮箱格式是否正确。
+			- 是否必填。
+			- 数值和字符串长度是否在合理范围内。
+			- 数据的格式是否正确。
 			- ```proto
 			  message AddRegistryRequest {
 			      string name = 1 [(validate.rules).string.min_len = 1];  // 检查 name 不为空
@@ -324,9 +325,8 @@
 			  ```
 	- **业务层（Biz Layer）**
 		- 业务层负责进行复杂的业务规则校验，确保操作合法并符合系统的核心规则和数据一致性要求。这些校验通常涉及数据库查询或外部服务调用，以确保业务逻辑的正确性，不会破坏系统的基本规则。
+		- **职责**：协调多个 repo / 其他 usecase 完成一个业务动作。
 		- **复杂业务规则校验：**
-			- 检查用户名是否已存在。
-			- 验证仓库地址是否可达。
 			- ```go
 			  // 检查仓库名称是否已存在
 			  if repositoryExists(req.Name) {
@@ -337,18 +337,19 @@
 			  if !isReachable(req.Address) {
 			      return errors.New("repository address is unreachable")
 			  }
-			  ```
-		- **业务不变量校验：**
-			- 确保用户余额足够进行转账。
-			- ```go
+			  
 			  // 确保用户余额足够
 			  if userBalance < req.Amount {
 			      return errors.New("insufficient balance")
 			  }
 			  ```
 	- **数据层（Data Layer）**
+		- **职责**：和数据库 / 缓存 / 外部 HTTP 服务打交道。
 		- 数据层依赖数据库的约束条件来确保数据符合数据库的规则，避免不一致或错误数据进入系统。
-		- 参数校验应该在 biz 层进行。biz 层负责业务逻辑和参数校验，而 data 层主要负责数据访问逻辑。
+		- **与存储/外部 API 的约束相关的校验：**某个字段长度超过 DB 字段上限时，提前报错。
+		- **不应该放的：**
+			- 不要在 data 层搞“业务流程判断”：能不能创建、权限是否足够等。
+			- 这些判断必须在 biz 层完成，repo 只负责执行“已经被允许的持久化操作/远程调用”。
 - **为啥 Biz 层能直接用 Model？这耦合能接受吗？**
   collapsed:: true
 	- **问题背景：**
@@ -368,4 +369,5 @@
 			- 后厨（`biz` 层）完成一道菜（构建好 `model` 数据）后，需要将其存入仓库（数据库）。后厨不会直接去 MySQL 仓库，而是按下墙上的按钮（调用接口），喊道：“仓库管理员，来取货！”至于值班的管理员是 MySQL 还是 PostgreSQL，后厨并不关心，只要能把货存好就行。这样，哪怕我们把 MySQL 换成 PostgreSQL，后厨的工作流程也不会受影响。
 			  id:: 68947f29-67a0-4486-a6b7-fac1172ba3d1
 - 在 service 把 biz 和 api 解耦：proto 的 req 和 resp 不要直接传入 biz，而是转换成 dto 再传，虽然看起来做多了一步复制对象的操作，但是实现了biz 和 api 层的解耦，甚至是 data 和 api 层的解耦，之后修改 api 层的代码，比如修改包名，就不需要改 biz 层的代码，否则要改biz层的函数签名。
+- [[Kratos/参数校验]]
 -

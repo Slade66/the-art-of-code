@@ -40,7 +40,6 @@
 			  docker inspect my-image:latest
 			  ```
 	- `docker network`
-	  collapsed:: true
 		- `docker network ls`：列出 Docker 宿主机上的所有网络。
 		  collapsed:: true
 			- ```bash
