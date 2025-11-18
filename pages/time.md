@@ -1,7 +1,8 @@
--
 - `func Now() Time`
+  collapsed:: true
 	- **作用：**调用 `time.Now()` 就像问电脑：“现在是几点？” 它会给你一个包含当前日期、时间和时区信息的 `Time` 对象（`2025-11-06 17:42:41.5393686 +0800 CST m=+0.000000001`）。
 - `func (t Time) Format(layout string) string`
+  collapsed:: true
 	- **作用：**`t.Format()` 就是把一个 `time.Time` 对象（一个复杂的时间数据）变成一个人类可读的、特定格式的字符串。
 	- **参数：**
 		- `layout string`：格式化模板字符串。
@@ -35,8 +36,10 @@
 					- `04` 对应分钟
 				- 因此，你的输入 `layout` 字符串是：`2006年01月02日 15:04`。
 - `func Sleep(d Duration)`
+  collapsed:: true
 	- **作用：**Sleep 会让当前的 goroutine 暂停执行，至少持续时间为 `d`。如果传入的时间是负数或 0，Sleep 会立即返回，不会产生任何延迟。
 - `type Duration int64`
+  collapsed:: true
 	- **作用：**是 Go 语言中用来表示时间段的基本类型。它以纳秒为单位来计数，`Duration` 变量存储的数值就是这个时间段包含的纳秒数。
 	- **注意：**
 		- 最大的 `Duration` 约等于 290 年。虽然这对大多数应用来说已经足够，但在涉及极长时间跨度的计算时需要注意这个上限。
@@ -62,4 +65,8 @@
 		      }
 		  }
 		  ```
+- `func Unix(sec int64, nsec int64) Time`
+  collapsed:: true
+	- **作用：**用于将 Unix 秒级时间戳（`1763103115`）转换为 `time.Time` 类型。
+	- **原理：**从零点（`1970-01-01T00:00:00Z`）出发，按 `sec` 秒再加 `nsec` 纳秒，得到一个具体的时刻（`time.Time` 值）。
 -

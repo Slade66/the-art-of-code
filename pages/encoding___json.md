@@ -1,8 +1,10 @@
 - **有什么用？**
+  collapsed:: true
 	- `encoding/json` 包实现了 JSON 标准（RFC 7159）的编解码。
 		- **编码：**将 Go 结构体转换为标准的 JSON 文本。
 		- **解码：**将 JSON 数据解析后填充到指定的 Go 结构体变量中。
 - **注意：**
+  collapsed:: true
 	- **重复键：**若 JSON 中存在重复键，后面的值会覆盖或合并前面的值；其中 `map` 和 `struct` 类型会合并，其他类型则被替换。
 	- **字段匹配：**字段名匹配时不区分大小写，例如 JSON 的 `"Name"` 能匹配 Go 结构体中的 `name`。
 	- **多余字段：**JSON 中出现结构体未定义的字段时，这些字段会被自动忽略。
@@ -17,7 +19,6 @@
 		- **无法给小写开头的结构体字段赋值：**在 Go 中，只有以大写字母开头的结构体字段才是可导出的，`encoding/json` 等外部包才能访问和修改它们。若字段名以小写字母开头（不可导出），即使 JSON 数据完全正确，`encoding/json` 也无法为这些字段赋值，解析结果中它们会保持默认零值（如字符串为 `""`、数字为 `0`），从而给人一种“数据没有解析到”的错觉。
 		- **json.Unmarshal 对未知字段是“宽松容忍”的：**默认行为是宽松解析，不会报错，如果 JSON 里有结构体没有的字段，Go 会自动忽略它们（多余的字段被自动丢弃）。
 	- **代码示例：**
-	  collapsed:: true
 		- ```go
 		  package main
 		  
@@ -63,11 +64,6 @@
 	- **注意：**
 		- **只编码可导出字段：**`Marshal` 只会编码结构体中以大写字母开头的字段（可导出字段）。
 		- `encoding/json` 会把 nil 切片编码成 `null`，而空切片会编码成 `[]`。
-		- **JSON Tag：**字段标签（`json:"..."`）用于控制 JSON 中的键名和行为：
-			- `json:"keyName"`：指定该字段在 JSON 中对应的键名。
-			- `json:"-"`：忽略该字段，不参与 JSON 编码或解码。
-			- `json:",omitempty"`：当字段值为空（如 `false`、`0`、`nil` 或零长度的切片、Map、字符串）时，省略该字段。
-			- `json:",omitzero"`：当字段值为零值，或字段类型实现了 `IsZero()` 方法且返回 `true` 时，省略该字段。
 - `func MarshalIndent(v any, prefix, indent string) ([]byte, error)`
   collapsed:: true
 	- **作用：**
@@ -82,4 +78,11 @@
   collapsed:: true
 	- **作用：**从输入流中读取下一个完整的 JSON 值，然后将它填充到 Go 对象。
 	- **优势：**流式解析、边读边处理，不需要一次性加载全部数据到内存。
+- **JSON 标签**
+  collapsed:: true
+	- `json:"keyName"`：指定该字段在 JSON 中对应的键名。
+	- `json:"-"`：忽略该字段，不参与 JSON 编码或解码。
+	- `json:"omitempty"`：当字段值为零值（如 `false`、`0`、`nil`、`""`）时，省略该字段。
+	- `json:"omitzero"`：当字段值为零值，或字段类型实现了 `IsZero()` 方法且返回 `true` 时，省略该字段。
+	- `json:"string"`：将该字段（通常是数字或布尔值）编码为 JSON 字符串。常用于 JavaScript 中大数字精度丢失的问题。
 -
