@@ -370,4 +370,17 @@
 			  id:: 68947f29-67a0-4486-a6b7-fac1172ba3d1
 - 在 service 把 biz 和 api 解耦：proto 的 req 和 resp 不要直接传入 biz，而是转换成 dto 再传，虽然看起来做多了一步复制对象的操作，但是实现了biz 和 api 层的解耦，甚至是 data 和 api 层的解耦，之后修改 api 层的代码，比如修改包名，就不需要改 biz 层的代码，否则要改biz层的函数签名。
 - [[Kratos/参数校验]]
+- ## DTO 转换应该放在 data 层还是 biz 层？
+	- **合理的做法：**在 data 层把 APISIX 的 JSON 转成 `dto.Route`，biz 层只接收 `[]*dto.Route`，用于业务处理或直接透传给 service。biz 不应该触碰任何 HTTP 或 JSON 相关细节。
+	- **职责划分**
+		- data 层：与外部系统交互（如 APISIX HTTP API），处理 HTTP 请求、响应和 JSON 格式。
+		- biz 层：只关注业务逻辑，不关心 APISIX 返回的数据结构或字段名。
+	- **为什么要把转换放在 data 层（解耦外部依赖）**
+		- 当 APISIX 的返回格式发生变化（例如字段从 create_time 改为 created_at）时：
+			- 如果转换在 data 层，改动只会影响 data 层；
+			- 如果转换放在 biz 层，则 biz 和 data 都要跟着调整，biz 也不得不理解 APISIX 的字段细节，层间耦合会变重。
+	- `data` 层做的事：
+		- 调用 APISIX 的 HTTP API。
+		- 用 data 内部定义的 struct 接收 JSON。
+		- 将该内部 struct 映射为`[]*dto.Route`  返回给 biz。
 -

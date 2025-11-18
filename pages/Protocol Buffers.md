@@ -250,7 +250,6 @@ heading:: true
 			- 如果字段确实可能是非常大的数，必须使用 `int64`，那么将其序列化为字符串是符合规范的行为。
 			- 此时，应由 API 的消费者（例如前端的 JavaScript 代码）负责处理这种字符串格式的数字。前端拿到 `"total": "2"` 这类数据时，应使用 `parseInt()` 或 `Number()` 将其转换为数字再进行后续处理。
 - ## Protobuf message 字段命名规范
-  collapsed:: true
 	- **字段名用小写下划线风格：**`string uri_prefix = 1;`
 	- **布尔值用 is/has/can/enable 之类前缀：**
 		- ✅ `bool enabled = 3;`
@@ -260,7 +259,6 @@ heading:: true
 		- ✅ `repeated string tags = 6;`
 		- ✅ `repeated UpstreamNode upstream_nodes = 7;`
 	- **字段序号是“协议稳定性”，不要随便改！**
-	  collapsed:: true
 		- **字段编号的作用：**
 			- Protobuf 仅传输字段编号和值，不传字段名，解析时根据编号映射到对应的字段名，既提升了解析效率，又减少了传输体积。
 			- 只要客户端和服务端对字段映射达成一致 —— 序号 1 对应字段 A、序号 2 对应字段 B，就能实现互通。而客户端与服务器使用的是同一份 Protobuf 文件，因此这份一致性自然成立。

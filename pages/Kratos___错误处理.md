@@ -140,7 +140,6 @@
 		- `option (errors.default_code) = 500;`：这个选项设置在 `enum` 的顶层，为该枚举中定义的所有错误原因指定一个默认的 HTTP 状态码。如果某个错误原因没有单独指定 `code`，它将使用这个默认值。
 		- `[(errors.code) = 404]`：这个选项附加在单个枚举值的后面，用于覆盖默认的 `code`。它为特定的 `reason` 指定了其对应的 HTTP 状态码。
 	- **使用 `protoc-gen-go-errors` 生成代码**
-	  collapsed:: true
 		- 定义好包含 `ErrorReason` 的 `.proto` 文件后，可使用 `protoc` 编译器结合 Kratos 提供的专用插件 `protoc-gen-go-errors` 生成对应的 Go 代码。
 		- 代码生成后，会在指定的输出目录下创建一个 `xxx_errors.pb.go` 文件。这个文件包含了以下类型的辅助函数：
 			- **错误检查函数**：为每个错误原因生成一个 `IsXXX` 函数。
