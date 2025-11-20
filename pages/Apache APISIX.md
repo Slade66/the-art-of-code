@@ -37,5 +37,6 @@
 - [[Apache APISIX/Consumer]]
 - [[Apache APISIX/Plugins]]
 - [[Apache APISIX/Credential]]
+- [[Apache APISIX/Plugin Config]]
 - [[Apache APISIX/配置 Nacos]]
 -
