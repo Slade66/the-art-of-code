@@ -26,6 +26,7 @@
 - [[The Go Programming Language/错误处理]]
 - [[The Go Programming Language/字符串]]
 - [[The Go Programming Language/泛型]]
+- [[Go 程序设计语言/单元测试]]
 - [[Go 的工具链]]
 - [[Go 的工作区]]
 - [[Go 的语法格式]]
@@ -42,4 +43,6 @@
 - [[Go 程序设计语言/注释]]
 - ## Packages
 	- [[Go 程序设计语言/zap]]
+	- [[Go 程序设计语言/uuid]]
+	- [[Go 程序设计语言/jwt]]
 -

@@ -1,5 +1,4 @@
 - `func Parse(s string) (UUID, error)`
-  title:: Go 的 uuid
 	- 这个函数的主要作用是验证并转换输入字符串。它接收一个字符串，尝试将其解析为 `uuid.UUID` 类型的对象。
 	- `uuid.Parse()` 会严格检查字符串是否符合 UUID 标准格式：
 		- 检查字符串的长度是否为 36 个字符，包含 4 个连字符。
