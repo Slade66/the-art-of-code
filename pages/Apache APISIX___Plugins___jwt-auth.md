@@ -1,5 +1,9 @@
 - **jwt-auth 插件有什么用？**
 	- jwt-auth 插件要求客户端在访问后端服务之前，通过 JWT 来验证自己的身份。
+	- 插件负责：
+		- 校验请求里带的 JWT 是否合法、未过期
+		- 从 JWT 中解析出 `key`，找到对应 Consumer 的 Credential。
+		- 把认证通过后的身份信息注入到请求（header/变量）中，给后端服务使用。
 - **jwt-auth 插件的配置项**
 	- **Consumer 或 Credential 上的配置：**
 		- `key`：JWT 凭证的标识符。
@@ -97,9 +101,12 @@
 		  Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJsaXl1emUta2V5IiwiZXhwIjoxNzYwODkzMjYxfQ.P8dpibA_tMapryAg-LT_aDyjxIodFVRvIttxh422h6E
 		  ```
 - **其它：**
-	- 启用插件后，会为消费者提供一个专门用于签发数字身份证（JWT）的 API 接口。消费者需要先通过该接口获取属于自己的 JWT，这个过程会生成一个令牌（token）。之后，客户端在发起请求时必须携带该令牌，以向 APISIX 证明身份。
-	- 令牌可以放在请求的 URL 查询参数、请求头或 Cookie 中。
+	- **JWT 放在哪些地方？**
+		- 请求头：`Authorization: Bearer <token>`
+		- 自定义 Header：例如 `X-APISIX-Token: <token>`
+		- URL 查询参数：例如 `?jwt=<token>`
+		- Cookie。
 	- 当 APISIX 收到带有 JWT 的请求时，会对令牌进行验证：它是不是我签发的？它过期了没有？它有没有被篡改过？验证通过就放行，否则直接拒绝。
-	- 当消费者成功通过认证后，APISIX 会在将请求代理到上游服务之前，向请求中添加一些额外的请求头，例如 `X-Consumer-Username`（用户的用户名）、`X-Credential-Identifier`（JWT 的唯一标识）以及其它配置的自定义请求头。然后，APISIX 再将请求转发给你的后端。这样，上游服务只需从请求头中读取这些信息，就能区分不同的消费者，知道“当前是谁在访问我”，从而专注于处理业务逻辑，实现了认证与业务逻辑的解耦。
+	- 当消费者成功通过认证后，APISIX 会在将请求代理到上游服务之前，向请求中添加一些额外的请求头，例如 `X-Consumer-Username`（APISIX Counsumer 的用户名）、`X-Credential-Identifier`（Credential 的唯一标识）。然后，APISIX 再将请求转发给你的后端。这样，上游服务只需从请求头中读取这些信息，就能区分不同的消费者，知道“当前是谁在访问我”，从而专注于处理业务逻辑，实现了认证与业务逻辑的解耦。
 	- jwt-auth 可以与 HashiCorp Vault 配合使用，将密钥或公钥存储在 Vault 这种安全的存储中，再通过 APISIX 的 Secret 资源进行读取，从而保证安全性。
 -

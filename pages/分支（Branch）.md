@@ -51,6 +51,13 @@
 			- `git pull` 实际上是两个命令的组合：
 				- `git fetch`：从远程仓库下载最新的改动到本地，但不会自动合并到你当前的工作分支。
 				- `git merge`：将远程分支的更新合并到当前本地分支。
+				- ```bash
+				  # git pull = git fetch + git merge
+				  git pull origin main
+				  # 等价于：
+				  git fetch origin main  # 1. 从远程拉取 main 分支的最新代码
+				  git merge origin/main  # 2. 将远程 main 分支合并到当前分支
+				  ```
 		- **删除远程分支：**`git push origin --delete [远程分支名]`
 		- **拉取远程分支：**
 			- `git switch <远程分支>` 或 `git checkout <远程分支>`

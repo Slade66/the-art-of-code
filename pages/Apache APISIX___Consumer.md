@@ -1,7 +1,10 @@
-- **Consumer 是什么？**
-	- 消费者（Consumer）是服务的使用者，是对“API 调用者”的一种身份抽象，通常与认证插件一起使用。
-- **Consumer 有什么用？**
-	- `Consumer` 的核心目的是识别身份，用于确定谁在使用你的 API，并对不同身份进行差异化管理。
+- **Consumer 是什么？有什么用？**
+	- 消费者是服务的使用者，是“API 调用者”的身份，它代表“谁在调用”。
+	- 在 APISIX 里，Consumer 表示一个具体的“客户端/用户/应用”，比如：
+		- 某个移动 App
+		- 某个后端服务
+		- 某个合作方客户
+	- `Consumer` 的核心目的是“识别调用者的身份 + 绑定认证 / 限流等插件配置”，用于确定谁在使用你的 API，并对不同身份进行差异化管理。
 	- 所有认证类插件（如 `key-auth`、`basic-auth`、`jwt-auth`、`ldap-auth` 等）的最终目的，都是将当前请求映射到一个已知的 `Consumer` 身份。
 - **Consumer API**
 	- **消费者资源请求地址：**`/apisix/admin/consumers/{username}`
@@ -15,7 +18,6 @@
 		- `plugins`：用于配置消费者的认证方式及其对应的私有凭证信息，例如指定认证方式为密钥认证（`key-auth`）并设置具体的密钥（`key`）。
 		  collapsed:: true
 			- **与路由上的 `plugins` 参数对比**
-			  collapsed:: true
 				- 要理解 `Consumer` 中 `plugins` 参数的作用，关键是将其与 `Route` 中的同名参数进行对比。虽然名称相同，但它们的角色截然不同。
 				- 在 `Consumer` 中，`plugins` 用于存放与消费者身份绑定的认证信息，例如 API 密钥或 JWT 密钥，相当于“身份凭证”。
 				- 在 `Route` 中，`plugins` 用于定义准入规则或启用功能，例如“此路由需要检查 API 密钥”。它关注的是规则本身，而不涉及密钥具体内容。
