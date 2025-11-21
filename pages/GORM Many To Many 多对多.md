@@ -71,14 +71,28 @@
 	  // 2. 在 'post_tags' 连接表中插入两条记录 (post.ID, tagGo.ID) 和 (post.ID, tagGorm.ID)
 	  db.Create(&post)
 	  ```
-- **GORM 多对多关联结构体标签：**
-	- ```
-	  Users []User `gorm:"many2many:user_menus;foreignKey:Uid;joinForeignKey:MenuUid;References:Uid;joinReferences:UserUid"`
+- **多对多关联的标签**
+	- ```go
+	  package model
+	  
+	  // User 用户模型
+	  type User struct {
+	  	BaseModel
+	  	Username    string  `gorm:"type:varchar(50);not null;uniqueIndex:uk_user_username"`
+	  	Password    string  `gorm:"type:varchar(100)"`
+	  	DisplayName *string `gorm:"type:varchar(100)"`
+	  	Email       *string `gorm:"type:varchar(200)"`
+	  	Phone       *string `gorm:"type:varchar(20)"`
+	  	IsSuperadmin bool   `gorm:"type:tinyint(1);not null;default:0"`
+	  	//BusinessGroups []BusinessGroup `gorm:"many2many:user_business_groups;references:Uid"`
+	  	Teams []Team `gorm:"many2many:user_teams;foreignKey:Uid;joinForeignKey:UserUid;References:Uid;joinReferences:TeamUid"`
+	  	Roles []Role `gorm:"many2many:user_roles;foreignKey:Uid;joinForeignKey:UserUid;References:Uid;joinReferences:RoleUid"`
+	  	Menus []Menu `gorm:"many2many:user_menus;foreignKey:Uid;joinForeignKey:UserUid;References:Uid;joinReferences:MenuUid"`
+	  }
 	  ```
-		- `many2many:user_menus` - 指定中间表名称为 `user_menus`
-		- `foreignKey:Uid` - Menu 表的外键字段是 `Uid`（Menu.Uid）
-		- `joinForeignKey:MenuUid` - 中间表中引用 Menu 的字段名是 `MenuUid`
-		- `References:Uid` - User 表的参考字段是 `Uid`（User.Uid）
-		- `joinReferences:UserUid` - 中间表中引用 User 的字段名是 `UserUid`
-	-
+	- `many2many:user_teams`：指定中间表的表名为 `user_teams`。
+	- `foreignKey:Uid`：本表标识。指 `User` 表中哪个字段是主键？是 `Uid`。
+	- `joinForeignKey:UserUid`：中间表对应本表的列。指中间表 `user_teams` 里，哪一列用来关联 User？是 `UserUid`。
+	- `References:Uid`：对方表标识。指 `Team` 表中哪个字段是主键？是 `Uid`。
+	- `joinReferences:TeamUid`：中间表对应对方的列。指中间表 `user_teams` 里，哪一列用来关联 Team？是 `TeamUid`。
 -

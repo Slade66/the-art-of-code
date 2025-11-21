@@ -1,4 +1,5 @@
 - **概念：**
+  collapsed:: true
 	- GORM 是 Go 语言的 ORM（Object-Relational Mapping，对象关系映射）框架。
 	- **ORM：**
 		- ORM（Object-Relational Mapping，对象关系映射）允许你像操作普通对象一样操作数据库中的数据。类（结构体）对应数据库中的表，对象对应表中的一行，属性对应表中的字段。操作对象就相当于操作表中的数据，从而以面向对象的方式简化了数据库操作，易于理解和使用。
@@ -8,6 +9,7 @@
 			- 复杂的查询可能还是需要手动编写 SQL，而 ORM 生成的 SQL 可能不如手写的 SQL 高效。
 			- 虽然 ORM 能让你几乎不再需要手写 SQL，但 SQL 仍然是必须懂的，只有这样你才能更好地使用 ORM。
 - **安装：**
+  collapsed:: true
 	- **安装 GORM 包：**
 	  logseq.order-list-type:: number
 		- ```bash
@@ -20,6 +22,7 @@
 			  go get -u gorm.io/driver/mysql
 			  ```
 - **连接到数据库：**
+  collapsed:: true
 	- **MySQL：**
 		- ```go
 		  import (
@@ -49,12 +52,22 @@
 - [[GORM Has One 一对一]]
 - [[GORM Has Many 一对多]]
 - [[GORM Many To Many 多对多]]
-- [[Preloading]]
+- [[Preload]]
 - [[GORM 的事务]]
 - [[GORM Context]]
 - [[GORM 的迁移]]
 - **外键放哪里？**
+  collapsed:: true
 	- 外键放在从属的那一方。
 	- 身份证属于公民，所以在身份证表中建立外键，而不是在公民表。
 	- 多对多关系无法通过在两张主表里加外键来实现，必须引入第三张中间表。
+- **指针 vs 值类型**
+  collapsed:: true
+	- 为什么有些字段是 `string`，有些是 `*string`？
+		- ```go
+		  Username    string  // 普通类型
+		  DisplayName *string // 指针类型
+		  ```
+	- 普通字符串（`string`）的零值是空串 `""`。在不传值的情况下，GORM 会将其写入为 `""`。因此你无法判断用户是刻意把字段清空，还是根本没有填写。
+	- 指针字符串（`*string`）的零值是 `nil`。字段为 `nil` 时，GORM 会写入 `NULL`。这种方式能让像 `DisplayName`、`Email` 这类可选字段在数据库中以真正的 `NULL` 表示“未填写”，而不是空串。
 -
