@@ -1,0 +1,23 @@
+- `func (db *DB) Count(count *int64) (tx *DB)`
+	- **作用：**根据当前 `db` 对象上已经拼好的查询条件，执行一条 `SELECT COUNT(*) ...`，并把匹配行数写进你传入的那个 `int64` 变量中。
+	- **参数：**
+		- `count *int64`：你传进来的整数变量的指针，GORM 会把统计出来的行数写进这个变量。
+	- **返回值：**`*DB`：返回新的 `DB` 实例，方便继续链式调用。
+- `func (db *DB) Offset(offset int) (tx *DB)`
+	- **作用：**在当前查询上设置 SQL 的 `OFFSET` 子句，表示跳过前 `offset` 条记录再开始返回结果，常用于分页。
+	- **参数：**
+		- `offset int`：要跳过的记录数量。
+	- **返回值：**`*DB`：返回新的 `DB` 实例，方便继续链式调用。
+- `func (db *DB) Limit(limit int) (tx *DB)`
+	- **作用：**在当前查询上设置 SQL 的 `LIMIT` 子句，表示最多返回 `limit` 条记录，常用于控制每页条数。
+	- **参数：**`limit int`：最多返回的记录数量。
+	- **返回值：**`*DB`：返回新的 `DB` 实例，方便继续链式调用。
+- `func (db *DB) Find(dest interface{}, conds ...interface{}) (tx *DB)`
+	- **作用：**根据当前 `db` 上已经拼好的查询条件（`Model`、`Where`、`Offset`、`Limit` 等），执行 `SELECT ... FROM ...` 查询，并把结果扫描到 `dest` 指向的变量里。
+	- **参数：**
+		- `dest interface{}`：用来接收查询结果的目标变量指针。
+		- `conds ...interface{}`：额外的查询条件，等价于在这次 Find 上再 `Where` 一次（一般你现在用链式 `Where` 比较多，这里可以不传）。
+	- **返回值：**`*DB`：返回新的 `DB` 实例，方便继续链式调用。
+- `func (db *DB) Scopes(funcs ...func(*DB) *DB) (tx *DB)`
+	-
+-
