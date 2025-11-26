@@ -65,12 +65,13 @@ collapsed:: true
 	- 宿主机上的 `/etc/hosts` 文件不会自动复制进容器。
 	- 如果你希望容器能识别额外的主机名，就需要通过 `--add-host` 参数手动指定，这样，Docker 会在容器的 `/etc/hosts` 文件中添加该条目。
 - ## container 网络模式
+  collapsed:: true
 	- `--network container:<容器名称或ID>`
 	- 当前容器不会创建新的网络接口，不拥有自己的 IP 地址，直接复用另一个容器的网络栈，简单说，就是：“我不自己搞网卡了，直接用你那张网卡。”
 	- **使用场景：**
 		- 调试容器网络：
 			- ```bash
-			  docker run -it --network container:web busybox sh
+			  docker run -it --rm --network container:web busybox sh
 			  ```
 			- 例如你怀疑某个容器的网络有问题，可以新建一个“诊断容器”共享它的网络，然后在里面用 `ping`, `nslookup`, `curl` 等命令测试网络。
 - ## Overlay
