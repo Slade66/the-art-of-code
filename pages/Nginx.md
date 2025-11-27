@@ -254,6 +254,7 @@
 							  ```
 							- 如果请求 `/`，Nginx 找到 `index.php`，然后将请求内部重定向到 `/index.php`。这个新请求 `/index.php` 就会成功命中第二个 `location` 块，从而被 PHP 解释器处理。完美！
 				- `try_files`：指示 Nginx 按顺序尝试访问一系列指定的文件或 URI，一旦找到可用项就停止继续查找；若全部尝试失败，则执行最后一个参数指定的操作。
+				  collapsed:: true
 					- `$uri` 与 `$uri/` 的区别：`$uri` 用于查找文件，而 `$uri/` 用于查找目录，并会触发 `index` 指令在该目录下继续查找指定文件。
 					- 当最后一个参数是 URI（如 `/index.html` 或 `@named_location`）时，Nginx 会执行一次内部重定向，新的 URI 将重新进入 `location` 匹配流程。
 					- 如果最后一个参数是 `=code`（如 `=404` 或 `=500`），Nginx 会直接返回对应的 HTTP 状态码，并终止后续处理。

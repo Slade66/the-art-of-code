@@ -40,6 +40,7 @@
 			  docker inspect my-image:latest
 			  ```
 	- `docker network`
+	  collapsed:: true
 		- `docker network ls`：列出 Docker 宿主机上的所有网络。
 		  collapsed:: true
 			- ```bash
@@ -188,13 +189,12 @@
 - [[Docker/network]]
 - [[Docker/Docker Swarm]]
 - ## 安装和配置 Docker
-  collapsed:: true
 	- **安装 Docker**
-	  collapsed:: true
 		- **先配置好 Linux 的网络代理。**
 		  logseq.order-list-type:: number
 		- **跟着做：**https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
 		  logseq.order-list-type:: number
+		- **一键安装脚本：**`curl -fsSL https://get.docker.com | bash`
 	- **配置 Docker 的网络代理**
 	  collapsed:: true
 		- `mkdir -p /etc/systemd/system/docker.service.d`
