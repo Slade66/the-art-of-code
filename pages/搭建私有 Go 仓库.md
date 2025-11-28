@@ -10,7 +10,6 @@
 	- **数据服务（PostgreSQL）**：虽然 Gitea 也能用 SQLite，但在多人协作、持续读写的环境里，PostgreSQL 在并发能力、数据一致性和在线备份方面更可靠。SQLite 在高并发写入时容易因为锁而卡住，而 PostgreSQL 能稳稳撑住团队级使用量。
 	- **接入网关（Nginx）**：负责反向代理、端口转发和 SSL 终结，同时还能缓存静态资源。在处理 Go 的自定义导入路径（Vanity Imports）时，Nginx 还能提供比 Gitea 更灵活、粒度更细的配置空间。
 - ## 操作步骤
-  collapsed:: true
 	- 安装 Docker：`curl -fsSL https://get.docker.com | bash`
 	  logseq.order-list-type:: number
 	- 创建配置文件：
@@ -19,7 +18,6 @@
 		  logseq.order-list-type:: number
 		- `.env`
 		  logseq.order-list-type:: number
-		  collapsed:: true
 			- ```
 			  DB_USER=gitea
 			  DB_PASS=Aa123456.
@@ -28,7 +26,6 @@
 			- `docker compose` 启动时默认会自动查找同级目录下的 `.env` 文件，并将其中定义的变量（如 `DB_USER`, `DB_PASS`）注入到 `docker-compose.yml` 中引用了 `${变量名}` 的地方。
 		- `nginx.conf`
 		  logseq.order-list-type:: number
-		  collapsed:: true
 			- ```nginx
 			  user  nginx;
 			  worker_processes  auto;
@@ -91,7 +88,6 @@
 			- logseq.order-list-type:: number
 		- `docker-compose.yml`
 		  logseq.order-list-type:: number
-		  collapsed:: true
 			- ```yaml
 			  version: "3.8"
 			  
@@ -351,4 +347,57 @@
 			- 允许使用 HTTP
 			- 忽略 HTTPS 证书无效问题
 			- 不会返回 TLS 验证错误
+- ## MacOS 配置
+  collapsed:: true
+	- 配置 Split DNS：
+	  logseq.order-list-type:: number
+		- logseq.order-list-type:: number
+		  ```bash
+		  sudo mkdir -p /etc/resolver
+		  sudo sh -c 'echo "nameserver 10.30.60.116" > /etc/resolver/nt.cn'
+		  sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+		  ping -c 2 gitea.nt.cn
+		  ping -c 2 baidu.com
+		  
+		  ```
+	- 配置 Go 环境变量：
+	  logseq.order-list-type:: number
+		- logseq.order-list-type:: number
+		  ```bash
+		  vim ~/.zshrc
+		  
+		  # 1. 声明私有域
+		  # 凡是 gitea.nt.cn 开头的包，不走 goproxy.cn 代理，直接回源
+		  export GOPRIVATE="gitea.nt.cn"
+		  
+		  # 2. 允许不安全连接
+		  # 允许 HTTPS 证书无效（自签名/域名不匹配）或降级 HTTP
+		  export GOINSECURE="gitea.nt.cn"
+		  
+		  source ~/.zshrc
+		  ```
+	- 配置 SSH 访问：
+	  logseq.order-list-type:: number
+		- 复制公钥：`cat ~/.ssh/id_ed25519.pub | pbcopy`
+		  logseq.order-list-type:: number
+		- 上传到 Gitea：
+		  logseq.order-list-type:: number
+		- 测试连通性：`ssh -p 2222 git@gitea.nt.cn`
+		  logseq.order-list-type:: number
+	- 配置 Git 强制替换规则：
+	  logseq.order-list-type:: number
+		- logseq.order-list-type:: number
+		  ```bash
+		  # 1. 针对 HTTPS 的强制替换 (Go 默认会尝试 HTTPS)
+		  # 当 Git 收到 https://gitea.nt.cn 请求时，自动替换为 ssh://git@gitea.nt.cn:2222
+		  git config --global url."ssh://git@gitea.nt.cn:2222/".insteadOf "https://gitea.nt.cn/"
+		  
+		  # 2. 针对 HTTP 的强制替换 (防止 Go 降级尝试 HTTP)
+		  git config --global url."ssh://git@gitea.nt.cn:2222/".insteadOf "http://gitea.nt.cn/"
+		  
+		  # 3. 关闭全局 SSL 校验 (防止 Nginx 证书不匹配导致报错)
+		  git config --global http.sslVerify false
+		  ```
+	- 测试：`go get gitea.nt.cn/nantian/pkg`
+	  logseq.order-list-type:: number
 -
