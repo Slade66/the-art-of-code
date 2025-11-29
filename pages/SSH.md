@@ -3,6 +3,7 @@
   heading:: true
 	- 通过 SSH 密钥进行免密登录
 	  heading:: true
+	  collapsed:: true
 		- 如果在某个用户的 `.ssh` 目录下创建了 `authorized_keys` 文件并将公钥添加其中，那么之后可以使用对应的私钥进行该用户的免密登录，SSH 服务将通过公钥进行验证。
 		- **步骤：**
 			- 在开发机上生成 SSH 密钥对，得到私钥和公钥。
@@ -41,7 +42,9 @@
 				  chmod 700 ~/.ssh
 				  chmod 600 ~/.ssh/authorized_keys
 				  ```
-	- **配置 SSH 允许使用密码登录**
+	- 配置 SSH 允许使用密码登录
+	  heading:: true
+	  collapsed:: true
 		- **修改 SSH 配置文件**
 			- ```bash
 			  sudo vim /etc/ssh/sshd_config
@@ -53,4 +56,34 @@
 			- 找到 `PermitRootLogin` 参数，并设置为 `yes`。
 			- `prohibit-password` 或 `without-password`：禁止使用密码登录，只允许密钥等方式。
 			- `yes`：允许使用任何方式登录（包括密码登录）。
+- .ssh/config
+  heading:: true
+	- `.ssh/config` 是 SSH 客户端的配置文件，它让你提前写好连接配置，让 SSH 用起来更顺手。
+	- **为什么需要 `.ssh/config`？**
+		- 如果你平时这样连服务器：`ssh -i ~/.ssh/id_rsa -p 2222 root@123.60.70.80`
+		- 每次敲这么长一串很烦，对吧？
+		- 有了 `.ssh/config`：
+			- ```config
+			  Host myserver
+			  HostName 123.60.70.80
+			  User root
+			  Port 2222
+			  IdentityFile ~/.ssh/id_rsa
+			  ```
+		- 你可以直接：`ssh myserver`
+		- 因为所有信息都提前写好了。你设置了别名和连接参数。
+	- **自动开启 KeepAlive（防掉线）：**
+		- ```config
+		  Host *
+		      ServerAliveInterval 60
+		  ```
+		- `Host *` 表示对所有连接生效。
+	- **自动跳板机（ProxyJump）：**
+		- ```config
+		  Host intranet
+		      HostName 10.0.0.5
+		      User dev
+		      ProxyJump jump.host.com
+		  ```
+		- 常见场景：公司内网不能直接 SSH，只能先连跳板机。一句 `ssh intranet` 就能自动穿透。
 -
