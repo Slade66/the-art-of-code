@@ -3,13 +3,9 @@
   collapsed:: true
 	- 技术选型的首要原则是“适度设计”。
 	- GitLab CE 很耗内存，要 4G以上。而 Gitea 与 Gogs 均采用 Go 语言编写，极低资源占用（100MB 左右），Gitea 作为 Gogs 的社区驱动分支，近年来在活跃度、功能迭代速度已全面超越 Gogs。
-	- Go get 要求基础设施必须严格遵循 Go 工具链的元数据发现协议。Gitea 的强大之处在于，它原生内置了对 go get 这一协议的支持。只要正确配置了 Gitea 的外部 URL（ROOT_URL），它就能自动为仓库页面响应正确的 `<meta>` 标签，无需用户手动搭建额外的元数据服务器。这正是我们选择 Gitea 而非简单的 Git Server 或静态文件服务器的核心原因之一。
-- ## 整体架构
-  collapsed:: true
-	- **应用服务（Gitea）**：主要负责处理 Git 协议（SSH / HTTP）、网页操作和 API 调用，可以理解为整套系统的中枢。`go get` 发起的模块元数据查询，最终都是由它来响应。
-	- **数据服务（PostgreSQL）**：虽然 Gitea 也能用 SQLite，但在多人协作、持续读写的环境里，PostgreSQL 在并发能力、数据一致性和在线备份方面更可靠。SQLite 在高并发写入时容易因为锁而卡住，而 PostgreSQL 能稳稳撑住团队级使用量。
-	- **接入网关（Nginx）**：负责反向代理、端口转发和 SSL 终结，同时还能缓存静态资源。在处理 Go 的自定义导入路径（Vanity Imports）时，Nginx 还能提供比 Gitea 更灵活、粒度更细的配置空间。
+	- Go get 要求基础设施必须严格遵循 Go 工具链的元数据发现协议。Gitea 的强大之处在于，它原生内置了对 go get 这一协议的支持。只要正确配置了 Gitea 的外部 URL（ROOT_URL），它就能自动为仓库页面响应正确的 `<meta>` 标签，无需用户手动搭建额外的元数据服务器。这正是我们选择 Gitea 而非简单的 Git Server 的核心原因之一。
 - ## 操作步骤
+  collapsed:: true
 	- 安装 Docker：`curl -fsSL https://get.docker.com | bash`
 	  logseq.order-list-type:: number
 	- 创建配置文件：
@@ -59,7 +55,7 @@
 			      server {
 			          listen 80;
 			          # 填写你的服务器 IP
-			          server_name 119.13.124.137;
+			          server_name 119.13.124.137; # 如果有域名，这里填域名
 			  
 			          # ------------------------------------------------------------
 			          # 核心优化：允许大文件上传 (512M)
@@ -85,7 +81,6 @@
 			      }
 			  }
 			  ```
-			- logseq.order-list-type:: number
 		- `docker-compose.yml`
 		  logseq.order-list-type:: number
 			- ```yaml
@@ -167,13 +162,15 @@
 		  logseq.order-list-type:: number
 		- 一般设置：
 		  logseq.order-list-type:: number
-			- 服务器域名：填服务器的 IP。
+			- 服务器域名：填服务器的 IP 或域名。
 			  logseq.order-list-type:: number
 			- SSH 服务端口：`2222`（Docker 映射的是 2222）。
 			  logseq.order-list-type:: number
 			- HTTP 服务端口：`3000`（实际访问的是 Nginx 的 80 端口，它会负责把 80 转过来这）
 			  logseq.order-list-type:: number
-			- Root URL：`http://服务器地址/`
+			- Root URL：`http://服务器的 IP 或域名/`
+			  logseq.order-list-type:: number
+			- **注意：**如果配置了域名，Nginx 的 `server_name` 和 Gitea 的 `ROOT_URL` 最好都统一改成域名。
 			  logseq.order-list-type:: number
 		- 管理员设置：立即创建一个管理员账号，否则第一个注册的人就是管理员。
 		  logseq.order-list-type:: number
@@ -181,6 +178,7 @@
 		  logseq.order-list-type:: number
 	- 客户端配置：
 	  logseq.order-list-type:: number
+	  这是决定 `go get` 能否成功的关键，需要在每一台需要拉取代码的开发机上执行。
 		- 配置 Go 环境变量：
 		  logseq.order-list-type:: number
 			- logseq.order-list-type:: number
@@ -199,7 +197,7 @@
 			  logseq.order-list-type:: number
 			- 验证 SSH 连通性：`ssh -p 2222 git@服务器地址`
 			  logseq.order-list-type:: number
-				- 如果看到 `Hi there, You've successfully authenticated...`，说明 SSH 通了。
+				- 如果看到 `Hi there, You've successfully authenticated...`，说明 SSH 通了。失败则说明防火墙拦截了 2222 端口或 Key 没配对。
 				  logseq.order-list-type:: number
 		- 配置 Git URL 自动替换：
 		  logseq.order-list-type:: number
@@ -226,14 +224,13 @@
 			  mkdir my-utils
 			  cd my-utils
 			  
-			  # 初始化 Go 模块 (注意：模块名必须包含 IP)
-			  # 格式: go mod init <IP>/<用户名>/<仓库名>
+			  # 初始化 Go 模块 (注意：模块名必须包含 IP/域名)
+			  # 格式: go mod init <IP/域名>/<用户名>/<仓库名>
 			  # 假设你的 Gitea 用户名是 admin
 			  go mod init 119.13.124.137/admin/my-utils
 			  
-			  # 创建一个简单的代码文件
-			  echo 'package myutils' > lib.go
-			  echo 'func Hello() string { return "Hello from Private Gitea!" }' >> lib.go
+			  # 创建一个简单的 go 代码文件
+			  ...
 			  
 			  # Git 提交
 			  git init
@@ -259,17 +256,125 @@
 			  # 拉取刚才发布的私有模块
 			  go get 119.13.124.137/admin/my-utils
 			  ```
+			- **如果成功：**
+			  logseq.order-list-type:: number
+				- Go 会先发 HTTP 请求给 Gitea 询问元数据。
+				  logseq.order-list-type:: number
+				- Gitea 返回 meta tag，指向 `.git` 结尾的地址。
+				  logseq.order-list-type:: number
+				- Go 调用本地 Git 命令去 clone。
+				  logseq.order-list-type:: number
+				- 本地 Git 触发 `insteadOf` 规则，将 HTTP 链接转为 SSH（带端口 2222）。
+				  logseq.order-list-type:: number
+				- SSH 鉴权通过，代码下载完成。
+				  logseq.order-list-type:: number
+				- `go.mod` 文件中会出现 `require 119.13.124.137/admin/my-utils v0.0.0-xxxx`。
+				  logseq.order-list-type:: number
 - ## 常见错误
   collapsed:: true
-	- **错误：`terminal prompts disabled`**
-		- 原因：Git 试图通过 HTTP 下载且需要输入密码，但 Go 禁止交互。
-		- 解决：检查第三步的 `git config` 命令是否执行正确，或者 `.gitconfig` 文件里是否有拼写错误。
-	- **错误：`certificate signed by unknown authority`**
-		- 原因：Go 还在校验 SSL 证书。
-		- 解决：确保 `go env -w GOINSECURE="119.13.124.137"` 已设置。
-	- **错误：`404 Not Found`**
-		- 原因：GOPRIVATE 没设置对，Go 跑去公网代理（goproxy.cn）找你的私有 IP 了。
-		- 解决：检查 `go env GOPRIVATE`。
+	- `go: unrecognized import path ... reading http://...?go-get=1: 502 Bad Gateway`
+	  collapsed:: true
+		- **问题：**中间代理出错。
+		- **原因 1：**
+		  id:: 692a6f78-ee6b-4537-a43b-544200fbaeb0
+			- 检查 Nginx 有没有访问日志，如果没有就是本地的翻墙代理软件出了问题。
+			- **Clash 转发原理：**
+				- 当你开启 Clash（或任何代理软件）时，命令行终端通常会被自动注入 `HTTP_PROXY` 和 `HTTPS_PROXY` 环境变量。
+				- **Go get 发起请求**：Go 试图访问 `http://nt-cxfz.com/...`
+				- **被代理拦截**：因为有环境变量，请求被 Clash 拦截。
+				- **Clash 转发**：Clash 把请求发给了你的代理服务器（例如位于香港或美国的 VPS）。
+				- **公网寻址**：代理服务器在公网上寻找 `nt-cxfz.com`。
+				- **失败：**由于代理服务器在公网，无法解析内网域名（或解析出错误的公网 IP），甚至直接找不到该域名，最终导致代理服务器无法连接目标 IP，返回 502。
+			- **解决方案：**
+				- **将内网域名加入“不走代理”的名单：**
+					- 打开 Clash -> Settings (设置) -> System Proxy (系统代理) -> 绕过域名/IP。
+					- 确保列表里包含以下内容：`*.nt-cxfz.com` (显式添加你的内网域名)
+				- **临时清除当前终端的系统代理：**
+					- ```powershell
+					  # 1. 查看系统环境变量中的代理设置
+					  Get-ChildItem Env: | Where-Object { $_.Name -like "*PROXY*" }
+					  
+					  Name                           Value
+					  ----                           -----
+					  HTTP_PROXY                     http://127.0.0.1:7897
+					  HTTPS_PROXY                    http://127.0.0.1:7897
+					  
+					  # 2. 手动清空
+					  $env:HTTP_PROXY=""
+					  $env:HTTPS_PROXY=""
+					  $env:ALL_PROXY=""
+					  ```
+	- `go: unrecognized import path ... parse https://...?go-get=1): no go-import meta tags ()`
+	  collapsed:: true
+		- 执行 `curl.exe -k https://git.nantian.com/admin/my-logger?go-get=1`：查看返回的内容中是否包含 `<meta name="go-import" ...>`。
+		  collapsed:: true
+			- 在 Windows 上使用 curl 有两个坑：一个是真正的 cURL，一个是 PowerShell `Invoke-WebRequest` 的别名。
+			- Windows 10/11 自带了标准的 curl 工具。为了不让 PowerShell 拦截，你需要加上 `.exe` 后缀。
+			- -k 表示允许不安全连接（忽略证书错误）
+		- **发生了什么？**
+			- 当执行 `go get` 时，Go 工具链的默认逻辑是 **“优先尝试 HTTPS”**。
+			- **期望的失败**：在内网环境中，通常没配 SSL（端口 443 没开）。Go 发起 HTTPS 请求，理应收到 `Connection Refused`（连接被拒绝）。一旦收到这个特定的网络错误，Go 就会**自动降级**尝试 HTTP（端口 80）。
+			- **实际的情况**：Go 发起了 HTTPS 请求，但是它**没有收到“连接拒绝”**，而是**连接成功了**，并且收到了一个 HTTP 响应（比如 404，或者 502，或者一个空白页），但这个页面里没有 `<meta>` 标签。
+			- **结局**：Go 认为：“既然 HTTPS 连通了，那我就以 HTTPS 的结果为准”。于是它停止尝试 HTTP，直接报错“找不到 meta 标签”。
+			- 端口 443 被其它服务占用，返回了无关的信息，阻断了 Go 的自动降级。
+		- **解决方案：**
+			- 既然 Go 那么想用 HTTPS，我们就给它一个假的 HTTPS。这样配合 `GOINSECURE` 就能完美工作。
+			- **生成自签名证书（如果其它服务已经有证书，可以直接复用，这一步可以跳过）：**
+			  logseq.order-list-type:: number
+				- ```bash
+				  openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 \
+				    -subj "/C=CN/ST=Fuzhou/L=Fuzhou/O=Dev/CN=nt-cxfz.com" \
+				    -keyout server.key -out server.crt
+				  ```
+			- **修改 `nginx.conf`**（增加 443 监听和转发）：
+			  logseq.order-list-type:: number
+				- ```nginx
+				  # [新增] Gitea 的 HTTPS 支持，为了满足 Go 工具链优先访问 HTTPS 的癖好
+				  server {
+				    listen 443 ssl;
+				    server_name nt-cxfz.com;
+				  
+				    # 或者复用你现有的证书 (即使证书域名不匹配，因为客户端配了 GOINSECURE，所以没关系)
+				    ssl_certificate /etc/nginx/certs/server.crt;
+				    ssl_certificate_key /etc/nginx/certs/server.key;
+				  
+				    client_max_body_size 512M;
+				  
+				    location / {
+				      proxy_pass http://gitea_backend;
+				      proxy_set_header Host $host;
+				      proxy_set_header X-Real-IP $remote_addr;
+				      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+				      proxy_set_header X-Forwarded-Proto $scheme;
+				    }
+				  }
+				  ```
+			- **把证书目录挂载进去，并暴露 443 端口，然后重启 Nginx。**
+			  logseq.order-list-type:: number
+				- 之前：HTTPS 请求 -> 默认规则 -> 其它平台 -> 无 Meta 标签 -> **报错**。
+				- 现在：HTTPS 请求 -> `nt-cxfz.com` 规则 -> Gitea -> 返回正确的 Meta 标签 -> **成功**。
+				- 配合你本地的 `go env -w GOINSECURE=nt-cxfz.com`，Go 不去验证 SSL 证书的合法性，哪怕这个证书是过期的、或者是颁发给 `google.com` 的，统统放行，只要能建立 HTTPS 连接就行。愉快地完成元数据解析，然后转交 Git 去 SSH 拉取代码。
+	- `terminal prompts disabled`：
+	  collapsed:: true
+		- 说明 Git 正在尝试用 HTTP 下载并且需要输密码。
+		- 检查 Git 的 `insteadOf` 命令是否执行。
+	- `fatal: unable to access 'https://nt-cxfz.com/admin/commonutils.git/': schannel: failed to receive handshake, SSL/TLS connection failed`
+	  collapsed:: true
+		- 问题出在 **Git**（而不是 Go）对 HTTPS 证书的校验上。
+		- **原因：**
+			- **Git 正在尝试 HTTPS**：请注意，报错的 URL 是 **`https://`** 开头的。
+			- Go 工具链发现你的服务器 支持 HTTPS，它就会**自动忽略** Gitea 返回的 `http://` 地址，强制把下载地址“升级”为 `https://`，因为它认为 HTTPS 更安全。
+			- **规则漏网**：我们之前只配置了 `http://nt-cxfz.com/` 自动替换为 SSH。但是 Go 或 Git 在处理过程中（可能是因为 Nginx 里的 HTTPS 配置生效了，或者 Go 的自动升级机制），决定尝试访问 HTTPS 地址。
+			- **规则未命中**：因为你只配了 `http` 的替换规则，没配 `https` 的替换规则，所以 Git 真的去连了 HTTPS。
+			- **证书拒绝**：Git（使用 Windows 的 schannel 库）发现 Nginx 返回的证书是“智能告警平台”的，或者是自签名的，**它不信任，所以拒绝连接**。
+		- **解决方案：**
+			- ```bash
+			  # 补全 HTTPS 的替换规则：之前的规则只覆盖了 http，现在加上 https
+			  git config --global url."ssh://git@nt-cxfz.com:2222/".insteadOf "https://nt-cxfz.com/"
+			  
+			  # 全局关闭 Git 的 SSL 校验：因为你的证书是复用的/自签名的，Git 默认会拦截。我们需要关掉它。
+			  git config --global http.sslVerify false
+			  ```
 - ## go get 到底在后台偷偷做了什么？
   collapsed:: true
 	- **Go Modules 的导入路径（Import Path）**：`119.13.124.137/user/repo` 在 Go 语言里是一个逻辑标识符。
@@ -364,23 +469,19 @@
 	  logseq.order-list-type:: number
 		- logseq.order-list-type:: number
 		  ```bash
-		  vim ~/.zshrc
-		  
-		  # 1. 声明私有域
 		  # 凡是 gitea.nt.cn 开头的包，不走 goproxy.cn 代理，直接回源
-		  export GOPRIVATE="gitea.nt.cn"
+		  go env -w GOPRIVATE="gitea.nt.cn"
 		  
-		  # 2. 允许不安全连接
 		  # 允许 HTTPS 证书无效（自签名/域名不匹配）或降级 HTTP
-		  export GOINSECURE="gitea.nt.cn"
-		  
-		  source ~/.zshrc
+		  go env -w GOINSECURE="gitea.nt.cn"
 		  ```
 	- 配置 SSH 访问：
 	  logseq.order-list-type:: number
+		- 生成公钥：`ssh-keygen -t ed25519 -C "your_mac@company.com"`，一路回车
+		  logseq.order-list-type:: number
 		- 复制公钥：`cat ~/.ssh/id_ed25519.pub | pbcopy`
 		  logseq.order-list-type:: number
-		- 上传到 Gitea：
+		- 上传到 Gitea：去 Gitea 网页 -> 右上角头像 -> 设置 -> SSH / GPG 密钥 -> 添加密钥。
 		  logseq.order-list-type:: number
 		- 测试连通性：`ssh -p 2222 git@gitea.nt.cn`
 		  logseq.order-list-type:: number
@@ -400,4 +501,5 @@
 		  ```
 	- 测试：`go get gitea.nt.cn/nantian/pkg`
 	  logseq.order-list-type:: number
+- [[搭建内网的 DNS]]
 -
