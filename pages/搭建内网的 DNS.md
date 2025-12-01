@@ -47,4 +47,65 @@
 	      errors
 	  }
 	  ```
+- ## 在 Linux 上设置分域解析
+	- split DNS 不是 `resolv.conf` 能干的事情，只有 `systemd-resolved` 可以按域名分流。
+	- **流程：**
+		- 程序查询域名 → 查询 `/etc/resolv.conf`
+		  logseq.order-list-type:: number
+		- `/etc/resolv.conf` 指向 127.0.0.53
+		  logseq.order-list-type:: number
+		- 请求打到 `systemd-resolved`
+		  logseq.order-list-type:: number
+		- `systemd-resolved` 检查你的分域规则
+		  logseq.order-list-type:: number
+		- 决定走哪个 DNS
+		  logseq.order-list-type:: number
+			- 你访问 nt.cn → `systemd-resolved` 把请求分流给你的内网 DNS（10.x.x.x）
+			  logseq.order-list-type:: number
+			- 你访问 google.com → `systemd-resolved` 把请求丢给你的默认公网 DNS（8.8.8.8）
+			  logseq.order-list-type:: number
+	- **配置：**
+		- ```bash
+		  systemctl status systemd-resolved
+		  systemctl start systemd-resolved
+		  mkdir -p /etc/systemd/resolved.conf.d
+		  vim /etc/systemd/resolved.conf.d/ntcn.conf
+		  systemctl restart systemd-resolved
+		  ```
+	- **`ntcn.conf` 的内容：**
+		- ```ini
+		  [Resolve]
+		  DNS=10.30.60.116
+		  Domains=~nt.cn
+		  ```
+		- `DNS=` 指定访问 `Domains` 定义的域名时，使用这个 DNS 服务器
+		- `~nt.cn` 表示“只匹配 nt.cn 这个域名及它的子域”
+		- 就像一句规则：“只要域名是 nt.cn，就去 10.0.0.2 这个内网 DNS 问一下。”
+	- **⚠️注意：`/etc/resolv.conf` 必须由 `systemd-resolved` 接管**
+		- **执行：**`ls -l /etc/resolv.conf`
+		- **应该是：**`/etc/resolv.conf -> /run/systemd/resolve/stub-resolv.conf`
+		- **否则执行：**
+			- ```bash
+			  ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+			  systemctl restart systemd-resolved
+			  ```
+		- **为什么 `systemd-resolved` 需要占用 `/etc/resolv.conf`？**
+			- Linux 的所有程序（curl、ping、docker、git、jenkins…）都只能从 `/etc/resolv.conf` 知道“我应该找谁解析域名”。
+			- `systemd-resolved` 会开一个 本地 DNS 服务器：`127.0.0.53:53`，系统里所有程序都应该先来找它，它再帮你判断到底要走哪个真实 DNS，于是它希望 `resolv.conf` 指向它的 DNS。
+			- **为什么不是 127.0.0.1？为什么是 127.0.0.53？**
+				- 因为 127.0.0.1 有可能已经被别的服务占用了。
+				- 而 127.x.x.x 本来就是 loopback 范围，使用 127.0.0.53 不会被抢占，不会干扰用户自己运行的 DNS 服务，所以它选了一个看起来奇怪但“安全、不冲突”的地址。
+		- **为什么要 `ln -sf`？**
+			- 因为很多工具会破坏 `/etc/resolv.conf`。
+			- 例如：Docker 会把 `/etc/resolv.conf` 替换成：
+				- ```ini
+				  nameserver 127.0.0.11   # Docker 内置 DNS
+				  ```
+			- 这样所有 DNS 流量都绕过 `systemd-resolved`，你的 split DNS 配置当然就不会生效。
+			- **`ln` 的作用：**给一个文件创建“别名”（硬链接）或“快捷方式”（软链接），它并不会复制文件，而是创建一个“引用指针”。
+				- `-s`：表示创建的是软链接。文件本身不存在，指向另一个真实文件，如果目标文件变了，软链接指向不变，删除软链接不会影响原文件。
+				- `-f`：强制覆盖已有文件。没有这个参数时，如果 `/etc/resolv.conf` 已经存在，会报错，因为系统不允许覆盖。加上 `-f` 之后，如果目标文件存在，就删除它再创建软链接。
+			- 意思是：把 `/etc/resolv.conf` 变成一个快捷方式，指向真实 DNS 配置文件 `stub-resolv.conf`。
+			-
+			-
 -
