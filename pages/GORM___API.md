@@ -20,4 +20,7 @@
 	- **返回值：**`*DB`：返回新的 `DB` 实例，方便继续链式调用。
 - `func (db *DB) Scopes(funcs ...func(*DB) *DB) (tx *DB)`
 	-
+- Association
+- `func (db *DB) SetupJoinTable(model interface{}, field string, joinTable interface{}) error`
+	- 显式告诉 GORM：多对多的时候用哪个模型当 join table。
 -
