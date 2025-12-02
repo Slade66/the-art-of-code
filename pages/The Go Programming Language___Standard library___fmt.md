@@ -84,6 +84,35 @@
 		  }
 		  
 		  ```
+	- **不同占位符打印结构体的差异：**
+		- `%v`：只打印字段的值，字段名不显示。
+		- `%+v`：显示字段名 + 值。不会显示空字符串。
+		- `%#v`：打印得最详细，会用接近 Go 语法的方式展示。空字符串会显示 `""`。
+		- ```go
+		  package main
+		  
+		  import (
+		  	"fmt"
+		  )
+		  
+		  type User struct {
+		  	Name    string
+		  	Age     int
+		  	Address string
+		  	Friend  *User
+		  }
+		  
+		  func main() {
+		  	slade := User{"Slade", 24, "", nil}
+		  	fmt.Printf("%v\n", slade)
+		  	fmt.Printf("%+v\n", slade)
+		  	fmt.Printf("%#v\n", slade)
+		  }
+		  
+		  {Slade 24  <nil>}
+		  {Name:Slade Age:24 Address: Friend:<nil>}
+		  main.User{Name:"Slade", Age:24, Address:"", Friend:(*main.User)(nil)}
+		  ```
 - `func Scan(a ...any) (n int, err error)`
   collapsed:: true
 	- **作用：**

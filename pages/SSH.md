@@ -58,7 +58,7 @@
 			- `yes`：允许使用任何方式登录（包括密码登录）。
 - .ssh/config
   heading:: true
-	- `.ssh/config` 是 SSH 客户端的配置文件，它让你提前写好连接配置，让 SSH 用起来更顺手。
+	- `.ssh/config` 是 SSH 客户端的配置文件，它让你为不同的远程主机提前写好连接配置，省去每次输入复杂命令的麻烦，让 SSH 用起来更顺手。
 	- **为什么需要 `.ssh/config`？**
 		- 如果你平时这样连服务器：`ssh -i ~/.ssh/id_rsa -p 2222 root@123.60.70.80`
 		- 每次敲这么长一串很烦，对吧？
@@ -86,4 +86,17 @@
 		      ProxyJump jump.host.com
 		  ```
 		- 常见场景：公司内网不能直接 SSH，只能先连跳板机。一句 `ssh intranet` 就能自动穿透。
+	- `StrictHostKeyChecking`：是否严格检查主机公钥。
+		- 默认情况下，SSH 会检查服务器的公钥是否在 `known_hosts` 中，如果没有，会提示你确认。
+		- 设置为 `no` 后，SSH 不提示你确认未知主机，也不阻止连接，即使服务器的公钥有变也会直接连接。
+	- `UserKnownHostsFile`：指定存储已知主机公钥的文件路径。
+		- 默认情况下，SSH 会把连接过的服务器公钥存到 `~/.ssh/known_hosts`。
+		- **示例：**
+			- ```ssh
+			  Host myserver
+			      HostName 192.168.1.100
+			      User root
+			      UserKnownHostsFile ~/.ssh/myserver_known_hosts
+			  ```
+			- SSH 连接 `myserver` 时，会把它的公钥记录到 `~/.ssh/myserver_known_hosts`，而不是默认的 `~/.ssh/known_hosts`。
 -
