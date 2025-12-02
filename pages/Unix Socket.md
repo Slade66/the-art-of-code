@@ -1,0 +1,31 @@
+- **Unix Socket 是什么？有什么用？**
+	- Unix Socket 也叫本地套接字，就是一个文件。
+	- Unix Socket 是进程间通信（IPC, Inter-Process Communication）的一种方式，同一台机器上（Linux / Unix）的两个进程用它进行通信。它和网络 Socket 类似，但是它不经过网络栈，所以只能在本机上使用。
+	- Unix Socket 使用的地址不是 IP+端口，而是文件路径（例如 `/tmp/myservice.sock`）。操作系统会在这个路径上创建一个特殊文件，用于连接和通信。
+	- **比喻：**
+		- TCP/UDP Socket 就像你通过电话或微信联系远方的朋友，需要通过“公共网络”。
+		- Unix Socket 就像你在同一栋楼里用对讲机直接和隔壁房间的朋友聊天，不需要经过网络运营商，速度快而且安全。
+- **Unix Socket 的类型：**
+	- **Stream（SOCK_STREAM）**
+		- 类似 TCP，面向连接，可靠，保证顺序。
+		- 用于要求严格顺序和可靠性的进程间通信，比如数据库客户端和数据库服务端。
+	- **Datagram（SOCK_DGRAM）**
+		- 类似 UDP，无连接，每次发送是独立的消息。
+		- 用于偶尔发消息、不要求顺序和重传的场景。
+- **Unix Socket 的优点：**
+	- **进程间高速通信：**不走网络协议栈，所以速度快很多。
+	- **方便：**无需分配 IP 和端口号，避免端口冲突。
+	- **安全性高：**只有拥有 Socket 文件权限的用户才能通信。
+- **SSH_AUTH_SOCK**
+	- `SSH_AUTH_SOCK` 是一个环境变量，指向一个 Unix Socket，其它进程（如 SSH 客户端）通过这个 Socket 和 SSH Agent （保存私钥的进程）进行 IPC，从而完成数字签名认证，不让私钥暴露。
+	  id:: 692edf4f-dfa3-4a86-b30f-f415c8f973e3
+- **为什么 cat socket 文件会报错？**
+	- `cat` 只能读普通文本文件和二进制文件。
+	- Unix Socket 是特殊文件，是一个“通信终端”，而不是普通文本文件，而是一个“通信入口”，所以不能用 `cat` 读取。
+- **查看 socket 文件：**
+	- 执行 `ls -l`，你会看到 socket 文件的开头是 `s`：`srwxr-xr-x 1 liyuze liyuze 0 ... uds_test.sock`。
+	- 执行 `file /tmp/uds_test.sock`，输出：`/tmp/uds_test.sock: socket`，告诉你：这是 socket。
+- **实际使用案例：**
+	- Docker 客户端通过 `/var/run/docker.sock` 和 Docker Daemon 通信。
+	- MySQL 客户端优先通过 `/var/run/mysqld/mysqld.sock` 和 MySQL 服务器通信，而不是 TCP/IP。
+-
