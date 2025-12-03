@@ -10,4 +10,19 @@
   [Container networking] [refers to] [the ability] [for containers to connect to and communicate with [each other], and [with non-Docker network services]].
   (      主语      )   (   谓语   )   ( 核心宾语 ) (          详细说明能力的内容和对象           )
   ```
+- 画一个简单的 ASCII 图来表示 Pod 与容器的关系。
+	- ```
+	  +---------------------------+
+	  |          Pod              |
+	  |  +---------------------+  |
+	  |  |     Container A     |  |
+	  |  +---------------------+  |
+	  |  +---------------------+  |
+	  |  |     Container B     |  |
+	  |  +---------------------+  |
+	  |   Shared Network, Volumes   |
+	  +---------------------------+
+	  
+	  ```
+- 画一个 ASCII 图，把这个 XXX 的结构可视化，看得更直观。
 -
