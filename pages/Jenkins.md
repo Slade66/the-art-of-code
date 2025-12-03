@@ -32,9 +32,6 @@
 			- 构建结束 Pod 直接销毁。你永远不用担心上一次构建留下的垃圾文件会影响这一次，也不用担心软件版本冲突。
 			- 如果需要升级构建环境（比如从 Java 8 升到 Java 11），你只需要修改 Jenkinsfile 里的镜像版本。Agent 变成了“用完即弃”的消耗品，不需要维护。
 		- **高并发：**K8s 集群本身是个庞大的资源池。只要集群资源够，并发数几乎没有上限。
-- **共享库（Shared Libraries）：**
-	- 将通用的构建逻辑（DNS映射、SSH挂载、Git配置）封装成 Groovy 函数（如 `withGoEnv`）。
-	- 业务流水线只需一行 `@Library` 调用，实现极简配置和统一维护。
 - **语法：**
 	- `pipeline`：声明式流水线的根节点。所有的流水线逻辑必须包裹在这个块中。
 		- `agent`：定义了流水线在哪个节点（机器）上运行。
@@ -55,6 +52,7 @@
 						- `sshagent([...]) { ... }`：用来在一段代码块中临时加载指定的 SSH 私钥，在 `{}` 内的命令拥有 SSH 私钥，可以顺利执行 `git clone`、`git pull`、`scp` 等需要 SSH 的操作。
 						- `docker`：让你的 Pipeline 在“指定的 Docker 容器里”执行步骤。在 `{ ... }` 块内的所有命令，实际上都是在容器内部执行的，块执行结束后，容器会自动销毁。
 						  id:: 692fad98-5bd2-45f8-a438-aa983bc845a2
+						  collapsed:: true
 							- **没用它前：**
 								- Jenkins 直接在宿主机里跑所有步骤。
 								- 构建依赖什么环境，就必须在 Jenkins 服务器上提前安装好。
@@ -84,6 +82,105 @@
 									  ```
 									- 这条 Pipeline 从头到尾都在一个 `golang:1.22` 的容器里运行。
 							- `docker.image('xxx').inside { ... }`：开启一个临时容器，将宿主机的工作目录挂载进去，把下面的命令全部丢进去执行。
+						- `withCredentials`：根据你给的 `credentialsId`，去凭证库里找到对应的密钥，然后把密钥塞进当前步骤的环境变量中。
 	- `${...}`：字符串插值。在双引号 `"` 中，`${variable}` 会被替换成变量的实际值。
-	-
+- **Shared Library：**
+	- 当部分配置为所有流水线共用时，若在每条流水线中重复复制粘贴该配置，会造成配置冗余且难以维护 —— 不仅产生重复代码，后续若需调整配置，还需逐一修改所有相关流水线。
+	- 将通用构建逻辑封装为 Groovy 函数后，业务流水线仅需通过 `@Library` 引入，再在 `stage` 中调用即可，以此实现极简配置与统一维护。
+	- **操作步骤：**
+		- 创建 Shared Library 代码
+		  logseq.order-list-type:: number
+		  collapsed:: true
+			- 在 Gitea 上创建 `jenkins-shared-library` Git 仓库。
+			  logseq.order-list-type:: number
+			- 创建目录 `vars`。
+			  logseq.order-list-type:: number
+			- 创建文件 `vars/goBuild.groovy`：
+			  logseq.order-list-type:: number
+				- ```groovy
+				  // vars/goBuild.groovy
+				  def call(Map config = [:], Closure body) {
+				      // 获取参数
+				      def giteaDomain = config.giteaDomain ?: env.GITEA_DOMAIN
+				      def giteaIP = config.giteaIP ?: env.GITEA_IP
+				      def credentialsId = config.credentialsId 
+				      
+				      // 读取凭据中的私钥到临时文件 SSH_KEY_FILE
+				      withCredentials([sshUserPrivateKey(credentialsId: credentialsId, keyFileVariable: 'SSH_KEY_FILE')]) {
+				          
+				          // 启动 Docker
+				          docker.image('golang:1.24').inside("--add-host ${giteaDomain}:${giteaIP}") {
+				              
+				              // 配置环境 (还原你之前的逻辑)
+				              sh """
+				                  mkdir -p ~/.ssh
+				                  # 将 Jenkins 提供的安全密钥文件复制到 ~/.ssh/id_ed25519
+				                  cp ${SSH_KEY_FILE} ~/.ssh/id_ed25519
+				                  chmod 600 ~/.ssh/id_ed25519
+				                  
+				                  # 配置 Git 和 SSH
+				                  printf "Host *\\n\\tStrictHostKeyChecking no\\n" > ~/.ssh/config
+				                  git config --global http.sslVerify false
+				                  git config --global url."ssh://git@${giteaDomain}:2222/".insteadOf https://${giteaDomain}/
+				              """
+				              
+				              // 设置环境变量并执行你的构建命令
+				              withEnv([
+				                  "GOPRIVATE=${giteaDomain}",
+				                  "GOINSECURE=${giteaDomain}",
+				                  "GOPROXY=https://goproxy.cn,direct"
+				              ]) {
+				                  body()
+				              }
+				          }
+				      }
+				  }
+				  ```
+		- 在 Jenkins 系统配置注册 Shared Library（告诉 Jenkins 去哪里找这个库）
+		  logseq.order-list-type:: number
+		  collapsed:: true
+			- 配置 Jenkins 信任 Gitea 的密钥：在安全设置那设置 "No verification"。
+			  logseq.order-list-type:: number
+			- 在全局设置配置从 Gitea 拉取 Library：
+			  logseq.order-list-type:: number
+				- **Name：**`jenkins-shared-library`（请记录该名称）
+				  logseq.order-list-type:: number
+				- **Default version：**`main`（或 `master`）
+				  logseq.order-list-type:: number
+				- **Project Repository：**填写该库的 Git 地址
+				  logseq.order-list-type:: number
+		- 在业务流水线的 Jenkinsfile 调用函数：
+		  logseq.order-list-type:: number
+		  collapsed:: true
+			- ```groovy
+			  // 1. 引入库
+			  @Library('jenkins-shared-library') _
+			  
+			  pipeline {
+			      agent { label 'node149' }
+			      stages {
+			          stage('拉取代码') {
+			              // ... 保持不变 ...
+			          }
+			          
+			          stage('安装依赖并构建项目') {
+			              steps {
+			                  script {
+			                      // 2. 使用新函数
+			                      goBuild(
+			                          credentialsId: 'gitea-ssh-key'
+			                      ) {
+			                          // 3. 只写纯业务逻辑
+			                          sh 'make build'
+			                      }
+			                  }
+			              }
+			          }
+			          
+			          stage('部署') {
+			              // ... 保持不变 ...
+			          }
+			      }
+			  }
+			  ```
 -
