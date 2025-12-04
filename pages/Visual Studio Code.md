@@ -12,7 +12,10 @@
 		        "request": "launch",
 		        "mode": "debug",
 		        "program": "${workspaceFolder}/cmd/docker-panel",
-		        "cwd": "${workspaceFolder}"
+		        "cwd": "${workspaceFolder}",
+		        "env": {
+		          "DEBUG": "true"
+		        }
 		      }
 		    ]
 		  }
