@@ -9,6 +9,7 @@
 	- [[Apache APISIX/Plugins/jwt-auth]]
 	- [[Apache APISIX/Plugins/forward-auth]]
 	- [[Apache APISIX/Plugins/clickhouse-logger]]
+- [[Apache APISIX/Plugins/real-ip]]
 - **Traffic**
 	- [[Apache APISIX/Plugins/limit-count]]
 - 其它

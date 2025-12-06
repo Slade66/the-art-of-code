@@ -103,7 +103,7 @@
 				- 用户访问：`http://1.2.3.4/hello`
 				- 浏览器发出的头：`Host: 1.2.3.4`
 				- 所有：`$host = "1.2.3.4"`
-		- `$proxy_add_x_forwarded_for`：
+		- `$proxy_add_x_forwarded_for`：会把现有的 `X-Forwarded-For` 再加上当前这一跳的 `$remote_addr`，适合多层代理场景。
 		  collapsed:: true
 			- 它会设置 `X-Forwarded-For` 这个 HTTP 头部，帮助后端服务器识别出最初发起请求的客户端真实 IP 地址，而不是 Nginx 代理的 IP。
 			- 当 Nginx 作为反向代理（Reverse Proxy）时，它会接收客户端的请求，然后转发给后端的应用服务器。如果没有特殊处理，后端服务器看到的请求 IP 永远是Nginx 服务器的 IP 地址，而不是客户端的真实 IP。
