@@ -48,6 +48,8 @@
 	- [[Go 程序设计语言/uuid]]
 	- [[Go 程序设计语言/jwt]]
 	- [[Go 程序设计语言/kratos]]
+	- [[Go 程序设计语言/kratos]]
+	- [[Go 程序设计语言/sync]]
 - [[搭建私有 Go 仓库]]
 - [[PowerShell 重定向输出的 go 代码无法运行]]
 -
