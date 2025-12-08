@@ -6,7 +6,7 @@
 	  func (cli *Client) ContainerExecCreate(ctx context.Context, containerID string, options container.ExecOptions) (container.ExecCreateResponse, error)
 	  ```
 - **参数：**
-	- `ctx context.Context`： [[context]]
+	- `ctx context.Context`： [[Go 程序设计语言/context]]
 	- `containerID string`：目标容器的 ID。
 	- `options container.ExecOptions`：[[type ExecOptions]]
 - **返回值：**

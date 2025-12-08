@@ -5,7 +5,7 @@
 	  func (cli *Client) ContainerExecInspect(ctx context.Context, execID string) (container.ExecInspect, error)
 	  ```
 - **参数：**
-	- `ctx context.Context`：[[context]]
+	- `ctx context.Context`：[[Go 程序设计语言/context]]
 	- `execID string`：你想要查询的那个 `exec` 任务的 ID。
 - **返回值：**
 	- `container.ExecInspect`：这个结构体包含了 `exec` 任务的运行状态信息。

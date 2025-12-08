@@ -5,7 +5,7 @@
 	  func (cli *Client) ContainerExecAttach(ctx context.Context, execID string, config container.ExecAttachOptions) (types.HijackedResponse, error)
 	  ```
 - **参数：**
-	- `ctx context.Context`： [[context]]
+	- `ctx context.Context`： [[Go 程序设计语言/context]]
 	- `execID string`：这个 ID 是你之前调用 `ContainerExecCreate` 接口时成功后获取到的。用于告诉 Docker 守护进程，你想要附加到哪一个具体的 `exec` 进程上。
 	- `config container.ExecAttachOptions`：是 [[type ExecStartOptions]] 的别名。
 - **返回值：**

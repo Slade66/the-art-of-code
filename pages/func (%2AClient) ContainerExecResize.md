@@ -5,7 +5,7 @@
 	  func (cli *Client) ContainerExecResize(ctx context.Context, execID string, options container.ResizeOptions) error
 	  ```
 - **参数：**
-	- `ctx context.Context`： [[context]]
+	- `ctx context.Context`： [[Go 程序设计语言/context]]
 	- `execID string`：这是要调整大小的执行实例的唯一标识符。这个 ID 由 `ContainerExecCreate` 函数返回。
 	- `options container.ResizeOptions`：
 		- ```go
