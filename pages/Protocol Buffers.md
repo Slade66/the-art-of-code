@@ -63,6 +63,7 @@ heading:: true
 	  collapsed:: true
 		- 在 Go 中，如果一个 `message` 字段引用了另一个 `message`，那么生成的 `struct` 字段会是一个指向被引用 `struct` 的指针。
 	- **`go_package` 选项：用于指定生成的 Go 代码的包信息**
+	  collapsed:: true
 		- **这个选项分为两部分（用分号分隔）：**
 			- **分号前（导入路径）：**定义其它 Go 程序 `import` 此包时使用的路径。这个路径必须是从你的 Go module 根目录开始的绝对路径。这也是 Go 代码的生成路径。
 			- **分号后（包名）：**写入到生成的 `.pb.go` 文件顶部的包声明 `package PACKAGE_NAME`。一个非常好的实践是在名称后加上 `pb` 后缀，以明确表示这是一个 Protobuf 生成的包。
