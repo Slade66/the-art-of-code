@@ -232,7 +232,6 @@
 		- `ss -lntp | grep 2375`
 		  logseq.order-list-type:: number
 - ## 注意
-  collapsed:: true
 	- **不要用镜像的 latest 标签，因为这个标签会变动，导致使用镜像的命令失效。**
 	  collapsed:: true
 		- nacos 2.4 的启动命令和 3+ 版本的启动参数不一样，会出现启动 nacos 的命令以前能用，过段时间就失效了，因为 latest 标签指向了 3+。
