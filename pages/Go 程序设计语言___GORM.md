@@ -164,8 +164,58 @@
 				  DB.First(&user, 10)
 				  ```
 	- `func (db *DB) Model(value interface{}) (tx *DB)`
+	  collapsed:: true
 		- **作用：**
-	-
+			- 告诉 GORM：“接下来的操作，是针对哪张表的？如果结构体中有 ID，就锁定那一行数据操作”
+			- 自动生成 SQL 的 `WHERE` 主键条件：
+				- 如果你传入的结构体**包含主键值**（例如 ID），`Model()` 会自动提取这个主键，并将其作为 SQL 的 `WHERE` 条件。
+				- ```go
+				  // 假设结构体是 User {ID, Name, Age}
+				  user := User{ID: 10}
+				  
+				  // 代码：
+				  db.Model(&user).Update("Name", "Tom")
+				  
+				  // 生成的 SQL：
+				  // UPDATE users SET name = 'Tom' WHERE id = 10;
+				  // (注意：因为它看到了 user.ID 是 10，所以自动加了 WHERE id = 10)
+				  ```
+				- 你不需要手动写 `db.Where("id = ?", user.ID).Update(...)`，GORM 帮你自动完成了。
+			- 指定表名：
+				- 如果你传入的结构体没有主键值（或者是空结构体 &User{}），Model() 的作用就仅仅是告诉 GORM “我要操作 users 这张表”。
+				- ```go
+				  // 代码：没有指定 ID，只是为了告诉 GORM 去操作 users 表
+				  db.Model(&User{}).Where("age > ?", 18).Update("is_adult", true)
+				  
+				  // 生成的 SQL：
+				  // UPDATE users SET is_adult = true WHERE age > 18;
+				  ```
+		- **Model vs Table**
+			- `db.Table("users")` 也能指定表，为什么要用 `Model`？
+			- | **特性** | **db.Model(&User{})** | **db.Table("users")** |
+			  | ---- | ---- | ---- |
+			  | **来源** | 基于 Go 结构体 | 基于字符串（表名） |
+			  | **主键智能识别** | **支持** (如果结构体有 ID，自动加 WHERE) | 不支持 (必须手写 Where) |
+			  | **Hooks (钩子)** | **触发** (如 `BeforeUpdate`) | 不触发 |
+			  | **软删除** | **支持** (自动处理 `deleted_at`) | 不支持 (必须手动处理) |
+			  | **类型安全** | 高 (重构结构体名时会自动匹配) | 低 (表名改了，字符串不会变，容易报错) |
+		- **注意：**
+			- **不更新结构体的零值字段**
+				- `Model` 配合 `Updates` (结构体传参) 使用时，不会更新零值（0, "", false）。
+				- ```go
+				  user := User{ID: 1}
+				  
+				  // ❌ 错误做法：试图把 Age 改为 0
+				  // GORM 会认为 0 是默认值，从而忽略在这个字段上的更新
+				  db.Model(&user).Updates(User{Age: 0, Name: "Jerry"})
+				  // SQL: UPDATE users SET name='Jerry' WHERE id = 1; (Age 没变！)
+				  
+				  // ✅ 正确做法 A：使用 Map（推荐）
+				  db.Model(&user).Updates(map[string]interface{}{"Age": 0, "Name": "Jerry"})
+				  
+				  // ✅ 正确做法 B：使用 Select 强制选中
+				  db.Model(&user).Select("Age").Updates(User{Age: 0})
+				  ```
 - ## Association
 	- `func (db *DB) Association(column string) *Association`
 	  collapsed:: true
