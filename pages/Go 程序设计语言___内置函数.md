@@ -1,2 +1,2 @@
-- [[make]]
+- [[func make(t Type, size ...IntegerType) Type]]
 -

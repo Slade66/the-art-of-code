@@ -86,9 +86,19 @@
 		- 使用专门为并发场景设计的 `sync.Map` 类型。
 - **操作未初始化的 Map**
   collapsed:: true
-	- map 的零值是 `nil`。
-	- **从 `nil` map 中读取数据是安全的：**读取键值时会返回值类型的零值，获取长度时返回 0，使用 `for-range` 遍历时不会执行循环。这些行为与空 `map` 相同，不会引发 panic。
-	- 不能向一个 `nil` map 添加键值对，否则会导致运行时错误。
+	- **只声明，不 make**
+		- ```go
+		  var m map[string]int // 这是一个 nil map
+		  
+		  fmt.Println(m["key"]) // ✅ 读是可以的，返回零值 0
+		  delete(m, "key")      // ✅ 删也是可以的（什么都不发生）
+		  
+		  m["key"] = 1          // ❌ Panic! (assignment to entry in nil map)
+		  ```
+		- `var m` 只是声明了一个指针，它指向 `nil`。你没有创建底层的 `hmap` 结构，所以没有地方存数据。
+		- map 的零值是 `nil`。
+		- **从 `nil` map 中读取数据是安全的：**读取键值时会返回值类型的零值，获取长度时返回 0，使用 `for-range` 遍历时不会执行循环。这些行为与空 `map` 相同，不会引发 panic。
+		- 不能向一个 `nil` map 添加键值对，否则会导致运行时错误。
 	- 使用 map 前必须使用 `make` 初始化，或者使用字面量 `{}`。
 		- ```go
 		  m := make(map[string]int)
