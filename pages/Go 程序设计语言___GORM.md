@@ -42,6 +42,9 @@
 				- `mysql.Open(dsn)` 是 GORM 提供的 MySQL 数据库驱动函数，它接受一个连接字符串（DSN，Data Source Name）并返回一个 `gorm.Dialector` 类型的对象，GORM 使用它来知道如何与 MySQL 数据库进行交互。
 			- **第二个参数**：`&gorm.Config{}`
 				- `&gorm.Config{}` 是一个指向 `gorm.Config` 结构体的指针，GORM 配置项通过这个结构体来设置。默认情况下，`gorm.Config{}` 是空的，即使用 GORM 的默认配置。
+		- **注意：**
+			- 要正确处理 `time.Time`，您需要将 `parseTime` 作为参数包含在内。
+			- 要完全支持 UTF-8 编码，您需要将 `charset=utf8` 更改为 `charset=utf8mb4`。
 - ## DB
 	- `func (db *DB) Count(count *int64) (tx *DB)`
 	  collapsed:: true
@@ -229,4 +232,160 @@
 			-
 		- **示例：**
 			-
+- **为什么 DeletedAt 要加索引？**
+	- 因为你用了 **软删除（soft delete）**：数据并没真删，而是把 `deleted_at` 填上时间。
+	- 之后你所有“正常查询”基本都会隐含一个条件：`WHERE deleted_at IS NULL`
+	- 给 `deleted_at` 加索引的目的就是：让这类查询更快。
+- ## 多对一
+  collapsed:: true
+	- 在 GORM（Go 的 ORM 库）中，“多对一”关系通常被称为 **Belongs To**（属于）。
+	- **举例：**
+		- 想象一下**员工（User）**和**部门（Department）**的关系：
+			- 一个部门有**多**个员工。
+			- 一个员工只**属于**（Belongs To）**一**个部门。
+		- 从员工的角度看，这就是“多对一”关系。
+	- 在 GORM 中实现 Belongs To 关系，关键在于**在“多”的一方（子表）中保存“一”的一方（父表）的主键作为外键**。
+	- **外键字段：**
+		- 通常命名为 [关联结构体名]ID
+		- 这是数据库中实际存在的列（外键），存储公司的 ID。
+	- **关联结构体字段：**
+		- 用于存储查询到的 Company 对象，这是一个 GORM 的辅助字段。
+		- 默认情况下它不会在数据库 users 表中生成列，但在查询时，GORM 会把对应的公司数据填充到这里。
+	- **GORM 的默认约定：**
+		- GORM 看到 `User` 结构体中有一个 `Company` 字段。
+		- 它会自动寻找名为 `CompanyID` 的字段作为外键。
+		- 它默认 `CompanyID` 对应 `Company` 表的 `ID` 字段。
+	- **自定义外键：**
+		- 如果你的字段名不一样，比如外键叫 `CompID`，你需要使用 Struct Tag 来告诉 GORM：
+			- **`foreignKey`**: 指定当前结构体（User）中的哪个字段是外键。
+			- **`references`**: 指定目标结构体（Company）中的哪个字段被引用（通常默认为 ID，一般不需要写）。
+	- **GORM 关联字段使用指针或值的区别：**
+		- | **特性** | **指针类型 (*Company)** | **值类型 (Company)** |
+		  | ---- | ---- | ---- |
+		  | **空值表现** | `nil` (真·空) | **零值** (ID为0, 字段为空串) |
+		  | **JSON 输出** | `"Company": null` | `"Company": { "ID":0, ... }` |
+		  | **代码安全性** | ⚠️ **低** (直接调用会 Panic，需判空) | ✅ **高** (永远不会崩，安全访问) |
+		  | **语义表达** | "没有公司" | "有一个空的公司对象" |
+		- 如果关联字段是指针，外键 ID 也用指针 (`CompanyID *int`)，这样数据库可以存 SQL `NULL`。
+	- **代码示例：**
+		- ```go
+		  package main
+		  
+		  import (
+		  	"encoding/json"
+		  	"fmt"
+		  	"gorm.io/driver/sqlite"
+		  	"gorm.io/gorm"
+		  )
+		  
+		  // ================= 模型定义 =================
+		  
+		  // 1. 公司表 (最基础)
+		  type Company struct {
+		  	ID   uint
+		  	Name string
+		  }
+		  
+		  // 2. 员工表 (中间层)
+		  type User struct {
+		  	ID   uint
+		  	Name string
+		  
+		  	// --- 关联 A: 标准多对一 (User -> Company) ---
+		  	// 使用指针 *int，允许为空 (NULL)
+		  	CompanyID *int
+		  	Company   *Company // 默认约定：关联 CompanyID -> Company.ID
+		  	
+		  	// --- 关键字段: 员工工号 ---
+		  	// 这个字段将作为被 CreditCard 引用的目标
+		  	UserCode string `gorm:"unique;not null"` 
+		  }
+		  
+		  // 3. 工卡表 (测试 references)
+		  type CreditCard struct {
+		  	ID     uint
+		  	Number string
+		  
+		  	// --- 关联 B: 特殊多对一 (CreditCard -> User) ---
+		  	// 数据库里存的是 "U-1001" 这种工号，而不是 User 的 ID (1, 2, 3...)
+		  	OwnerCode string 
+		  
+		  	// [重点配置]
+		  	// foreignKey: 指明本结构体的 OwnerCode 是外键
+		  	// references: 指明关联 User 结构体的 UserCode 字段 (而不是默认的 User.ID)
+		  	Owner User `gorm:"foreignKey:OwnerCode;references:UserCode"`
+		  }
+		  
+		  // ================= 主程序 =================
+		  
+		  func main() {
+		  	// 初始化 SQLite 内存数据库
+		  	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+		  	// 自动迁移表结构
+		  	db.AutoMigrate(&Company{}, &User{}, &CreditCard{})
+		  
+		  	// ------------------------------------
+		  	// 1. 准备数据
+		  	// ------------------------------------
+		  	
+		  	// 创建公司
+		  	google := Company{Name: "Google"}
+		  	db.Create(&google)
+		  
+		  	// 创建员工 (关联公司 + 设置工号)
+		  	// UserCode "GOOG-001" 是我们将要引用的关键
+		  	alice := User{
+		  		Name:      "Alice", 
+		  		Company:   &google, 
+		  		UserCode:  "GOOG-001", 
+		  	}
+		  	db.Create(&alice)
+		  
+		  	// 创建工卡 (关联员工)
+		  	// 注意：我们直接赋值 OwnerCode 为 "GOOG-001"，完全没用到 alice.ID
+		  	card := CreditCard{
+		  		Number:    "CARD-9999",
+		  		OwnerCode: "GOOG-001", 
+		  	}
+		  	db.Create(&card)
+		  
+		  	// ------------------------------------
+		  	// 2. 查询验证
+		  	// ------------------------------------
+		  	fmt.Println("======= 开始查询 =======")
+		  
+		  	var resultCard CreditCard
+		  	
+		  	// 链式预加载：
+		  	// 1. 加载 Owner (根据 CreditCard.OwnerCode -> User.UserCode)
+		  	// 2. 加载 Owner.Company (根据 User.CompanyID -> Company.ID)
+		  	db.Preload("Owner.Company").First(&resultCard, "number = ?", "CARD-9999")
+		  
+		  	// ------------------------------------
+		  	// 3. 输出结果
+		  	// ------------------------------------
+		  	
+		  	// 打印工卡信息
+		  	fmt.Printf("工卡号: %s\n", resultCard.Number)
+		  	fmt.Printf("关联工号(外键): %s\n", resultCard.OwnerCode)
+		  	
+		  	// 打印关联的员工信息
+		  	fmt.Printf("持卡人姓名: %s\n", resultCard.Owner.Name)
+		  	fmt.Printf("持卡人工号: %s\n", resultCard.Owner.UserCode)
+		  	
+		  	// 打印员工的公司信息
+		  	if resultCard.Owner.Company != nil {
+		  		fmt.Printf("所属公司: %s\n", resultCard.Owner.Company.Name)
+		  	}
+		  
+		  	// 打印完整 JSON 结构以便观察
+		  	printJSON(resultCard)
+		  }
+		  
+		  func printJSON(v interface{}) {
+		  	b, _ := json.MarshalIndent(v, "", "  ")
+		  	fmt.Printf("\nJSON 结构:\n%s\n", string(b))
+		  }
+		  ```
+-
 -

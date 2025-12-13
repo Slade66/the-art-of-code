@@ -388,4 +388,15 @@
 		- CodecForRequest 返回 `(jsonCodec, false)`
 		- DefaultRequestDecoder 的 codec, ok := CodecForRequest(r, "Content-Type")
 		- `ok == false` → 直接返回 `BadRequest("CODEC", "unregister Content-Type: ...")`
+- 在 data 下建 model
+	- 我想看看现在的数据库设计，总共有多少张表？字段都叫什么？
+		- **混在一起写**：小泽需要打开 `site.go`，翻过 50 行 CRUD 代码找到 struct；再打开 `room.go`，翻过 100 行代码找到 struct... 如果有 20 张表，他要开 20 个文件，像大海捞针。文件臃肿，想看数据库结构得在代码堆里找。
+		- **单独 `model` 包**：小泽打开 `internal/data/model` 目录。每个文件点开**全是 struct**，没有干扰代码。
+			- 这实际上就充当了**“代码版的 SQL 数据库文档”**。一眼就能看清整个系统的数据库全貌。就像看 SQL 建表语句一样清晰。
+	- 为了“复用”
+		- 除了 CRUD，你的项目可能还有别的地方需要用到这些数据库模型：
+			- **Migration (自动建表脚本)**：在 `main.go` 启动时，或者专门的一个 CLI 工具里，需要引用这些 Struct 来生成表。
+			- **Seeder (造假数据脚本)**：测试时需要批量造数据。
+		- 如果 struct 藏在 `internal/data/site.go` 的 CRUD 逻辑里，你想引用它，就得把整个 `data` 包引入进来。而 `data` 包里通常包含了数据库连接、Redis 连接等**“重”**资源。
+		- **单独的 `model` 包是纯净的**（只有 Go 原生类型和 GORM 标签），任何脚本想引用它，负担极小，随时随地都能用。
 -
