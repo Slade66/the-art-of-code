@@ -387,5 +387,151 @@
 		  	fmt.Printf("\nJSON 结构:\n%s\n", string(b))
 		  }
 		  ```
--
+- ## 多对多
+  collapsed:: true
+	- **核心原理：中间表（Join Table）**
+	  collapsed:: true
+		- 与“一对多”不同，多对多不能只在某一方增加一个外键。它必须引入第三张表——中间表。
+		- 多对多必须有 `many2many` 标签，GORM 会自动管理中间表。
+	- **代码示例：**
+	  collapsed:: true
+		- **用户（User）和语言（Language）之间是多对多关系：**一个用户可以使用多种语言（如英语、中文等），而一种语言也可以被多个用户使用。
+		- ```go
+		  package main
+		  
+		  import (
+		  	"fmt"
+		  	"gorm.io/driver/sqlite"
+		  	"gorm.io/gorm"
+		  )
+		  
+		  // Language (被引用的实体)
+		  type Language struct {
+		  	gorm.Model
+		  	Name string
+		  }
+		  
+		  // User (主实体)
+		  type User struct {
+		  	gorm.Model
+		  	Name string
+		  
+		  	// [核心配置]
+		  	// 1. 使用切片表示多个
+		  	// 2. 必须加 `many2many:表名` 标签
+		  	// GORM 会自动创建名为 `user_languages` 的中间表
+		  	Languages []*Language `gorm:"many2many:user_languages;"`
+		  }
+		  
+		  func main() {
+		  	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+		  	// GORM 会自动创建三张表：users, languages, user_languages
+		  	db.AutoMigrate(&User{}, &Language{})
+		  
+		  	// ==========================================
+		  	// 1. 插入 (Create) - 建立关系
+		  	// ==========================================
+		  	// 准备两种语言
+		  	cn := Language{Name: "Chinese"}
+		  	en := Language{Name: "English"}
+		  
+		  	user := User{
+		  		Name: "John",
+		  		// 直接把语言对象放进去，GORM 会自动处理中间表
+		  		Languages: []*Language{&cn, &en},
+		  	}
+		  	db.Create(&user)
+		  	
+		  	fmt.Println("创建完成，中间表已自动填充。")
+		  
+		  	// ==========================================
+		  	// 2. 查询 (Read) - 预加载
+		  	// ==========================================
+		  	var u User
+		  	// 使用 Preload 加载关联数据
+		  	db.Preload("Languages").First(&u, "name = ?", "John")
+		  
+		  	fmt.Printf("用户: %s 会说的语言: ", u.Name)
+		  	for _, l := range u.Languages {
+		  		fmt.Printf("[%s] ", l.Name)
+		  	}
+		  	fmt.Println()
+		  
+		  	// ==========================================
+		  	// 3. 更新关联 (Update Association)
+		  	// ==========================================
+		  	// 场景：John 学会了法语，要加进去
+		  	fr := Language{Name: "French"}
+		  	
+		  	// 使用 Association 模式（推荐）
+		  	// 这里的 "Languages" 对应结构体字段名
+		  	err := db.Model(&u).Association("Languages").Append(&fr)
+		  	if err == nil {
+		  		fmt.Println("已添加法语关联")
+		  	}
+		  
+		  	// ==========================================
+		  	// 4. 删除关联 (Delete Association)
+		  	// ==========================================
+		  	// 场景：John 忘记了英语 (只删除关系，不删除英语这个数据本身)
+		  	// 注意：这里需要传入具体的对象，或者对象的 ID
+		  	db.Model(&u).Association("Languages").Delete(&en)
+		  	fmt.Println("已移除英语关联")
+		  
+		  	// ==========================================
+		  	// 5. 替换关联 (Replace)
+		  	// ==========================================
+		  	// 场景：重置，John 现在只懂日语
+		  	jp := Language{Name: "Japanese"}
+		  	db.Model(&u).Association("Languages").Replace(&jp)
+		  	fmt.Println("关联已重置为仅日语")
+		  }
+		  ```
+	- **CRUD 中间表：**
+	  collapsed:: true
+		- 专门用于管理关联。
+		- ```go
+		  // 1. 添加关系 (Append)
+		  db.Model(&user).Association("Languages").Append(&newLang)
+		  
+		  // 2. 移除关系 (Delete) - 仅删中间表记录，不删 Language 表记录
+		  db.Model(&user).Association("Languages").Delete(&oldLang)
+		  
+		  // 3. 替换关系 (Replace) - 先清空该用户的所有旧关系，再添加新的
+		  db.Model(&user).Association("Languages").Replace(&lang1, &lang2)
+		  
+		  // 4. 清空关系 (Clear) - 删掉该用户在中间表的所有记录
+		  db.Model(&user).Association("Languages").Clear()
+		  
+		  // 5. 计数 (Count) - 该用户会几种语言？
+		  db.Model(&user).Association("Languages").Count()
+		  ```
+	- **自定义外键和中间表列名：**
+	  collapsed:: true
+		- 如果你的表不是通过 ID 关联，或者你想自定义中间表的列名。
+		- ```go
+		  type User struct {
+		      gorm.Model
+		      UserCode  string `gorm:"unique"` // 自己的唯一标识
+		      
+		      Languages []Language `gorm:"many2many:user_languages;foreignKey:UserCode;joinForeignKey:UserRef;references:Code;joinReferences:LangRef"`
+		  }
+		  
+		  type Language struct {
+		      gorm.Model
+		      Code string `gorm:"unique"` // 对方的唯一标识
+		      Name string
+		  }
+		  ```
+		- **Tag 解释：**
+			- **`many2many:user_languages`：**中间表叫 `user_languages`。
+			- **`foreignKey:UserCode`：**我方（User）用哪个字段去关联？ $\rightarrow$ `UserCode`。
+			- **`joinForeignKey:UserRef`：**在中间表里，映射我方数据的列名叫什么？ $\rightarrow$ 叫 `UserRef`。
+			- **`references:Code`：**对方（Language）用哪个字段被关联？ $\rightarrow$ `Code`。
+			- **`joinReferences:LangRef`：**在中间表里，映射对方数据的列名叫什么？ $\rightarrow$ 叫 `LangRef`。
+	- **多对多的字段加在哪一边？**
+	  collapsed:: true
+		- **只查一边**：放在“主”的一方（通常是 User）。
+		- **两边都要查**：两边都加，但中间表名字必须一致。
+		- **数据库层面**：无论你加在一边还是两边，GORM 在数据库里生成的中间表都是同一张。
 -
