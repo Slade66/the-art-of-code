@@ -1,6 +1,6 @@
 概念
 heading:: true
-	- 简称 Protobuf，是 Google 开发的一种与语言无关的，用于定义数据结构和服务接口的工具。它根据 proto 文件中的定义，生成多种编程语言对应的数据结构操作代码（进行序列化与反序列化），支持在不同服务之间传输结构化数据，从而实现跨语言和系统的数据通信。
+	- 简称 Protobuf，是 Google 开发的一种与语言无关的，用于定义数据结构和服务接口的语言（接口描述语言（IDL）。它根据 proto 文件中的定义，生成多种编程语言对应的数据结构操作代码（进行序列化与反序列化），支持在不同服务之间传输结构化数据，从而实现跨语言和系统的数据通信。
 	- 相较于 JSON/XML，它是一种更高效的数据通信格式。
 - `.proto` 文件
   heading:: true
@@ -283,4 +283,31 @@ heading:: true
 			- 不要修改已有字段的编号。
 			- 不要用已删除字段的旧号码给新字段。
 		- 可以用 `reserved` 标记不用的编号。
+- ## 选项（Option）
+	- **作用：**告诉 `protoc` 编译器，在将这个 `.proto` 文件编译成具体的编程语言代码（Go 或 Java）时，应该如何处理包名和文件结构，控制代码生成后的结果。
+	- `option go_package`
+		- **作用：** 指定生成的 `.pb.go` 文件应该属于哪个 Go 包（import path）以及包名是什么。
+		- **格式：**
+			- 由两部分组成，中间用分号 `;` 隔开：`option go_package = "{完整的 Go 导入路径};{包名}";`
+			- **第一部分（Import Path）：** `network-config-generator/api/site/v1`
+				- 这是 Go 语言中导入这个包的完整路径。当你想要在其他 Go 项目中引用生成的代码时，你会 `import` 这个路径。
+				- 这也决定了生成的 Go 文件在磁盘上的目录结构。
+				- 导入路径应该是项目的 Module Name（go.mod 中的名字）+ 目录路径。
+			- **第二部分（Package Name）：** `v1`
+				- 这是生成的 Go 文件内部 `package v1` 声明的名字。
+				- Go 语言惯例是“目录名即包名”，包名应与目录名的最后一段一致：如果你的路径以 `/v1` 结尾，那么包名就应该是 `v1`。
+			- `option go_package = "{go.mod的module名}/{proto文件所在的相对路径};{目录名的最后一段}";`
+	- `option java_package`
+		- **作用：** 指定生成的 Java 类应该属于哪个 Java 包。
+	- `option java_multiple_files`
+		- **作用：** 控制生成的 Java 文件是“生成为一个大文件”还是“拆分成多个文件”。
+		- **取值：**
+			- **`true`（推荐）：**
+				- `.proto` 文件中定义的每一个 `message`、`enum` 和 `service` 都会生成一个单独的 `.java` 文件。
+				- 例如：`CreateSiteRequest.java`、`SiteGrpc.java` 等都会独立存在。
+				- 这符合 Java 的一般编程习惯（一个类一个文件）。
+			- **`false`（默认）：**
+				- 只会生成一个外层的 Java 类文件（名字通常基于文件名），所有的 `message` 和 `enum` 都会变成这个外层类里面的静态内部类。
+				- 这会导致代码引用起来很长，例如 `MyProtoFile.CreateSiteRequest`，用起来比较麻烦。
+	-
 -
