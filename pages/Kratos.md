@@ -371,6 +371,7 @@
 - 在 service 把 biz 和 api 解耦：proto 的 req 和 resp 不要直接传入 biz，而是转换成 dto 再传，虽然看起来做多了一步复制对象的操作，但是实现了biz 和 api 层的解耦，甚至是 data 和 api 层的解耦，之后修改 api 层的代码，比如修改包名，就不需要改 biz 层的代码，否则要改biz层的函数签名。
 - [[Kratos/参数校验]]
 - ## DTO 转换应该放在 data 层还是 biz 层？
+  collapsed:: true
 	- **合理的做法：**在 data 层把 APISIX 的 JSON 转成 `dto.Route`，biz 层只接收 `[]*dto.Route`，用于业务处理或直接透传给 service。biz 不应该触碰任何 HTTP 或 JSON 相关细节。
 	- **职责划分**
 		- data 层：与外部系统交互（如 APISIX HTTP API），处理 HTTP 请求、响应和 JSON 格式。
@@ -399,4 +400,21 @@
 			- **Seeder (造假数据脚本)**：测试时需要批量造数据。
 		- 如果 struct 藏在 `internal/data/site.go` 的 CRUD 逻辑里，你想引用它，就得把整个 `data` 包引入进来。而 `data` 包里通常包含了数据库连接、Redis 连接等**“重”**资源。
 		- **单独的 `model` 包是纯净的**（只有 Go 原生类型和 GORM 标签），任何脚本想引用它，负担极小，随时随地都能用。
+- **kratos 各层的职责：**
+	- data 层：
+		- 只做「拿原料」
+		- **SQL / 表结构相关**的东西：属于 data。
+		- DB 里长什么样，属于data。
+		- data 层只负责：
+			- 写 SQL / GORM Join
+			- 把 DB 行 → 这些简单 struct
+		- Data 层只负责“搬运数据”，
+		- Data 层提供原子查询能力
+	- biz/usecase 层做「拼装」
+		- Biz 层负责“组装逻辑”（推荐）
+		- 这些“如何从原始数据拼出我想要的业务结构”的逻辑，其实就是典型的 **usecase 逻辑**：
+		- 把多个 data 查询结果组装成
+		- 决定“父没在列表时怎么处理”“脏数据怎么兜底”等业务规则。
+		- Biz 层负责编排业务逻辑（组装树）。
+	- service 层只做 DTO → proto 的转换。
 -

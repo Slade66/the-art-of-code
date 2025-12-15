@@ -534,4 +534,14 @@
 		- **只查一边**：放在“主”的一方（通常是 User）。
 		- **两边都要查**：两边都加，但中间表名字必须一致。
 		- **数据库层面**：无论你加在一边还是两边，GORM 在数据库里生成的中间表都是同一张。
+- `type Tabler interface`
+	- ```go
+	  type Tabler interface {
+	  	TableName() string
+	  }
+	  ```
+		- `TableName() string`
+			- **作用：**
+				- 用于给某个自定义模型（Struct）硬编码一个固定的数据库表名。
+				- 如果你的模型结构体实现了 `Tabler` 接口（即定义了一个无参数的 `TableName` 方法），GORM 会在解析 Schema 时调用它来获取表名。
 -
