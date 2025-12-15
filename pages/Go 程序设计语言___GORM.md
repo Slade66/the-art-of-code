@@ -233,9 +233,39 @@
 		- **示例：**
 			-
 - **为什么 DeletedAt 要加索引？**
+  collapsed:: true
 	- 因为你用了 **软删除（soft delete）**：数据并没真删，而是把 `deleted_at` 填上时间。
 	- 之后你所有“正常查询”基本都会隐含一个条件：`WHERE deleted_at IS NULL`
 	- 给 `deleted_at` 加索引的目的就是：让这类查询更快。
+- **软删除**
+  collapsed:: true
+	- GORM 的软删除并不会执行 `DELETE` 语句，而是将记录的 `deleted_at` 字段更新为当前时间。
+	- **查询时：**GORM 会自动加上 `WHERE deleted_at IS NULL`，让应用层“看”不到这条数据，从而认为数据已删除。
+	- **物理上：**这条数据依然安然无恙地躺在数据库表中。
+	- **软删除与唯一索引的冲突：**
+		- 数据库的唯一索引（Unique Index）是物理约束。它的作用是确保某一列（或多列组合）的值在整个表中是唯一的，它只关心它管着的那一列，不关心你是否觉得这条数据“已删除”。
+		- 当你对一行数据进行软删除时，这条记录实际上仍然存在于表中。此时如果再次创建一条在唯一索引列上取值相同的记录，应用层会认为这是一次新的插入操作，但在数据库看来，这条记录早已存在，只是被标记为“已删除”、对应用层不可见而已。结果就是违反了唯一性约束，数据库会抛出 `Duplicated Entry` 错误。
+		- **解决方案：复合唯一索引**
+			- **在 GORM 中的写法：**
+				- ```go
+				  type User struct {
+				      ID        uint
+				      // 将 name 和 deleted_at 设为同一个索引组
+				      Name      string         `gorm:"uniqueIndex:idx_name_deleted_at"`
+				      DeletedAt gorm.DeletedAt `gorm:"uniqueIndex:idx_name_deleted_at"`
+				  }
+				  ```
+			- **原理**：将 `DeletedAt` 加入到唯一索引中，形成 `(Name, DeletedAt)` 的联合唯一索引。
+			- **目标**：允许 `("Jerry", "2023-10-01")` 和 `("Jerry", NULL)` 共存。
+			- **这种方案在 MySQL 的陷阱：**
+				- 在 MySQL 中，唯一索引通常允许多个 NULL 值共存（因为 `NULL` 的含义是未知，所以 `NULL != NULL`）。
+				- 如果 `DeletedAt` 是 `NULL`（代表活跃用户），MySQL 允许存在多行 `("Jerry", NULL)`。
+				- 这意味着：你可以创建多个同名的活跃用户，这违背了唯一索引的初衷（我们只允许一个活跃的 Jerry）。
+				- **修正：**
+					- 你需要让 `DeletedAt` 字段不使用 `NULL`，而是使用默认值（例如 0）。
+					- 将 `DeletedAt` 类型改为 `int64` (存储时间戳) 或其他非 NULL 类型。
+					- 未删除时为 `0`，删除时为时间戳。
+					- 这样 `("Jerry", 0)` 就变得严格唯一了。
 - ## 多对一
   collapsed:: true
 	- 在 GORM（Go 的 ORM 库）中，“多对一”关系通常被称为 **Belongs To**（属于）。
@@ -535,6 +565,7 @@
 		- **两边都要查**：两边都加，但中间表名字必须一致。
 		- **数据库层面**：无论你加在一边还是两边，GORM 在数据库里生成的中间表都是同一张。
 - `type Tabler interface`
+  collapsed:: true
 	- ```go
 	  type Tabler interface {
 	  	TableName() string
