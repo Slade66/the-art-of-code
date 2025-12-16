@@ -57,7 +57,6 @@
 		- `service` 接收请求，调用 `biz` 处理业务，`biz` 层则通过 `data` 层的方法操作数据库。
 - kratos 命令行工具
   heading:: true
-  collapsed:: true
 	- **安装：**`go install github.com/go-kratos/kratos/cmd/kratos/v2@latest`
 	- **创建项目：**
 		- 使用默认模板创建一个新的 Kratos 项目：`kratos new <项目名>`
