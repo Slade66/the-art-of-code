@@ -180,46 +180,171 @@
   collapsed:: true
 	- 如果一个结构体为空，唯一的作用是提供方法，不存储任何数据或状态。对于没有状态的“函数集”，嵌入空结构体几乎没有开销。对于这种没有状态、仅提供方法的结构体，可以直接使用值嵌入的简单方式。
 	- 对于有状态的实例，必须通过指针引用，而非复制。因为嵌入值会带来复制开销，并且如果原状态发生变化，复制对象无法同步更新。
-- **结构体嵌套与匿名字段**
+- **结构体嵌入（Struct Embedding）**
   collapsed:: true
-	- **简化字段访问：**
-		- 普通嵌套下，如果一个结构体包含另一个结构体，需要通过完整路径访问内部字段，例如 `outer.inner.field`，书写较为繁琐。
-		- 若将内部结构体作为匿名字段（只写类型，不写字段名），其字段和方法会被“提升”，可以直接通过外层结构体访问。这种结构体嵌入方式能有效简化访问语法。
-	- **实现类型组合：**
-		- Go 通过结构体嵌入实现类似继承的效果，使外层结构体自动拥有被嵌入结构体的字段和方法，从而达到代码复用和类型扩展的目的。
-	- **字段与方法的提升规则：**
-		- 被嵌入结构体的字段和方法（无论值类型还是指针类型）都会被提升，从外层结构体的实例即可直接访问，就像这些成员原本属于外层结构体一样。
-		- 需要注意的是，未导出的字段不会被提升以保证封装性；但内部结构体中导出的方法仍会提升，外层结构体依然可以直接调用。
-	- ```go
-	  // 定义一个基础结构体，用于表示通用联系信息
-	  type ContactInfo struct {
-	    email string
-	    phone string
-	  }
-	  
-	  // 用户结构体，嵌入 ContactInfo 作为匿名字段
-	  type User struct {
-	    name string
-	    age  int
-	    ContactInfo  // 匿名字段，其字段会被提升
-	  }
-	  
-	  func main() {
-	    u := User{
-	      name: "Alice",
-	      age:  30,
-	      ContactInfo: ContactInfo{ // 使用嵌入结构体的类型名作为字段名来初始化它。
-	        email: "alice@example.com",
-	        phone: "123-456-7890",
-	      },
-	    }
-	  
-	    // 可以直接访问嵌入字段的成员
-	    fmt.Println("Name:", u.name)
-	    fmt.Println("Email:", u.email)  // 实际访问的是 ContactInfo.email
-	    fmt.Println("Phone:", u.phone)  // 实际访问的是 ContactInfo.phone
-	  }
-	  ```
+	- **什么是结构体嵌入？**
+	  collapsed:: true
+		- 它允许你将一个结构体直接作为另一个结构体的字段，而不需要给这个字段起名字。
+		- 当你在一个结构体中声明一个字段，但只写了类型而没有写字段名时，这就是嵌入（也称为匿名嵌入）。
+		- **隐式字段命名：**嵌入字段的名字 = 类型名。
+			- 当你写 `type A struct { B }` 时，编译器实际上在背后把它看作：
+				- ```go
+				  type A struct {
+				      B B  // 字段名是 B，类型也是 B
+				  }
+				  ```
+				- 所谓的“直接塞进去”，只是省略了写名字这个步骤，编译器帮你补上了。
+			- **硬性限制：**由于字段名是根据类型名自动生成的，你不能在同一个结构体中嵌入两个同名的类型（即使它们来自不同的包）。
+			- **嵌入指针类型：**`*T` -> 字段名依然是 `T`（而不是 `*T`，字段名不包含符号）。
+		- ```go
+		  package main
+		  
+		  import "fmt"
+		  
+		  // 定义一个基础结构体
+		  type User struct {
+		  	Name  string
+		  	Email string
+		  }
+		  
+		  // 定义一个方法
+		  func (u *User) Notify() {
+		  	fmt.Printf("Sending email to %s <%s>\n", u.Name, u.Email)
+		  }
+		  
+		  // Admin 嵌入了 User
+		  type Admin struct {
+		  	User  // <--- 这就是嵌入，没有字段名
+		  	Level string
+		  }
+		  
+		  func main() {
+		  	// 初始化
+		  	admin := Admin{
+		  		User: User{
+		  			Name:  "Alice",
+		  			Email: "alice@example.com",
+		  		},
+		  		Level: "Super",
+		  	}
+		  
+		  	// 1. 直接访问 User 的字段（字段提升）
+		  	fmt.Println("Admin Name:", admin.Name) // 等同于 admin.User.Name
+		  
+		  	// 2. 直接调用 User 的方法（方法提升）
+		  	admin.Notify() // 等同于 admin.User.Notify()
+		  }
+		  
+		  ```
+	- **提升**
+	  collapsed:: true
+		- 内部字段和方法被“提升”到外部，可以直接访问。
+		- **字段提升：**你可以直接通过外层结构体访问内层结构体的字段，仿佛它们是外层自己的一样。
+		- **方法提升：**被嵌入结构体的方法，可以直接通过外部结构体调用。
+	- **覆盖**
+	  collapsed:: true
+		- 如果外部结构体和内部结构体有同名的字段或方法，外部的会覆盖内部的。
+		- ```go
+		  package main
+		  
+		  import "fmt"
+		  
+		  type Base struct {
+		  	Status string
+		  }
+		  
+		  type Container struct {
+		  	Base
+		  	Status string // 外部也有 Status
+		  }
+		  
+		  func main() {
+		  	c := Container{}
+		  	c.Status = "Outer"      // 访问的是 Container.Status
+		  	fmt.Println(c)          // {{} Outer}
+		  	c.Base.Status = "Inner" // 必须显式指定才能访问内部的 Status
+		  	fmt.Println(c)          // {{Inner} Outer}
+		  }
+		  
+		  ```
+		- **重写：**
+			- 在 Go 里，其实并没有传统面向对象语言（比如 Java、C++）里那种 “重写（Override）” 的概念，但效果上可以做到。
+			- Go 不是靠继承重写，而是靠组合 + 方法提升。
+			- 本质不是替换嵌入结构体的方法，而是外部结构体有了一个同名方法，调用时编译器会优先选择“层级最浅”的那一个，也就是优先用外部结构体自己的那个。
+			- ```go
+			  package main
+			  
+			  import "fmt"
+			  
+			  // 1. 定义内部结构体
+			  type Robot struct{}
+			  
+			  func (r *Robot) Work() {
+			  	fmt.Println("Robot: I am working...")
+			  }
+			  
+			  // 2. 定义外部结构体
+			  type AdvancedRobot struct {
+			  	Robot // 嵌入
+			  }
+			  
+			  // 3. "重写" (遮蔽) Work 方法
+			  func (a *AdvancedRobot) Work() {
+			      // 如果你还想在“重写”里用到原来的逻辑，可以这样：
+			    	a.Robot.Work() // 先按老流程走一遍，再加点自己的处理。
+			  	fmt.Println("AdvancedRobot: I am working fast!")
+			  }
+			  
+			  func main() {
+			  	r := AdvancedRobot{}
+			  
+			  	// 调用的是 AdvancedRobot 自己的方法
+			  	r.Work()
+			  	// 输出: AdvancedRobot: I am working fast!
+			  
+			  	// 原始的方法依然存在，只是需要通过显式路径访问
+			  	r.Robot.Work()
+			  	// 输出: Robot: I am working...
+			  }
+			  
+			  ```
+	- **在结构体中嵌入接口**
+	  collapsed:: true
+		- 当你将一个接口类型直接声明在结构体中（不指定字段名，只写接口名）时，这就叫“嵌入接口”。
+		- ```go
+		  type Processor interface {
+		      Process(data string) error
+		  }
+		  
+		  type MyStruct struct {
+		      // 这里嵌入了 Processor 接口
+		      Processor
+		  }
+		  ```
+		- **发生了什么？**
+			- **字段隐式命名：**`MyStruct` 自动拥有了一个名为 `Processor` 的字段。
+			- **方法提升：**`Processor` 接口中的所有方法都会被“提升”到 `MyStruct` 上。这意味着你可以直接在 `MyStruct` 的实例上调用 `Process()` 方法，而不需要写 `myStruct.Processor.Process()`。
+			- **自动代理：**当你调用 `myStruct.Process()` 时，Go 实际上是把它转发（代理）给了内部存储的那个实现了 `Processor` 接口的具体对象。
+		- **陷阱一：空指针 Panic**
+			- 必须确保在调用方法前，内部的接口字段指向了一个具体的实现。
+			- 嵌入接口本质上是一个字段。如果你初始化结构体时没有给这个接口字段赋值，它的默认值是 `nil`。
+			- ```go
+			  type MyStruct struct {
+			      Processor // 接口
+			  }
+			  
+			  func main() {
+			      m := MyStruct{} // Processor 是 nil
+			      m.Process("hello") //运行时 Panic！空指针引用
+			  }
+			  ```
+	- **有什么用？**
+	  collapsed:: true
+		- **代码复用：**你不需要在每个结构体里重复写相同的字段。
+		  logseq.order-list-type:: number
+			- 在使用 GORM 时，几乎所有模型都会嵌入 `gorm.Model`，从而复用 `ID`，`CreatedAt`，`UpdatedAt`，`DeletedAt` 字段。
+		- **快速满足接口：**你可以嵌入一个接口或结构体，通过“提升”机制，让外部结构体自动满足某个接口。
+		  logseq.order-list-type:: number
 - **结构体标签**
   collapsed:: true
 	- 结构体标签的本质是字符串字面量，是一种附加在结构体字段后的“注解”或“元数据”。它不会影响程序逻辑，而是为反射机制和其他第三方库准备的元数据。
