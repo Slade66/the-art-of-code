@@ -125,6 +125,16 @@
 		- **参数：**
 			- `count *int64`：你传进来的整数变量的指针，GORM 会把统计出来的行数写进这个变量。
 		- **返回值：**`*DB`：返回新的 `DB` 实例，方便继续链式调用。
+		- **核心实现逻辑：**
+			- **获取实例副本**：`Count` 第一步会调用 `db.GetInstance()` 或类似机制。这意味着它会基于当前的 `db` 复制出一个新的、临时的 `*gorm.DB` 对象（我们称之为 `tx`）。
+			  logseq.order-list-type:: number
+			- **修改副本**：在 `tx` 上，GORM 会强制把 `SELECT` 语句修改为 `SELECT COUNT(*)`。
+			  logseq.order-list-type:: number
+			- **执行查询**：执行 `tx` 的 SQL。
+			  logseq.order-list-type:: number
+			- **丢弃副本**：函数结束，`tx` 被销毁。
+			  logseq.order-list-type:: number
+			- 原始的 `db` 对象在这个过程中保持了“清白”，它根本不知道刚才发生了一次 `COUNT` 查询。
 	- `func (db *DB) Offset(offset int) (tx *DB)`
 	  collapsed:: true
 		- **作用：**在当前查询上设置 SQL 的 `OFFSET` 子句，表示跳过前 `offset` 条记录再开始返回结果，常用于分页。
@@ -435,6 +445,7 @@
 	- `func (db *DB) Where(query interface{}, args ...interface{}) (tx *DB)`
 	  collapsed:: true
 		- **作用：**
+			- `Where` 本质上只是往当前的 `*gorm.DB` 操作上下文里不断追加查询条件，像是在完善一份 SQL 草稿，直到真正执行查询或更新时，才把这些条件组合成最终的 SQL 发给数据库。
 			- | **传入参数类型** | **示例** | **行为** | **备注** |
 			  | ---- | ---- | ---- |
 			  | **String** | `"name = ?", "tom"` | `WHERE name = 'tom'` | **推荐**，最清晰，无坑。 |
@@ -455,6 +466,71 @@
 				  // 根据主键查找 (最常用)
 				  db.First(&user, 10) // id = 10
 				  ```
+	- `func (db *DB) Delete(value interface{}, conds ...interface{}) (tx *DB)`
+	  collapsed:: true
+		- **作用：**
+			- `Delete` 方法用于根据主键或条件移除记录，若模型包含 `DeletedAt` 字段则默认执行软删除（仅更新时间戳隐藏数据），否则执行物理删除（从数据库彻底清除）。
+		- **代码示例：**
+			- **根据主键删除：**
+				- 你需要告诉 GORM：哪张表以及删谁（ID）。
+				- ```go
+				  // 方法 A：内联主键 (最简洁)
+				  // DELETE FROM users WHERE id = 10;
+				  db.Delete(&User{}, 10)
+				  
+				  // 方法 B：传入包含 ID 的对象
+				  user := User{ID: 10}
+				  db.Delete(&user)
+				  ```
+			- **批量删除：**
+				- 配合 `Where` 条件，可以一次性删除多条记录。
+				- ```go
+				  // DELETE FROM users WHERE name = 'jinzhu';
+				  db.Where("name = ?", "jinzhu").Delete(&User{})
+				  
+				  // 或者使用切片传入多个 ID
+				  // DELETE FROM users WHERE id IN (1,2,3);
+				  db.Delete(&User{}, []int{1, 2, 3})
+				  ```
+		- **核心特性：软删除**
+			- 如果你的模型结构体包含 `gorm.DeletedAt` 字段（或者嵌入了 `gorm.Model`），调用 `Delete` 时，GORM 不会真的从数据库删除这条记录！
+			- 它会执行一个 `UPDATE` 操作，将 `deleted_at` 字段更新为当前时间。
+			- ```go
+			  // 嵌入了 gorm.Model，自带 Soft Delete 能力
+			  type User struct {
+			    gorm.Model 
+			    Name string
+			  }
+			  
+			  // 代码调用 Delete
+			  db.Delete(&user)
+			  
+			  // 实际执行的 SQL 竟然是 Update！
+			  // UPDATE users SET deleted_at="2024-10-29 10:00:00" WHERE id = 10;
+			  ```
+			- **软删除的效果：**
+				- **普通查询看不到：**调用 `db.Find()` 时，GORM 会自动加上 `WHERE deleted_at IS NULL`，所以你查不到这些被“删掉”的数据。
+				- **数据依然在：**你去数据库里直接写 SQL 查，数据还在那里，只是被打上了“已删除”的标记。
+			- **找回软删除 & 物理删除**
+				- **查询已删除的数据：**
+					- ```go
+					  // SELECT * FROM users WHERE id = 10; (不加 deleted_at IS NULL 条件)
+					  db.Unscoped().First(&user, 10)
+					  
+					  // 查找所有数据（包含被软删除的）
+					  db.Unscoped().Find(&users)
+					  ```
+				- **物理删除：**
+					- ```go
+					  // DELETE FROM users WHERE id = 10;
+					  // 真的删了，找不回来了
+					  db.Unscoped().Delete(&user)
+					  ```
+		- **注意：**
+			- **安全机制：阻止全局删除**
+				- 如果结构体的 `ID` 为空（零值），GORM 会触发批量删除（如果没有开启防全表删除保护，这会很危险）。务必确保主键有值。
+				- 为了防止新手写出 `db.Delete(&User{})` 这种导致全表清空的恐怖代码，GORM 默认开启了保护机制。
+				- 如果没有任何 `Where` 条件，也没有指定主键，GORM 会报错：`there is no missing where clause`。
 - ## Association
 	- `func (db *DB) Association(column string) *Association`
 	  collapsed:: true
@@ -502,6 +578,30 @@
 					- 将 `DeletedAt` 类型改为 `int64` (存储时间戳) 或其他非 NULL 类型。
 					- 未删除时为 `0`，删除时为时间戳。
 					- 这样 `("Jerry", 0)` 就变得严格唯一了。
+- **分页查询缺少排序导致的数据重复和数据丢失问题**
+  collapsed:: true
+	- SQL 数据库（如 MySQL、PostgreSQL）不保证 `SELECT` 查询的默认返回顺序。
+	- **问题现象：**当你请求第 1 页和第 2 页时，如果没有明确的 `ORDER BY`，数据库可能会根据磁盘读取顺序随机返回数据。这意味着：
+		- **数据重复：**某条记录可能同时出现在第 1 页和第 2 页。
+		- **数据丢失：**某条记录可能在翻页过程中被跳过，哪一页都没出现。
+	- **修复方案：**在分页查询时，必须加上确定性的排序条件（通常是主键 ID 或创建时间）。
+		- ```go
+		  // 在 Find 之前加上 Order
+		  // 推荐使用主键排序，或者 CreatedAt desc
+		  if err := db.Order("id DESC").Offset(int(offset)).Limit(int(pageSize)).Find(&sites).Error; err != nil {
+		      return nil, 0, err
+		  }
+		  ```
+- **分页查询的 DoS 问题**
+  collapsed:: true
+	- 如果不限制 `pageSize` 上限，调用方传 `pageSize=100000`，会全表扫/大内存分配，影响服务稳定性。
+	- **分页防护：**`pageSize` 设置最大值（比如 100 / 200）。
+- **为什么 gorm.ErrRecordNotFound 透传到 HTTP 常常会变成 500？**
+	- `gorm.ErrRecordNotFound` 只是一个普通的 `error`，不携带 Kratos 需要的 `Reason/Code`，transport 不知道这是 404，通常按“未知内部错误”处理 => HTTP 500。
+	- 要避免 500，核心就是：在进入 transport 前，把业务错误统一转换成 Kratos errors。
+- **最佳实践：**
+  collapsed:: true
+	- 更新之前不需要先查询记录是否存在，直接尝试更新，如果 `RowsAffected` 为 0，就说明不存在。
 - ## 多对一
   collapsed:: true
 	- 在 GORM（Go 的 ORM 库）中，“多对一”关系通常被称为 **Belongs To**（属于）。

@@ -429,4 +429,6 @@
 	- **问题原因：**
 		- `protoc-gen-openapi` 会将 proto 注释写入 OpenAPI 的 `description` 字段，但 Apifox 在显示“接口名称”时优先使用 `summary`。而你当前生成的 `openapi.yaml` 中缺少 `summary`，因此接口名称会退回显示英文的 `operationId`。
 		- Apifox 的接口目录通常按照接口的 `tags` 分组；而 `protoc-gen-openapi` 默认生成的 `tags` 是服务名称（英文），所以导入 Apifox 后，目录也会显示为英文。
+- **最佳实践**（Kratos 常见做法）：
+	- 参数校验尽量在 `service` 层做（返回 `errors.BadRequest`），不要把非法参数落到 data 层变成 DB 行为。
 -
