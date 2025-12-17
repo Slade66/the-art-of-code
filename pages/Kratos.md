@@ -134,6 +134,7 @@
 			- 而 `UnimplementedContainerLogServiceServer` 这个结构体天生就带着这个“密码”。所以你只要把它嵌入你的结构体，编译器就满意了。
 		- 通过增加“必须实现一个奇怪的空方法”这个小麻烦，并用方法名直接提示你应该怎么做，来引导你走上最简单且最正确的道路——即通过嵌入 `Unimplemented...` 结构体来自动满足这个要求。
 - **Kratos 的开发流程：**
+  collapsed:: true
 	- **定义 API**：使用 Protobuf 定义服务的接口、路由、输入数据和返回数据。生成代码。
 	  logseq.order-list-type:: number
 	- **编写服务层（Service）代码**：
@@ -348,6 +349,7 @@
 		- **[service]** 只做 DTO 转换（pb ↔︎ biz）+ 调用 usecase + 组装 reply
 		- 在 service 把 biz 和 api 解耦：proto 的 req 和 resp 不要直接传入 biz，而是转换成 dto 再传，虽然看起来做多了一步复制对象的操作，但是实现了biz 和 api 层的解耦，甚至是 data 和 api 层的解耦，之后修改 api 层的代码，比如修改包名，就不需要改 biz 层的代码，否则要改biz层的函数签名。
 - **为什么 Kratos 的 CLI 工具默认生成的 `.proto` 文件中包含 `java_package` 等选项？**
+  collapsed:: true
 	- **支持 Java 客户端：**
 		- `api` 目录下的 `.proto` 文件不仅仅属于你的 Go 服务，它是整个系统的契约。因此，它包含非 Go 语言的配置是非常合理的，因为它不仅服务于服务端（Go），也服务于潜在的所有客户端。
 		- 在 Google 的标准工程实践中，`.proto` 文件通常都会包含多种主流语言（Go, Java, C#, ObjC 等）的配置选项，以确保任何客户端都能无缝接入。
@@ -357,6 +359,7 @@
 		- 这些 Java 选项对 Go 代码的生成和运行没有任何影响。
 		- `protoc-gen-go` 编译器在工作时，会直接忽略 `java_package` 和 `java_multiple_files`。保留它们不会增加 Go 二进制文件的大小，也不会影响性能。
 - **Kratos 断点调试 context deadline exceeded 问题**
+  collapsed:: true
 	- **问题原因：**由于 Kratos 服务器的超时设置导致。
 		- ```yaml
 		  server:
@@ -421,4 +424,9 @@
 					    ]
 					  }
 					  ```
+- **protoc-gen-openapi 生成的 openapi.yaml 导入 Apifox 后，接口名称和接口目录显示为英文的问题**
+  collapsed:: true
+	- **问题原因：**
+		- `protoc-gen-openapi` 会将 proto 注释写入 OpenAPI 的 `description` 字段，但 Apifox 在显示“接口名称”时优先使用 `summary`。而你当前生成的 `openapi.yaml` 中缺少 `summary`，因此接口名称会退回显示英文的 `operationId`。
+		- Apifox 的接口目录通常按照接口的 `tags` 分组；而 `protoc-gen-openapi` 默认生成的 `tags` 是服务名称（英文），所以导入 Apifox 后，目录也会显示为英文。
 -
