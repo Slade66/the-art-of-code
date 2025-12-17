@@ -396,7 +396,29 @@
 			  ```
 		- 使用单独的调试配置文件
 		  logseq.order-list-type:: number
-		  collapsed:: true
 			- 创建一个 `configs/config.debug.yaml` 专门用于调试，避免影响正常配置。
 			- 启动时指定配置文件：`-conf configs/config.debug.yaml`。
+				- **vscode：**
+					- ```json
+					  {
+					    // Use IntelliSense to learn about possible attributes.
+					    // Hover to view descriptions of existing attributes.
+					    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+					    "version": "0.2.0",
+					    "configurations": [
+					      {
+					        "name": "DEBUG",
+					        "type": "go",
+					        "request": "launch",
+					        "mode": "debug",
+					        "program": "${workspaceFolder}/cmd/network-config-generator",
+					        "cwd": "${workspaceFolder}",
+					        "args": [
+					          "-conf",
+					          "./configs/config.debug.yaml"
+					        ]
+					      }
+					    ]
+					  }
+					  ```
 -
