@@ -219,6 +219,157 @@
 				  // ✅ 正确做法 B：使用 Select 强制选中
 				  db.Model(&user).Select("Age").Updates(User{Age: 0})
 				  ```
+	- `func (db *DB) Create(value interface{}) (tx *DB)`
+	  collapsed:: true
+		- **作用：**
+			- 用于向数据库插入记录。
+		- **参数：**
+			-
+		- **返回值：**
+			- `tx *DB`： ((694256c8-9635-447a-8333-c080774525b3))
+		- **代码示例：**
+			- **插入单条记录：**
+				- ```go
+				  type User struct {
+				    ID           uint
+				    Name         string
+				    Email        string
+				    Age          uint8
+				    CreatedAt    time.Time
+				  }
+				  
+				  func main() {
+				    user := User{Name: "Jinzhu", Age: 18, Birthday: time.Now()}
+				  
+				    // 注意：必须传入指针 &user
+				    result := db.Create(&user) 
+				    
+				    // 检查错误和返回结果
+				    if result.Error != nil {
+				        // 处理错误
+				    }
+				    fmt.Println(user.ID)             // 插入成功后，GORM 会自动回填主键 ID
+				    fmt.Println(result.RowsAffected) // 返回插入的记录数
+				  }
+				  ```
+			- **批量插入：**
+				- GORM 允许你通过传入一个 Slice（切片）来一次性插入多条数据。GORM 会自动生成一条 SQL 语句来插入所有数据（例如 `INSERT INTO users (...) VALUES (...), (...), ...`），这比循环插入单条数据效率高得多。
+				- ```go
+				  users := []User{
+				    {Name: "Jinzhu", Age: 18},
+				    {Name: "Jackson", Age: 19},
+				  }
+				  
+				  result := db.Create(&users) // 传入切片的指针
+				  
+				  fmt.Println(result.RowsAffected) // 输出 2
+				  for _, user := range users {
+				      fmt.Println(user.ID) // ID 也会被回填
+				  }
+				  ```
+			- **只插入指定字段：**
+				- ```go
+				  // INSERT INTO users (name, age) VALUES ("jinzhu", 18)
+				  db.Select("Name", "Age").Create(&user)
+				  ```
+			- **忽略指定字段插入：**
+				- ```go
+				  // INSERT INTO users (name, age) VALUES ("jinzhu", 18) 
+				  // 忽略了 Email 和 CreatedAt
+				  db.Omit("Email", "CreatedAt").Create(&user)
+				  ```
+		- **注意：**
+			- **必须传入指针：**只有传入指针，GORM 才能在数据插入数据库后，将数据库生成的 `ID`（主键）和 `CreatedAt` 等默认值写回到原本的结构体中。
+			- **触发钩子函数：**
+			  collapsed:: true
+				- GORM 在创建数据的过程中会触发一系列的钩子函数。这对于数据验证、自动生成 UUID 或密码加密非常有用。
+				- 执行顺序如下：
+					- `BeforeSave`
+					- `BeforeCreate`
+					- **DB INSERT 操作**
+					- `AfterCreate`
+					- `AfterSave`
+				- 如果在任何 Hook 中返回错误，GORM 将停止插入操作并回滚事务。
+				- ```go
+				  func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
+				    if u.Name == "admin" {
+				      return errors.New("cannot create user with name admin")
+				    }
+				    u.UUID = uuid.New().String() // 自动生成 UUID
+				    return
+				  }
+				  ```
+	- `type DB struct`
+	  id:: 694256c8-9635-447a-8333-c080774525b3
+	  collapsed:: true
+		- **作用：**它扮演了以下 3 个主要角色⬇️
+			- **SQL 构建器：**
+			  collapsed:: true
+				- 它支持链式调用。当你调用 `Where`, `Select`, `Limit` 等方法时，GORM 并不是立即执行 SQL，而是通过这个对象不断叠加条件，组装成最终的 SQL 语句。
+				- ```go
+				  // db 是一个 *gorm.DB 对象
+				  // 这里的 Where, Order, Limit 都会返回一个新的 *gorm.DB 对象
+				  query := db.Where("age > ?", 18).Order("created_at desc").Limit(10)
+				  ```
+			- **执行结果的容器：**
+			  collapsed:: true
+				- 当你执行了“终结方法”（如 `Create`, `Find`, `Save`, `Delete`）后，GORM 会执行 SQL，并将执行的结果状态（是否报错、影响了多少行）存回返回的 `*gorm.DB` 对象中。
+				- ```go
+				  // result 也是一个 *gorm.DB 对象
+				  result := db.Create(&user)
+				  
+				  // 通过 result (即 *gorm.DB) 获取执行结果
+				  if result.Error != nil {
+				      // 处理错误
+				  }
+				  fmt.Println(result.RowsAffected) // 获取影响行数
+				  ```
+			- **事务管理器：**
+			  collapsed:: true
+				- ```go
+				  tx := db.Begin() // 开启事务，返回一个代表该事务的 *gorm.DB 对象
+				  
+				  //在此之后，必须使用 tx 来操作数据库，才能保证在同一个事务中
+				  tx.Create(...)
+				  tx.Update(...)
+				  
+				  tx.Commit() // 或者 tx.Rollback()
+				  ```
+			- 它既包含了“我要对数据库做什么（SQL条件）”，也包含了“刚才数据库告诉了我什么。
+		- **结构体定义：**
+			- ```go
+			  type DB struct {
+			  	*Config
+			  	Error        error
+			  	RowsAffected int64
+			  	Statement    *Statement
+			  	clone        int
+			  }
+			  ```
+		- **重要字段解析：**
+			- `Error`：操作产生的错误。
+			  collapsed:: true
+				- 务必检查此项。
+				- 如果插入过程中发生任何错误（如连接断开、约束冲突、Hook报错），这里会有值。
+			- `RowsAffected`：受影响的行数。
+		- **注意：**
+			- **`*gorm.DB` 是并发安全的：**
+			  collapsed:: true
+				- 因为它使用了“克隆”机制。当你调用 `db.Where(...)` 时，GORM 不会修改原始的 `db` 对象，而是创建一个新的 `*gorm.DB` 实例（副本），把条件加在这个副本上并返回。
+				- ```go
+				  // 基础的 db 对象（通常在程序启动时初始化）
+				  var globalDB *gorm.DB 
+				  
+				  func GetUser() {
+				      // tx 是一个新的 *gorm.DB 实例，包含了 "name = 'jinzhu'" 条件
+				      tx := globalDB.Where("name = ?", "jinzhu")
+				      
+				      // globalDB 依然是干净的，不包含 Where 条件
+				      // tx 则是“携带了状态”的会话
+				      
+				      tx.First(&user) // 执行查询
+				  }
+				  ```
 - ## Association
 	- `func (db *DB) Association(column string) *Association`
 	  collapsed:: true
