@@ -55,78 +55,7 @@
 		- `service` 相当于 Spring Boot 的控制器层 (`controller`)，接收并响应外部请求，进行参数校验，并调用下层业务。
 		- `data` 相当于 Spring Boot 的数据访问层 (`dao`)，与数据源交互，负责数据持久化。
 		- `service` 接收请求，调用 `biz` 处理业务，`biz` 层则通过 `data` 层的方法操作数据库。
-- kratos 命令行工具
-  heading:: true
-	- **安装：**`go install github.com/go-kratos/kratos/cmd/kratos/v2@latest`
-	- **创建项目：**
-		- 使用默认模板创建一个新的 Kratos 项目：`kratos new <项目名>`
-		- Kratos 通过 Git 仓库管理项目模板，创建项目时会自动拉取模板并初始化项目目录结构。
-		- 使用 `-r` 参数可以指定自定义模板仓库来创建项目。
-		- 使用 `--nomod` 参数添加服务：告诉 Kratos 在创建服务时，不要生成独立的模块（即不创建新的 `go.mod` 文件），而是将新服务作为当前项目的一部分，使用统一的依赖管理（共用项目根目录下的 `go.mod`）。
-		- 如果遇到网络拉取失败的问题（如 GitHub 访问受限），可以设置代理，例如：
-			- ```shell
-			  $env:HTTPS_PROXY = "http://127.0.0.1:10809"
-			  $env:HTTP_PROXY = "http://127.0.0.1:10809"
-			  ```
-	- **添加 proto 文件：**
-		- `kratos proto add` 命令用于将 proto 文件快速添加到项目的指定目录中。
-		- **举例：**
-			- ```bash
-			   kratos proto add api/bubble/v1/todo.proto
-			  ```
-			- 执行该命令后，`api/bubble/v1/todo.proto` 文件会被添加到 Kratos 项目的 `api/bubble/v1` 目录。如果该目录不存在，命令会自动创建所需的目录结构。
-			- 同时，命令还会自动生成服务接口和数据结构的代码，帮助你快速开发。
-	- **根据 proto 文件生成客户端代码：**
-		- `kratos proto client` 命令用于根据 `.proto` 文件生成对应的 Go 语言客户端代码。
-		- **举例：**
-			- ```bash
-			  kratos proto client api/bubble/v1/todo.proto
-			  ```
-			- **会生成以下文件：**
-				- `.pb.go`：包含消息类型和服务接口的 Go 实现及其序列化方法；
-				- `_grpc.pb.go`：包含客户端可调用的接口定义，以及服务端需要实现的接口；
-				- `_http.pb.go`：仅当 `.proto` 文件中声明了 HTTP 映射（`google.api.http`）时才会生成，包含 HTTP 路由相关代码。
-			- **生成的代码：**
-				- ```proto
-				  syntax = "proto3";
-				  
-				  package api.apisix.v1;
-				  
-				  option go_package = "user-service/api/apisix/v1;v1";
-				  option java_multiple_files = true;
-				  option java_package = "api.apisix.v1";
-				  
-				  service Apisix {
-				  	rpc CreateApisix (CreateApisixRequest) returns (CreateApisixReply);
-				  	rpc UpdateApisix (UpdateApisixRequest) returns (UpdateApisixReply);
-				  	rpc DeleteApisix (DeleteApisixRequest) returns (DeleteApisixReply);
-				  	rpc GetApisix (GetApisixRequest) returns (GetApisixReply);
-				  	rpc ListApisix (ListApisixRequest) returns (ListApisixReply);
-				  }
-				  
-				  message CreateApisixRequest {}
-				  message CreateApisixReply {}
-				  
-				  message UpdateApisixRequest {}
-				  message UpdateApisixReply {}
-				  
-				  message DeleteApisixRequest {}
-				  message DeleteApisixReply {}
-				  
-				  message GetApisixRequest {}
-				  message GetApisixReply {}
-				  
-				  message ListApisixRequest {}
-				  message ListApisixReply {}
-				  ```
-	- **通过 proto 文件生成 Service 模板代码：**
-		- `kratos proto server` 命令用于根据 `.proto` 文件生成服务端代码的模板，包括接口定义和方法的空实现，便于你在其中编写具体的业务逻辑。
-		- `-t` 参数（target）用于指定生成代码的目标目录，Kratos 会将模板文件输出到该目录下。
-		- **举例：**
-			- ```bash
-			  kratos proto server api/bubble/v1/todo.proto -t internal/service
-			  ```
-			- Kratos 会根据 `.proto` 中定义的服务名称，在 `internal/service` 目录下生成对应的 `.go` 文件（如 `todo.go`），其中包含服务方法的空实现，供你后续填充业务逻辑。
+- [[kratos/命令行工具]]
 - **存根（Stub）：**
   collapsed:: true
 	- 客户端存根和服务端骨架是一对孪生兄弟，都是由 API 定义（`.proto` 文件）自动生成的，它们共同构建了一个桥梁，让开发者可以忽略底层的网络细节，专注于业务逻辑的实现。
@@ -205,23 +134,39 @@
 			- 而 `UnimplementedContainerLogServiceServer` 这个结构体天生就带着这个“密码”。所以你只要把它嵌入你的结构体，编译器就满意了。
 		- 通过增加“必须实现一个奇怪的空方法”这个小麻烦，并用方法名直接提示你应该怎么做，来引导你走上最简单且最正确的道路——即通过嵌入 `Unimplemented...` 结构体来自动满足这个要求。
 - **Kratos 的开发流程：**
-  collapsed:: true
-	- **定义 API**：使用 Protobuf 定义服务的功能、输入数据和返回数据。
+	- **定义 API**：使用 Protobuf 定义服务的接口、路由、输入数据和返回数据。生成代码。
+	  logseq.order-list-type:: number
 	- **编写服务层（Service）代码**：
-		- 创建 Service 并实现 Protobuf 中定义的 API 接口（通过工具自动生成）。
+	  logseq.order-list-type:: number
+		- 创建 Service 类型并嵌入UnimplementedSiteServiceServer
+		  logseq.order-list-type:: number
+		- 嵌入 usecase
+		  logseq.order-list-type:: number
+		- 组装biz 并调用 usecase
+		  logseq.order-list-type:: number
+		- 返回reply
+		  logseq.order-list-type:: number
+	- **注册到 server**：
+	  logseq.order-list-type:: number
+		- 将 Service 注册到 Kratos 的路由系统中 HTTP Server，确保服务可以处理外部请求。这样你再往下写 biz/data 才有意义，否则接口根本不会被注册、请求进不来。
+		  logseq.order-list-type:: number
+		- http.go 和 grpc.go 增加 RegisterSiteServiceHTTPServer，并修改构造函数的参数。
+		  logseq.order-list-type:: number
+		- 将 NewSerivce 加入 wire，生成代码
+		  logseq.order-list-type:: number
 	- **编写业务层（Biz）代码**：
 		- 定义业务模型（DO，Domain Object），业务模型专注于业务逻辑，而非数据库表结构。
 		- 定义仓库接口（Repo），抽象数据操作，不关心具体实现。
 		- 编写业务用例，结合业务模型、仓库接口和业务逻辑，完成具体的业务流程。
 		- 让业务层被服务层调用。
+		- 调用 data 层。
 	- **编写数据层（Data）代码**：
-		- 实现业务层定义的仓库接口，编写数据库客户端连接及操作数据库的代码。
 		- 定义与数据库表结构对应的持久化对象（PO，Persistent Object）。
-	- 创建数据库表并进行迁移，确保数据模型与数据库一致。
+		- 创建数据库表并进行迁移，确保数据模型与数据库一致。
+		- 实现业务层定义的仓库接口，编写操作数据库的代码。
 	- **依赖注入**：将各层的构造函数注册到各自的 `ProviderSet` 中。
-	- **服务器注册**：将 Service 注册到 Kratos 的路由系统中，确保服务可以处理外部请求。
 	- 执行 `wire` 命令，生成依赖注入代码。
-	- 采用“由内向外、自底向上（Bottom-Up）”的顺序，确保在编写每一层代码时，其依赖的底层组件已存在并可用。这样，你始终站在坚实的基础上，而不是在“空中楼阁”上写代码。就像盖房子，我们首先打好坚实的地基（Model, pkg），然后搭建承重墙（Data），接着构建核心房间（Biz），最后装修门面（Service）。
+	- 编写.http 文件测试接口的连通性
 - **Usecase 是什么：**
   collapsed:: true
 	- Usecase（用例）表示某个特定的业务操作或任务。
@@ -349,40 +294,7 @@
 		- **不应该放的：**
 			- 不要在 data 层搞“业务流程判断”：能不能创建、权限是否足够等。
 			- 这些判断必须在 biz 层完成，repo 只负责执行“已经被允许的持久化操作/远程调用”。
-- **为啥 Biz 层能直接用 Model？这耦合能接受吗？**
-  collapsed:: true
-	- **问题背景：**
-		- 写代码的时候，我发现在 `biz` 层的代码里，直接就 `&model.Registry{...}` 这样去创建一个 `model` 结构体了。心里犯嘀咕：Kratos 这种分层架构，不是讲究解耦吗？这么直接引用，算不算一种不好的“耦合”？
-	- **Biz 层与 Model 层的耦合：一种必要的设计**
-		- **`Model` 层：数据的“模具”**
-			- 它只做一件事：定义核心数据应该长什么样子。例如，一个 `UserModel` 会规定“用户”必须包含 `ID`、`Name` 等字段。它为业务操作提供了一个标准化的数据结构蓝本。
-		- **`Biz` 层：业务的“加工者”**
-			- 它负责执行具体的业务逻辑。例如，在处理“用户注册”时，`Biz` 层必须使用 `UserModel` 这个“模具”，将接收到的数据进行校验、组装，最终“浇筑”出一个结构完整、数据合规的用户实体，以备持久化。
-		- `Biz` 和 `Model` 是一对相辅相成的伙伴。一个负责定义数据实体（出实体），一个负责实现业务逻辑（出主意）。如果 `Biz` 层不认识 `Model` 这个“模具”，它就无法创建出任何有效的数据交给 `Data` 层处理，整个业务流程便无从谈起。
-	- **解耦解的是谁？**
-		- **解耦 API 层和 Biz 层：**
-			- `biz` 层不直接使用 `api` 层定义的请求结构体（如 `v1.AddRegistryRequest`），而是定义了自己的“工作参数”（`biz.AddRegistryParams`）。
-			- `api` 层作为“前台接待”，负责与外部交互，接收到的“客户订单”（API 请求）格式可能会经常变化。为了避免前台的变化影响到“后厨”（`biz` 层），我们规定，前台必须将客户订单转化为后厨能够理解的、标准化的“配菜单”（`biz` 参数），再交给后厨。这样，即使客户点菜的方式发生变化，后厨的工作流程依然不受影响。
-		- **解耦 Biz 层和 Data 层：**
-			- `biz` 层不直接调用 `data` 层的具体实现，而是通过调用 `data` 层提供的**接口**（如 `biz.RegistryRepo`）。
-			- 后厨（`biz` 层）完成一道菜（构建好 `model` 数据）后，需要将其存入仓库（数据库）。后厨不会直接去 MySQL 仓库，而是按下墙上的按钮（调用接口），喊道：“仓库管理员，来取货！”至于值班的管理员是 MySQL 还是 PostgreSQL，后厨并不关心，只要能把货存好就行。这样，哪怕我们把 MySQL 换成 PostgreSQL，后厨的工作流程也不会受影响。
-			  id:: 68947f29-67a0-4486-a6b7-fac1172ba3d1
-- 在 service 把 biz 和 api 解耦：proto 的 req 和 resp 不要直接传入 biz，而是转换成 dto 再传，虽然看起来做多了一步复制对象的操作，但是实现了biz 和 api 层的解耦，甚至是 data 和 api 层的解耦，之后修改 api 层的代码，比如修改包名，就不需要改 biz 层的代码，否则要改biz层的函数签名。
 - [[Kratos/参数校验]]
-- ## DTO 转换应该放在 data 层还是 biz 层？
-  collapsed:: true
-	- **合理的做法：**在 data 层把 APISIX 的 JSON 转成 `dto.Route`，biz 层只接收 `[]*dto.Route`，用于业务处理或直接透传给 service。biz 不应该触碰任何 HTTP 或 JSON 相关细节。
-	- **职责划分**
-		- data 层：与外部系统交互（如 APISIX HTTP API），处理 HTTP 请求、响应和 JSON 格式。
-		- biz 层：只关注业务逻辑，不关心 APISIX 返回的数据结构或字段名。
-	- **为什么要把转换放在 data 层（解耦外部依赖）**
-		- 当 APISIX 的返回格式发生变化（例如字段从 create_time 改为 created_at）时：
-			- 如果转换在 data 层，改动只会影响 data 层；
-			- 如果转换放在 biz 层，则 biz 和 data 都要跟着调整，biz 也不得不理解 APISIX 的字段细节，层间耦合会变重。
-	- `data` 层做的事：
-		- 调用 APISIX 的 HTTP API。
-		- 用 data 内部定义的 struct 接收 JSON。
-		- 将该内部 struct 映射为`[]*dto.Route`  返回给 biz。
 - 注意：
 	- 前端的请求必须有 content-type，如果 Content-Type 缺失或是未注册类型：
 		- CodecForRequest 返回 `(jsonCodec, false)`
@@ -399,8 +311,10 @@
 			- **Seeder (造假数据脚本)**：测试时需要批量造数据。
 		- 如果 struct 藏在 `internal/data/site.go` 的 CRUD 逻辑里，你想引用它，就得把整个 `data` 包引入进来。而 `data` 包里通常包含了数据库连接、Redis 连接等**“重”**资源。
 		- **单独的 `model` 包是纯净的**（只有 Go 原生类型和 GORM 标签），任何脚本想引用它，负担极小，随时随地都能用。
-- **kratos 各层的职责：**
+- **kratos 各层的职责划分：**
 	- data 层：
+		- data 层：与外部系统交互（如 APISIX HTTP API），处理 HTTP 请求、响应和 JSON 格式。
+		  id:: 6940f24f-46c4-4fe3-9e1d-d220d91294d9
 		- 只做「拿原料」
 		- **SQL / 表结构相关**的东西：属于 data。
 		- DB 里长什么样，属于data。
@@ -408,14 +322,31 @@
 			- 写 SQL / GORM Join
 			- 把 DB 行 → 这些简单 struct
 		- Data 层只负责“搬运数据”，
+		- **[data]** 用 GORM 写入 ,model.Site，拿到 `UUID` 回传
 		- Data 层提供原子查询能力
+		- `data` 层做的事：
+			- 调用 APISIX 的 HTTP API。
+			- 用 data 内部定义的 struct 接收 JSON。
+			- 将该内部 struct 映射为`[]*dto.Route`  返回给 biz。
+		- data 层负责对接外部系统，天然承接格式差异
+		- 外部返回结构变化时，只需要改 data 层
+		- 避免 biz 理解外部字段，降低层间耦合
+		- 外部数据 → 内部 DTO 的转换，放在 data 层；
+		- biz 层只接收 DTO，不接触 HTTP、JSON、第三方字段。
+		- 判断标准
+			- biz 层不应该出现 json tag、HTTP 响应结构、第三方字段名
+			- 一旦出现，通常说明转换层放错了
 	- biz/usecase 层做「拼装」
+		- **[biz]** 做参数校验/业务规则（比如 name/code 必填、是否允许重复）
+		- 只关注业务逻辑，不关心 APISIX 返回的数据结构或字段名。
 		- Biz 层负责“组装逻辑”（推荐）
 		- 这些“如何从原始数据拼出我想要的业务结构”的逻辑，其实就是典型的 **usecase 逻辑**：
 		- 把多个 data 查询结果组装成
 		- 决定“父没在列表时怎么处理”“脏数据怎么兜底”等业务规则。
 		- Biz 层负责编排业务逻辑（组装树）。
 	- service 层只做 DTO → proto 的转换。
+		- **[service]** 只做 DTO 转换（pb ↔︎ biz）+ 调用 usecase + 组装 reply
+		- 在 service 把 biz 和 api 解耦：proto 的 req 和 resp 不要直接传入 biz，而是转换成 dto 再传，虽然看起来做多了一步复制对象的操作，但是实现了biz 和 api 层的解耦，甚至是 data 和 api 层的解耦，之后修改 api 层的代码，比如修改包名，就不需要改 biz 层的代码，否则要改biz层的函数签名。
 - **为什么 Kratos 的 CLI 工具默认生成的 `.proto` 文件中包含 `java_package` 等选项？**
 	- **支持 Java 客户端：**
 		- `api` 目录下的 `.proto` 文件不仅仅属于你的 Go 服务，它是整个系统的契约。因此，它包含非 Go 语言的配置是非常合理的，因为它不仅服务于服务端（Go），也服务于潜在的所有客户端。
@@ -425,4 +356,47 @@
 	- **对 Go 编译完全无副作用：**
 		- 这些 Java 选项对 Go 代码的生成和运行没有任何影响。
 		- `protoc-gen-go` 编译器在工作时，会直接忽略 `java_package` 和 `java_multiple_files`。保留它们不会增加 Go 二进制文件的大小，也不会影响性能。
+- **Kratos 断点调试 context deadline exceeded 问题**
+	- **问题原因：**由于 Kratos 服务器的超时设置导致。
+		- ```yaml
+		  server:
+		    http:
+		      addr: 0.0.0.0:8000
+		      timeout: 1s
+		    grpc:
+		      addr: 0.0.0.0:9000
+		      timeout: 1s
+		  ```
+		- 当你在断点处停留超过 1 秒，请求的 context 就会超时并被取消。
+	- **解决方案：**
+		- 调试时增大超时时间
+		  logseq.order-list-type:: number
+		  collapsed:: true
+			- ```yaml
+			  server:
+			    http:
+			      addr: 0.0.0.0:8000
+			      timeout: 600s   # 10 分钟
+			    grpc:
+			      addr: 0.0.0.0:9000
+			      timeout: 600s   # 10 分钟
+			  ```
+		- 禁用超时
+		  logseq.order-list-type:: number
+		  collapsed:: true
+			- 将 `timeout` 设置为 `0s` 可以禁用超时。
+			- ```yaml
+			  server:
+			    http:
+			      addr: 0.0.0.0:8000
+			      timeout: 0s
+			    grpc:
+			      addr: 0.0.0.0:9000
+			      timeout: 0s
+			  ```
+		- 使用单独的调试配置文件
+		  logseq.order-list-type:: number
+		  collapsed:: true
+			- 创建一个 `configs/config.debug.yaml` 专门用于调试，避免影响正常配置。
+			- 启动时指定配置文件：`-conf configs/config.debug.yaml`。
 -
