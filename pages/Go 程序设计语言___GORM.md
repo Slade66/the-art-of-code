@@ -46,6 +46,79 @@
 			- 要正确处理 `time.Time`，您需要将 `parseTime` 作为参数包含在内。
 			- 要完全支持 UTF-8 编码，您需要将 `charset=utf8` 更改为 `charset=utf8mb4`。
 - ## DB
+	- `type DB struct`
+	  id:: 694256c8-9635-447a-8333-c080774525b3
+	  collapsed:: true
+		- **作用：**
+			- `*gorm.DB` 是此时此刻的数据库操作上下文。它既包含了 “我要对数据库做什么（SQL条件）”，也包含了 “刚才数据库告诉了我什么（Error/RowsAffected）”。
+			- 它扮演了以下 3 个主要角色：
+				- **SQL 构建器：**
+				  collapsed:: true
+					- 它支持链式调用。当你调用 `Where`, `Select`, `Limit` 等方法时，GORM 并不是立即执行 SQL，而是通过这个对象不断叠加条件，组装成最终的 SQL 语句。
+					- ```go
+					  // db 是一个 *gorm.DB 对象
+					  // 这里的 Where, Order, Limit 都会返回一个新的 *gorm.DB 对象
+					  query := db.Where("age > ?", 18).Order("created_at desc").Limit(10)
+					  ```
+				- **执行结果的容器：**
+				  collapsed:: true
+					- 当你执行了“终结方法”（如 `Create`, `Find`, `Save`, `Delete`）后，GORM 会执行 SQL，并将执行的结果状态（是否报错、影响了多少行）存回返回的 `*gorm.DB` 对象中。
+					- ```go
+					  // result 也是一个 *gorm.DB 对象
+					  result := db.Create(&user)
+					  
+					  // 通过 result (即 *gorm.DB) 获取执行结果
+					  if result.Error != nil {
+					      // 处理错误
+					  }
+					  fmt.Println(result.RowsAffected) // 获取影响行数
+					  ```
+				- **事务管理器：**
+				  collapsed:: true
+					- ```go
+					  tx := db.Begin() // 开启事务，返回一个代表该事务的 *gorm.DB 对象
+					  
+					  //在此之后，必须使用 tx 来操作数据库，才能保证在同一个事务中
+					  tx.Create(...)
+					  tx.Update(...)
+					  
+					  tx.Commit() // 或者 tx.Rollback()
+					  ```
+		- **结构体定义：**
+			- ```go
+			  type DB struct {
+			  	*Config
+			  	Error        error
+			  	RowsAffected int64
+			  	Statement    *Statement
+			  	clone        int
+			  }
+			  ```
+		- **重要字段解析：**
+			- `Error`：操作产生的错误。
+			  collapsed:: true
+				- 务必检查此项。
+				- 如果插入过程中发生任何错误（如连接断开、约束冲突、Hook报错），这里会有值。
+			- `RowsAffected`：受影响的行数。
+		- **注意：**
+			- **`*gorm.DB` 是并发安全的：**
+			  collapsed:: true
+				- 因为它使用了“克隆”机制。当你调用 `db.Where(...)` 时，GORM 不会修改原始的 `db` 对象，而是创建一个新的 `*gorm.DB` 实例（副本），把条件加在这个副本上并返回。
+				- 这意味着你可以定义一个全局的 `db` 对象，然后在不同的请求中安全地复用它，而不用担心一个请求的查询条件污染了另一个请求。
+				- ```go
+				  // 基础的 db 对象（通常在程序启动时初始化）
+				  var globalDB *gorm.DB 
+				  
+				  func GetUser() {
+				      // tx 是一个新的 *gorm.DB 实例，包含了 "name = 'jinzhu'" 条件
+				      tx := globalDB.Where("name = ?", "jinzhu")
+				      
+				      // globalDB 依然是干净的，不包含 Where 条件
+				      // tx 则是“携带了状态”的会话
+				      
+				      tx.First(&user) // 执行查询
+				  }
+				  ```
 	- `func (db *DB) Count(count *int64) (tx *DB)`
 	  collapsed:: true
 		- **作用：**根据当前 `db` 对象上已经拼好的查询条件，执行一条 `SELECT COUNT(*) ...`，并把匹配行数写进你传入的那个 `int64` 变量中。
@@ -83,17 +156,77 @@
 			- 第 1 批：插入 0~99
 			- 第 2 批：插入 100~199
 			- 第 3 批：插入 200~299
-	- `func (db *DB) Update(column string, value interface{}) (tx *DB)`
+	- `func (db *DB) Updates(values interface{}) (tx *DB)`
 	  collapsed:: true
-		- 把单个列更新成指定值。
+		- **作用：**更新一个或多个字段。
+			- 它生成的 SQL 类似于：`UPDATE users SET name='new', age=18 WHERE id=1;`
+			- 它不会覆盖所有的列，只覆盖你传给它的那些列。
+		- **代码示例：**
+			- **单行记录更新：**
+				- 要更新单行数据，你通常需要先通过 `Model` 指定要操作的对象（主要是为了获取主键 ID）。
+				- ```go
+				  var user User
+				  db.First(&user, 1) // 查出 ID 为 1 的用户
+				  
+				  // 更新 Name 和 Age
+				  // SQL: UPDATE users SET name='hello', age=18, updated_at='2024-...' WHERE id = 1;
+				  db.Model(&user).Updates(User{Name: "hello", Age: 18})
+				  ```
+			- **批量更新：**
+				- 此时它不需要 `Model` 中包含 ID，只需要指定表（Model）和条件。
+				- ```go
+				  // SQL: UPDATE users SET role='active', age=18 WHERE age < 10;
+				  // 将所有 age < 10 的用户，年龄设为 18，状态设为 active
+				  db.Model(&User{}).Where("age < ?", 10).Updates(User{Role: "active", Age: 18})
+				  ```
+		- **注意：**
+			- **结构体的“零值陷阱”：**
+				- 当你传入一个 `Struct` 给 `Updates` 时，GORM 会自动忽略零值（0, false, ""）。GORM 认为你是想“保持原样”，而不是“更新为 0”。
+				- ```go
+				  // 你的意图：把库存设置为 0，把激活状态设为 false
+				  // 实际结果：什么都没变！因为 0 和 false 被忽略了。
+				  db.Model(&product).Updates(Product{Stock: 0, IsActive: false})
+				  ```
+				- 如果你确实要把某个字段更新为 `0` 或 `false`：
+					- **使用 Map：**
+						- `map[string]interface{}` 包含所有的键值对，GORM 不会忽略其中的零值。
+						- ```go
+						  // SQL: UPDATE products SET stock=0, is_active=false ...
+						  db.Model(&product).Updates(map[string]interface{}{
+						    "stock": 0, 
+						    "is_active": false,
+						  })
+						  ```
+					- **使用 Select 指明字段：**
+						- 告诉 GORM：“不管这个字段值是什么，我都强制更新它”。
+						- ```go
+						  // 强制更新 Stock 和 IsActive，即使它们是 0 或 false
+						  db.Model(&product).Select("Stock", "IsActive").Updates(Product{
+						    Stock: 0, 
+						    IsActive: false,
+						  })
+						  
+						  // 或者使用 "*" 更新所有字段
+						  db.Model(&product).Select("*").Updates(Product{...})
+						  ```
+			- **安全提示：**如果没有任何 `Where` 条件，GORM 默认会阻止全局更新（Global Update）以防删库跑路。如果真的要全表更新，需要加 `AllowGlobalUpdate` 模式或者 `Where("1 = 1")`。
+			- **更新时触发的钩子：**
+			  collapsed:: true
+				- 调用 `Updates` 时，会依次触发以下钩子：
+					- `BeforeSave`
+					- `BeforeUpdate`
+					- **DB UPDATE 操作**
+					- `AfterUpdate`
+					- `AfterSave`
 	- `func (db *DB) WithContext(ctx context.Context) *DB`
 	  collapsed:: true
 		- **作用：**
 			- 将上下文（Context）传递给数据库操作，以便实现超时控制、取消操作或链路追踪等功能。
-			- `WithContext` 会返回一个新的 `*gorm.DB` 实例，该实例绑定了你传入的 `context.Context`。这使得该 Context 仅对后续链式调用的操作生效，而不会影响原始的 `*gorm.DB` 实例。
 			- **超时控制**：结合 `context.WithTimeout`，可以防止数据库查询执行时间过长。
 			- **请求取消**：当 HTTP 请求被取消时（例如用户断开连接），可以利用 Context 级联取消正在进行的数据库操作。
 			- **链路追踪**：在微服务架构中，通过 Context 传递 Trace ID，以便监控数据库调用的性能和路径。
+		- **注意：**
+			- `WithContext` 会返回一个新的 `*gorm.DB` 实例，该实例绑定了你传入的 `context.Context`。这使得该 Context 仅对后续链式调用的操作生效，而不会影响原始的 `*gorm.DB` 实例。
 		- **示例：**
 			- ```go
 			  // 创建一个 2 秒超时的 Context
@@ -299,76 +432,28 @@
 				    return
 				  }
 				  ```
-	- `type DB struct`
-	  id:: 694256c8-9635-447a-8333-c080774525b3
+	- `func (db *DB) Where(query interface{}, args ...interface{}) (tx *DB)`
 	  collapsed:: true
-		- **作用：**它扮演了以下 3 个主要角色⬇️
-			- **SQL 构建器：**
-			  collapsed:: true
-				- 它支持链式调用。当你调用 `Where`, `Select`, `Limit` 等方法时，GORM 并不是立即执行 SQL，而是通过这个对象不断叠加条件，组装成最终的 SQL 语句。
-				- ```go
-				  // db 是一个 *gorm.DB 对象
-				  // 这里的 Where, Order, Limit 都会返回一个新的 *gorm.DB 对象
-				  query := db.Where("age > ?", 18).Order("created_at desc").Limit(10)
-				  ```
-			- **执行结果的容器：**
-			  collapsed:: true
-				- 当你执行了“终结方法”（如 `Create`, `Find`, `Save`, `Delete`）后，GORM 会执行 SQL，并将执行的结果状态（是否报错、影响了多少行）存回返回的 `*gorm.DB` 对象中。
-				- ```go
-				  // result 也是一个 *gorm.DB 对象
-				  result := db.Create(&user)
-				  
-				  // 通过 result (即 *gorm.DB) 获取执行结果
-				  if result.Error != nil {
-				      // 处理错误
-				  }
-				  fmt.Println(result.RowsAffected) // 获取影响行数
-				  ```
-			- **事务管理器：**
-			  collapsed:: true
-				- ```go
-				  tx := db.Begin() // 开启事务，返回一个代表该事务的 *gorm.DB 对象
-				  
-				  //在此之后，必须使用 tx 来操作数据库，才能保证在同一个事务中
-				  tx.Create(...)
-				  tx.Update(...)
-				  
-				  tx.Commit() // 或者 tx.Rollback()
-				  ```
-			- 它既包含了“我要对数据库做什么（SQL条件）”，也包含了“刚才数据库告诉了我什么。
-		- **结构体定义：**
-			- ```go
-			  type DB struct {
-			  	*Config
-			  	Error        error
-			  	RowsAffected int64
-			  	Statement    *Statement
-			  	clone        int
-			  }
-			  ```
-		- **重要字段解析：**
-			- `Error`：操作产生的错误。
-			  collapsed:: true
-				- 务必检查此项。
-				- 如果插入过程中发生任何错误（如连接断开、约束冲突、Hook报错），这里会有值。
-			- `RowsAffected`：受影响的行数。
+		- **作用：**
+			- | **传入参数类型** | **示例** | **行为** | **备注** |
+			  | ---- | ---- | ---- |
+			  | **String** | `"name = ?", "tom"` | `WHERE name = 'tom'` | **推荐**，最清晰，无坑。 |
+			  | **Struct** | `&User{Name: "tom"}` | `WHERE name = 'tom'` | **有坑**：GORM 只会查询非零值字段。`0`, `false`, `""` 这些在 Go 中被视为“零值”的字段，不会被构建到 SQL 中。 |
+			  | **Map** | `{"age": 0}` | `WHERE age = 0` | 包含所有 Key，适合查询零值。 |
+			  | **Slice** | `"id IN ?", []int{1,2}` | `WHERE id IN (1, 2)` | 自动展开为 IN 查询。 |
 		- **注意：**
-			- **`*gorm.DB` 是并发安全的：**
+			- **内联 Where：**
 			  collapsed:: true
-				- 因为它使用了“克隆”机制。当你调用 `db.Where(...)` 时，GORM 不会修改原始的 `db` 对象，而是创建一个新的 `*gorm.DB` 实例（副本），把条件加在这个副本上并返回。
+				- 你不需要总是先写 `Where`。像 `First`, `Find`, `Last`, `Delete` 这样的“终结方法”都支持直接传入查询条件。
 				- ```go
-				  // 基础的 db 对象（通常在程序启动时初始化）
-				  var globalDB *gorm.DB 
+				  // 啰嗦的写法
+				  db.Where("name = ?", "jinzhu").First(&user)
 				  
-				  func GetUser() {
-				      // tx 是一个新的 *gorm.DB 实例，包含了 "name = 'jinzhu'" 条件
-				      tx := globalDB.Where("name = ?", "jinzhu")
-				      
-				      // globalDB 依然是干净的，不包含 Where 条件
-				      // tx 则是“携带了状态”的会话
-				      
-				      tx.First(&user) // 执行查询
-				  }
+				  // 大师写法 (内联)
+				  db.First(&user, "name = ?", "jinzhu")
+				  
+				  // 根据主键查找 (最常用)
+				  db.First(&user, 10) // id = 10
 				  ```
 - ## Association
 	- `func (db *DB) Association(column string) *Association`
