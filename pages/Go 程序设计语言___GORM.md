@@ -53,7 +53,6 @@
 			- `*gorm.DB` 是此时此刻的数据库操作上下文。它既包含了 “我要对数据库做什么（SQL条件）”，也包含了 “刚才数据库告诉了我什么（Error/RowsAffected）”。
 			- 它扮演了以下 3 个主要角色：
 				- **SQL 构建器：**
-				  collapsed:: true
 					- 它支持链式调用。当你调用 `Where`, `Select`, `Limit` 等方法时，GORM 并不是立即执行 SQL，而是通过这个对象不断叠加条件，组装成最终的 SQL 语句。
 					- ```go
 					  // db 是一个 *gorm.DB 对象
@@ -61,7 +60,6 @@
 					  query := db.Where("age > ?", 18).Order("created_at desc").Limit(10)
 					  ```
 				- **执行结果的容器：**
-				  collapsed:: true
 					- 当你执行了“终结方法”（如 `Create`, `Find`, `Save`, `Delete`）后，GORM 会执行 SQL，并将执行的结果状态（是否报错、影响了多少行）存回返回的 `*gorm.DB` 对象中。
 					- ```go
 					  // result 也是一个 *gorm.DB 对象
@@ -74,7 +72,6 @@
 					  fmt.Println(result.RowsAffected) // 获取影响行数
 					  ```
 				- **事务管理器：**
-				  collapsed:: true
 					- ```go
 					  tx := db.Begin() // 开启事务，返回一个代表该事务的 *gorm.DB 对象
 					  
@@ -96,13 +93,11 @@
 			  ```
 		- **重要字段解析：**
 			- `Error`：操作产生的错误。
-			  collapsed:: true
 				- 务必检查此项。
 				- 如果插入过程中发生任何错误（如连接断开、约束冲突、Hook报错），这里会有值。
 			- `RowsAffected`：受影响的行数。
 		- **注意：**
 			- **`*gorm.DB` 是并发安全的：**
-			  collapsed:: true
 				- 因为它使用了“克隆”机制。当你调用 `db.Where(...)` 时，GORM 不会修改原始的 `db` 对象，而是创建一个新的 `*gorm.DB` 实例（副本），把条件加在这个副本上并返回。
 				- 这意味着你可以定义一个全局的 `db` 对象，然后在不同的请求中安全地复用它，而不用担心一个请求的查询条件污染了另一个请求。
 				- ```go
@@ -221,7 +216,6 @@
 						  ```
 			- **安全提示：**如果没有任何 `Where` 条件，GORM 默认会阻止全局更新（Global Update）以防删库跑路。如果真的要全表更新，需要加 `AllowGlobalUpdate` 模式或者 `Where("1 = 1")`。
 			- **更新时触发的钩子：**
-			  collapsed:: true
 				- 调用 `Updates` 时，会依次触发以下钩子：
 					- `BeforeSave`
 					- `BeforeUpdate`
@@ -279,7 +273,6 @@
 			    return nil
 			  })
 			  ```
-		-
 	- `func (db *DB) First(dest interface{}, conds ...interface{}) (tx *DB)`
 	  collapsed:: true
 		- **作用：**获取按主键升序排列的第一条记录。
@@ -424,7 +417,6 @@
 		- **注意：**
 			- **必须传入指针：**只有传入指针，GORM 才能在数据插入数据库后，将数据库生成的 `ID`（主键）和 `CreatedAt` 等默认值写回到原本的结构体中。
 			- **触发钩子函数：**
-			  collapsed:: true
 				- GORM 在创建数据的过程中会触发一系列的钩子函数。这对于数据验证、自动生成 UUID 或密码加密非常有用。
 				- 执行顺序如下：
 					- `BeforeSave`
@@ -454,7 +446,6 @@
 			  | **Slice** | `"id IN ?", []int{1,2}` | `WHERE id IN (1, 2)` | 自动展开为 IN 查询。 |
 		- **注意：**
 			- **内联 Where：**
-			  collapsed:: true
 				- 你不需要总是先写 `Where`。像 `First`, `Find`, `Last`, `Delete` 这样的“终结方法”都支持直接传入查询条件。
 				- ```go
 				  // 啰嗦的写法
@@ -531,19 +522,7 @@
 				- 如果结构体的 `ID` 为空（零值），GORM 会触发批量删除（如果没有开启防全表删除保护，这会很危险）。务必确保主键有值。
 				- 为了防止新手写出 `db.Delete(&User{})` 这种导致全表清空的恐怖代码，GORM 默认开启了保护机制。
 				- 如果没有任何 `Where` 条件，也没有指定主键，GORM 会报错：`there is no missing where clause`。
-- ## Association
-	- `func (db *DB) Association(column string) *Association`
-	  collapsed:: true
-		- **作用：**
-			-
-		- **示例：**
-			-
-	- `func (association *Association) Replace(values ...interface{}) error`
-	  collapsed:: true
-		- **作用：**
-			-
-		- **示例：**
-			-
+	- Preload
 - **为什么 DeletedAt 要加索引？**
   collapsed:: true
 	- 因为你用了 **软删除（soft delete）**：数据并没真删，而是把 `deleted_at` 填上时间。
@@ -597,159 +576,14 @@
 	- 如果不限制 `pageSize` 上限，调用方传 `pageSize=100000`，会全表扫/大内存分配，影响服务稳定性。
 	- **分页防护：**`pageSize` 设置最大值（比如 100 / 200）。
 - **为什么 gorm.ErrRecordNotFound 透传到 HTTP 常常会变成 500？**
-	- `gorm.ErrRecordNotFound` 只是一个普通的 `error`，不携带 Kratos 需要的 `Reason/Code`，transport 不知道这是 404，通常按“未知内部错误”处理 => HTTP 500。
+  collapsed:: true
+	- `gorm.ErrRecordNotFound` 只是一个普通的 `error`，不携带 Kratos 需要的 `Reason/Code`，transport 不知道这是 404，通常按 “未知内部错误” 处理，也就是 HTTP 500。
 	- 要避免 500，核心就是：在进入 transport 前，把业务错误统一转换成 Kratos errors。
 - **最佳实践：**
   collapsed:: true
 	- 更新之前不需要先查询记录是否存在，直接尝试更新，如果 `RowsAffected` 为 0，就说明不存在。
 - [[Go 程序设计语言/GORM/多对一（Many-to-One）]]
-- ## 多对多
-  collapsed:: true
-	- **核心原理：中间表（Join Table）**
-	  collapsed:: true
-		- 与“一对多”不同，多对多不能只在某一方增加一个外键。它必须引入第三张表——中间表。
-		- 多对多必须有 `many2many` 标签，GORM 会自动管理中间表。
-	- **代码示例：**
-	  collapsed:: true
-		- **用户（User）和语言（Language）之间是多对多关系：**一个用户可以使用多种语言（如英语、中文等），而一种语言也可以被多个用户使用。
-		- ```go
-		  package main
-		  
-		  import (
-		  	"fmt"
-		  	"gorm.io/driver/sqlite"
-		  	"gorm.io/gorm"
-		  )
-		  
-		  // Language (被引用的实体)
-		  type Language struct {
-		  	gorm.Model
-		  	Name string
-		  }
-		  
-		  // User (主实体)
-		  type User struct {
-		  	gorm.Model
-		  	Name string
-		  
-		  	// [核心配置]
-		  	// 1. 使用切片表示多个
-		  	// 2. 必须加 `many2many:表名` 标签
-		  	// GORM 会自动创建名为 `user_languages` 的中间表
-		  	Languages []*Language `gorm:"many2many:user_languages;"`
-		  }
-		  
-		  func main() {
-		  	db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-		  	// GORM 会自动创建三张表：users, languages, user_languages
-		  	db.AutoMigrate(&User{}, &Language{})
-		  
-		  	// ==========================================
-		  	// 1. 插入 (Create) - 建立关系
-		  	// ==========================================
-		  	// 准备两种语言
-		  	cn := Language{Name: "Chinese"}
-		  	en := Language{Name: "English"}
-		  
-		  	user := User{
-		  		Name: "John",
-		  		// 直接把语言对象放进去，GORM 会自动处理中间表
-		  		Languages: []*Language{&cn, &en},
-		  	}
-		  	db.Create(&user)
-		  	
-		  	fmt.Println("创建完成，中间表已自动填充。")
-		  
-		  	// ==========================================
-		  	// 2. 查询 (Read) - 预加载
-		  	// ==========================================
-		  	var u User
-		  	// 使用 Preload 加载关联数据
-		  	db.Preload("Languages").First(&u, "name = ?", "John")
-		  
-		  	fmt.Printf("用户: %s 会说的语言: ", u.Name)
-		  	for _, l := range u.Languages {
-		  		fmt.Printf("[%s] ", l.Name)
-		  	}
-		  	fmt.Println()
-		  
-		  	// ==========================================
-		  	// 3. 更新关联 (Update Association)
-		  	// ==========================================
-		  	// 场景：John 学会了法语，要加进去
-		  	fr := Language{Name: "French"}
-		  	
-		  	// 使用 Association 模式（推荐）
-		  	// 这里的 "Languages" 对应结构体字段名
-		  	err := db.Model(&u).Association("Languages").Append(&fr)
-		  	if err == nil {
-		  		fmt.Println("已添加法语关联")
-		  	}
-		  
-		  	// ==========================================
-		  	// 4. 删除关联 (Delete Association)
-		  	// ==========================================
-		  	// 场景：John 忘记了英语 (只删除关系，不删除英语这个数据本身)
-		  	// 注意：这里需要传入具体的对象，或者对象的 ID
-		  	db.Model(&u).Association("Languages").Delete(&en)
-		  	fmt.Println("已移除英语关联")
-		  
-		  	// ==========================================
-		  	// 5. 替换关联 (Replace)
-		  	// ==========================================
-		  	// 场景：重置，John 现在只懂日语
-		  	jp := Language{Name: "Japanese"}
-		  	db.Model(&u).Association("Languages").Replace(&jp)
-		  	fmt.Println("关联已重置为仅日语")
-		  }
-		  ```
-	- **CRUD 中间表：**
-	  collapsed:: true
-		- 专门用于管理关联。
-		- ```go
-		  // 1. 添加关系 (Append)
-		  db.Model(&user).Association("Languages").Append(&newLang)
-		  
-		  // 2. 移除关系 (Delete) - 仅删中间表记录，不删 Language 表记录
-		  db.Model(&user).Association("Languages").Delete(&oldLang)
-		  
-		  // 3. 替换关系 (Replace) - 先清空该用户的所有旧关系，再添加新的
-		  db.Model(&user).Association("Languages").Replace(&lang1, &lang2)
-		  
-		  // 4. 清空关系 (Clear) - 删掉该用户在中间表的所有记录
-		  db.Model(&user).Association("Languages").Clear()
-		  
-		  // 5. 计数 (Count) - 该用户会几种语言？
-		  db.Model(&user).Association("Languages").Count()
-		  ```
-	- **自定义外键和中间表列名：**
-	  collapsed:: true
-		- 如果你的表不是通过 ID 关联，或者你想自定义中间表的列名。
-		- ```go
-		  type User struct {
-		      gorm.Model
-		      UserCode  string `gorm:"unique"` // 自己的唯一标识
-		      
-		      Languages []Language `gorm:"many2many:user_languages;foreignKey:UserCode;joinForeignKey:UserRef;references:Code;joinReferences:LangRef"`
-		  }
-		  
-		  type Language struct {
-		      gorm.Model
-		      Code string `gorm:"unique"` // 对方的唯一标识
-		      Name string
-		  }
-		  ```
-		- **Tag 解释：**
-			- **`many2many:user_languages`：**中间表叫 `user_languages`。
-			- **`foreignKey:UserCode`：**我方（User）用哪个字段去关联？ $\rightarrow$ `UserCode`。
-			- **`joinForeignKey:UserRef`：**在中间表里，映射我方数据的列名叫什么？ $\rightarrow$ 叫 `UserRef`。
-			- **`references:Code`：**对方（Language）用哪个字段被关联？ $\rightarrow$ `Code`。
-			- **`joinReferences:LangRef`：**在中间表里，映射对方数据的列名叫什么？ $\rightarrow$ 叫 `LangRef`。
-	- **多对多的字段加在哪一边？**
-	  collapsed:: true
-		- **只查一边**：放在“主”的一方（通常是 User）。
-		- **两边都要查**：两边都加，但中间表名字必须一致。
-		- **数据库层面**：无论你加在一边还是两边，GORM 在数据库里生成的中间表都是同一张。
+- [[Go 程序设计语言/GORM/多对多（Many-to-Many）]]
 - `type Tabler interface`
   collapsed:: true
 	- ```go
@@ -757,8 +591,8 @@
 	  	TableName() string
 	  }
 	  ```
-		- `TableName() string`
-			- **作用：**
-				- 用于给某个自定义模型（Struct）硬编码一个固定的数据库表名。
-				- 如果你的模型结构体实现了 `Tabler` 接口（即定义了一个无参数的 `TableName` 方法），GORM 会在解析 Schema 时调用它来获取表名。
+	- `TableName() string`
+		- **作用：**
+			- 用于给某个自定义模型（Struct）硬编码一个固定的数据库表名。
+			- 如果你的模型结构体实现了 `Tabler` 接口（即定义了一个无参数的 `TableName` 方法），GORM 会在解析 Schema 时调用它来获取表名。
 -
