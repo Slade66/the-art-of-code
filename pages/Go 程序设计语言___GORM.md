@@ -163,9 +163,7 @@
 			- 第 3 批：插入 200~299
 	- `func (db *DB) Updates(values interface{}) (tx *DB)`
 	  collapsed:: true
-		- **作用：**更新一个或多个字段。
-			- 它生成的 SQL 类似于：`UPDATE users SET name='new', age=18 WHERE id=1;`
-			- 它不会覆盖所有的列，只覆盖你传给它的那些列。
+		- **作用：**批量更新一个或多个字段。
 		- **代码示例：**
 			- **单行记录更新：**
 				- 要更新单行数据，你通常需要先通过 `Model` 指定要操作的对象（主要是为了获取主键 ID）。
@@ -185,14 +183,14 @@
 				  db.Model(&User{}).Where("age < ?", 10).Updates(User{Role: "active", Age: 18})
 				  ```
 		- **注意：**
-			- **结构体的“零值陷阱”：**
-				- 当你传入一个 `Struct` 给 `Updates` 时，GORM 会自动忽略零值（0, false, ""）。GORM 认为你是想“保持原样”，而不是“更新为 0”。
+			- **结构体的 “零值陷阱”：**
+				- 当你传入一个结构体给 `Updates` 时，GORM 只更新非零值，会自动忽略零值（`0`，`false`，`""`）。GORM 认为你没填就是不想改，是想“保持原样”，而不是 “更新为 0”。
 				- ```go
 				  // 你的意图：把库存设置为 0，把激活状态设为 false
 				  // 实际结果：什么都没变！因为 0 和 false 被忽略了。
 				  db.Model(&product).Updates(Product{Stock: 0, IsActive: false})
 				  ```
-				- 如果你确实要把某个字段更新为 `0` 或 `false`：
+				- **如果你确实要把某个字段更新为零值：**
 					- **使用 Map：**
 						- `map[string]interface{}` 包含所有的键值对，GORM 不会忽略其中的零值。
 						- ```go
@@ -203,6 +201,7 @@
 						  })
 						  ```
 					- **使用 Select 指明字段：**
+						- 如果你非要用 Struct 更新零值，必须配合 `Select` 使用。
 						- 告诉 GORM：“不管这个字段值是什么，我都强制更新它”。
 						- ```go
 						  // 强制更新 Stock 和 IsActive，即使它们是 0 或 false
@@ -214,7 +213,7 @@
 						  // 或者使用 "*" 更新所有字段
 						  db.Model(&product).Select("*").Updates(Product{...})
 						  ```
-			- **安全提示：**如果没有任何 `Where` 条件，GORM 默认会阻止全局更新（Global Update）以防删库跑路。如果真的要全表更新，需要加 `AllowGlobalUpdate` 模式或者 `Where("1 = 1")`。
+			- **安全提示：**如果没有任何 `Where` 条件，GORM 默认会阻止全局更新，以防删库跑路。如果真的要全表更新，需要加 `AllowGlobalUpdate` 模式或者 `Where("1 = 1")`。
 			- **更新时触发的钩子：**
 				- 调用 `Updates` 时，会依次触发以下钩子：
 					- `BeforeSave`
