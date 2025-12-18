@@ -99,6 +99,4 @@
 			- **`references:Code`：**对方（Language）用哪个字段被关联？ $\rightarrow$ `Code`。
 			- **`joinReferences:LangRef`：**在中间表里，映射对方数据的列名叫什么？ $\rightarrow$ 叫 `LangRef`。
 		- 你需要写这么长的 Tag 来告诉 GORM 如何映射。如果用默认规约，一切都很简单；一旦打破规约，就要写很多配置。
-- **查询**
-	-
 -

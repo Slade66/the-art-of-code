@@ -522,7 +522,29 @@
 				- 如果结构体的 `ID` 为空（零值），GORM 会触发批量删除（如果没有开启防全表删除保护，这会很危险）。务必确保主键有值。
 				- 为了防止新手写出 `db.Delete(&User{})` 这种导致全表清空的恐怖代码，GORM 默认开启了保护机制。
 				- 如果没有任何 `Where` 条件，也没有指定主键，GORM 会报错：`there is no missing where clause`。
-	- Preload
+	- `func (db *DB) Preload(query string, args ...interface{}) (tx *DB)`
+		- **作用：**
+			- 在查询主对象（比如用户）的时候，告诉 GORM：“顺便帮我去隔壁表把关联的数据（比如信用卡、订单、角色）也查出来，填到我的结构体字段里。”
+		- **参数：**
+			- `query string`：结构体中的字段名。
+			- `args ...interface{}`：给关联查询加条件。
+		- **返回值：**
+			- `*gorm.DB`：返回当前数据库会话的指针。
+				- 为了支持链式调用：你可以一直点下去 `db.Preload("A").Preload("B").Find(...)`。
+		- **核心执行流程：**
+			-
+		- **注意：**
+			- **别想过滤主表**：
+			  collapsed:: true
+				- `Preload("Orders", "amount > 100")` 不会只查出有大额订单的用户。它会查出所有用户，只是那些没有大额订单的用户，其 `Orders` 字段为空。
+			- **字段名大小写敏感**：
+			  collapsed:: true
+				- 不是数据库的列名，也不是表名，是 Go Struct 里的那个 Field Name。
+				- 参数必须完全匹配 Struct 里的字段名（如 `"Orders"`），写成 `"orders"` 或数据库表名通常会报错。
+			- **嵌套加载：**
+			  collapsed:: true
+				- 可以用点号：`Preload("Orders.Items")`（查用户 -> 查订单 -> 查订单明细）。
+				- 也可以分开写：`Preload("Orders").Preload("Orders.Items")`。
 - **为什么 DeletedAt 要加索引？**
   collapsed:: true
 	- 因为你用了 **软删除（soft delete）**：数据并没真删，而是把 `deleted_at` 填上时间。
