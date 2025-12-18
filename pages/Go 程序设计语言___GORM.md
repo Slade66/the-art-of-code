@@ -523,6 +523,7 @@
 				- 为了防止新手写出 `db.Delete(&User{})` 这种导致全表清空的恐怖代码，GORM 默认开启了保护机制。
 				- 如果没有任何 `Where` 条件，也没有指定主键，GORM 会报错：`there is no missing where clause`。
 	- `func (db *DB) Preload(query string, args ...interface{}) (tx *DB)`
+	  collapsed:: true
 		- **作用：**
 			- 在查询主对象（比如用户）的时候，告诉 GORM：“顺便帮我去隔壁表把关联的数据（比如信用卡、订单、角色）也查出来，填到我的结构体字段里。”
 		- **参数：**
@@ -532,7 +533,106 @@
 			- `*gorm.DB`：返回当前数据库会话的指针。
 				- 为了支持链式调用：你可以一直点下去 `db.Preload("A").Preload("B").Find(...)`。
 		- **核心执行流程：**
-			-
+			- **Has Many / Has One（一对多 / 一对一）**
+			  collapsed:: true
+				- **场景：**查询用户（User），同时查出他名下的信用卡（CreditCards）。
+					- **User ID：**10、11
+					- **关系：**一个用户 → 多张信用卡
+				- **执行流程：**
+					- **主查询：**
+					  logseq.order-list-type:: number
+						- **Go：**`db.Preload("CreditCards").Find(&users)`
+						- **SQL：**`SELECT * FROM users;`
+						- **动作：**GORM 先查询所有用户数据，并从结果中提取主键 ID：[10, 11]。
+					- **子查询：**
+					  logseq.order-list-type:: number
+						- **SQL：**
+							- ```sql
+							  SELECT * FROM credit_cards
+							  WHERE user_id IN (10, 11);
+							  -- 核心：使用 IN 一次性查出所有相关信用卡
+							  ```
+						- **动作：**GORM 查询到所有属于这些用户的信用卡数据。
+					- **内存组装：**
+					  logseq.order-list-type:: number
+						- **动作：**GORM 在内存中遍历这批信用卡记录。
+						- 如果发现某张卡的 `user_id` 是 10，就把它放进 `users[0].CreditCards`。
+						- 如果发现某张卡的 `user_id` 是 11，就把它放进 `users[1].CreditCards`。
+			- collapsed:: true
+			  
+			  **Belongs To（多对一）**
+				- **场景：**查询用户（User），同时查出他们所属的公司（Company）。
+					- User 有 `CompanyID` 列
+					- **关系：**多个用户 → 属于同一个公司
+				- **执行流程：**
+					- **主查询：**
+					  logseq.order-list-type:: number
+						- **Go：**`db.Preload("Company").Find(&users)`
+						- **SQL：**`SELECT * FROM users;`
+						- **动作：**GORM 遍历查询到的用户，提取他们的外键 CompanyID。
+							- User A（CompanyID: 99）
+							- User B（CompanyID: 99）
+							- User C（CompanyID: 100）
+							- 去重后的 Company ID 列表：[99, 100]
+					- **子查询：**
+					  logseq.order-list-type:: number
+						- **SQL：**
+							- ```sql
+							  SELECT * FROM companies
+							  WHERE id IN (99, 100);
+							  -- 核心：只查询需要的公司，重复 ID 只查一次
+							  ```
+						- **动作：**GORM 查询到所有相关公司数据。
+					- **内存组装：**
+					  logseq.order-list-type:: number
+						- **动作：**将查询到的公司对象分配给对应用户
+						- 把查到的 `Company 99` 的指针赋给 User A 和 User B 的 `Company` 字段。
+						- 把 `Company 100` 赋给 User C。
+			- **Many to Many（多对多）**
+			  collapsed:: true
+				- **场景：**查询用户（User），同时查出他们掌握的语言（Languages）。
+					- **表结构：**`users`、`languages`、`user_languages`（中间表）
+				- **执行流程：**
+					- **主查询：**
+					  logseq.order-list-type:: number
+						- **Go：**`db.Preload("Languages").Find(&users)`
+						- **SQL：**`SELECT * FROM users;`
+						- **动作：**提取用户主键 ID：[1, 2]
+					- **子查询：**
+					  logseq.order-list-type:: number
+						- **动作：**这里 GORM 需要做一个 JOIN，因为它不知道哪个语言属于哪个用户，必须问中间表。
+						- **SQL：**
+							- ```sql
+							  SELECT 
+							  languages.*,              -- 查询语言详情
+							  user_languages.user_id    -- 关键：标明属于哪个用户，否则内存中无法匹配
+							  FROM languages
+							  INNER JOIN user_languages 
+							  ON user_languages.language_id = languages.id
+							  WHERE user_languages.user_id IN (1, 2);
+							  ```
+					- **内存组装：**
+					  logseq.order-list-type:: number
+						- **动作：**GORM 遍历查询结果，将语言分配给对应用户。
+						- 看到 `English` 且 `user_id=1` -> 塞进 User 1 的 `Languages`。
+						- 看到 `Chinese` 且 `user_id=1` -> 塞进 User 1 的 `Languages`。
+			- **嵌套 Preload**
+			  collapsed:: true
+				- **场景：**查询用户（User）及其订单（Orders），再查询订单中的商品（OrderItems）。
+					- **Go：**`db.Preload("Orders.OrderItems").Find(&users)`
+				- **执行流程：**
+					- **递归查询：**
+						- **Level 1：**
+							- **SQL：**`SELECT * FROM users;`
+							- **动作：**获取 User ID 列表
+						- **Level 2：**
+							- **SQL：**`SELECT * FROM orders WHERE user_id IN (...);`
+							- **动作：**获取订单 ID 列表
+						- **Level 3：**
+							- **SQL：**`SELECT * FROM order_items WHERE order_id IN (...);`
+							- **动作：**获取订单对应的商品数据
+					- **内存组装：**
+						- **动作：**先把 Items 塞到 Orders，再把 Orders 塞到 Users
 		- **注意：**
 			- **别想过滤主表**：
 			  collapsed:: true
@@ -541,10 +641,6 @@
 			  collapsed:: true
 				- 不是数据库的列名，也不是表名，是 Go Struct 里的那个 Field Name。
 				- 参数必须完全匹配 Struct 里的字段名（如 `"Orders"`），写成 `"orders"` 或数据库表名通常会报错。
-			- **嵌套加载：**
-			  collapsed:: true
-				- 可以用点号：`Preload("Orders.Items")`（查用户 -> 查订单 -> 查订单明细）。
-				- 也可以分开写：`Preload("Orders").Preload("Orders.Items")`。
 - **为什么 DeletedAt 要加索引？**
   collapsed:: true
 	- 因为你用了 **软删除（soft delete）**：数据并没真删，而是把 `deleted_at` 填上时间。
