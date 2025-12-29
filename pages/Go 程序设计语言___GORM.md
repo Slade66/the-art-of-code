@@ -696,6 +696,11 @@
   collapsed:: true
 	- `gorm.ErrRecordNotFound` 只是一个普通的 `error`，不携带 Kratos 需要的 `Reason/Code`，transport 不知道这是 404，通常按 “未知内部错误” 处理，也就是 HTTP 500。
 	- 要避免 500，核心就是：在进入 transport 前，把业务错误统一转换成 Kratos errors。
+- **GORM 与 MySQL 的数据类型映射**
+  collapsed:: true
+	- `bool`➡️`tinyint(1)`：0 为 false，1 为 true。
+	- `time.Time`➡️`datetime(3)`：默认为毫秒精度
+	-
 - **最佳实践：**
   collapsed:: true
 	- 更新之前不需要先查询记录是否存在，直接尝试更新，如果 `RowsAffected` 为 0，就说明不存在。

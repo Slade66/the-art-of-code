@@ -431,4 +431,16 @@
 		- Apifox 的接口目录通常按照接口的 `tags` 分组；而 `protoc-gen-openapi` 默认生成的 `tags` 是服务名称（英文），所以导入 Apifox 后，目录也会显示为英文。
 - **最佳实践**（Kratos 常见做法）：
 	- 参数校验尽量在 `service` 层做（返回 `errors.BadRequest`），不要把非法参数落到 data 层变成 DB 行为。
+- MySQL 的 JSON 字段和 proto 的零值冲突
+	- MySQL 对 JSON 列有强校验：
+	  **只能存合法 JSON 文本**（比如 "{}", "[]", "\"abc\"", "[1,2]" 等），不能存空字符串 "" 这种“不是 JSON”的东西。
+	- 你的 proto 里 topology 是 string 字段，且你这次请求里 **没有传 topology**。
+	  Go 里 string 的零值是 ""，
+	- 所以流程大概是这样的：
+		- 前端没传 topology。
+		- gRPC/HTTP 网关把请求解到 Go struct，Topology 字段是空字符串 ""。
+		- GORM 插入时把 "" 写到 topology 这一列。
+		- MySQL 发现你往 JSON 列里存的是 ""（不是合法 JSON），触发 JSON 约束：
+	- **你往 JSON 列写了非法 JSON（空字符串）**。
+	- 你这次请求里没传 topology，Go 的 string 零值是 ""，GORM 把 "" 写进 JSON 列，就被 MySQL 拒了。
 -
