@@ -640,6 +640,52 @@
 			  collapsed:: true
 				- 不是数据库的列名，也不是表名，是 Go Struct 里的那个 Field Name。
 				- 参数必须完全匹配 Struct 里的字段名（如 `"Orders"`），写成 `"orders"` 或数据库表名通常会报错。
+	- `func (db *DB) Pluck(column string, dest interface{}) (tx *DB)`
+	  collapsed:: true
+		- **作用：**
+			- 查询单列数据并将其扫描到切片中。
+			- 如果你只需要获取数据库中某个字段的列表（例如所有的用户 ID 或用户名），而不想要整个结构体对象，`Pluck` 是最高效的选择。
+		- **注意：**
+			- **查询结果为空会报错吗？**
+				- 如果查询不到符合条件的记录，`Pluck` 不会返回 `ErrRecordNotFound` 错误，而是返回一个空切片。
+			- **可以用 Pluck 查询多列吗？**
+				- 不可以。`Pluck` 的设计初衷就是针对单列。
+				- 如果你想查询多列，应该使用 `Select` 配合 `Scan` 或 `Find`：
+					- ```go
+					  type Result struct {
+					      Name string
+					      Age  int
+					  }
+					  var results []Result
+					  db.Model(&User{}).Select("name", "age").Scan(&results)
+					  ```
+		- **示例：**
+			- **基础用法：**
+				- 当你使用 `Pluck` 时，必须先使用 `Model` 或 `Table` 指定查询的源，以便 GORM 知道去哪张表找这个字段。
+				- ```go
+				  var names []string
+				  // SELECT name FROM users;
+				  db.Model(&User{}).Pluck("name", &names)
+				  ```
+			- **结合条件查询：**
+				- 你可以像使用 `Find` 一样，在 `Pluck` 之前加入 `Where`、`Limit` 或 `Order` 等过滤条件。
+				- ```go
+				  var activeUserNames []string
+				  
+				  db.Model(&User{}).
+				      Where("status = ?", "active").
+				      Limit(10).
+				      Order("created_at desc").
+				      Pluck("name", &activeUserNames)
+				  // SQL: SELECT name FROM users WHERE status = 'active' ORDER BY created_at desc LIMIT 10;
+				  ```
+			- **使用 Distinct 去重：**
+				- 如果需要查询不重复的值，可以结合 `Distinct` 使用。
+				- ```go
+				  var roles []string
+				  // SELECT DISTINCT role FROM users;
+				  db.Model(&User{}).Distinct().Pluck("role", &roles)
+				  ```
 - **为什么 DeletedAt 要加索引？**
   collapsed:: true
 	- 因为你用了 **软删除（soft delete）**：数据并没真删，而是把 `deleted_at` 填上时间。
