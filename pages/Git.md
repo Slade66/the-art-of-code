@@ -1,7 +1,6 @@
 - [[CRLF 和 LF 混用导致的“虚假改动”问题]]
 - [[分支（Branch）]]
 - ## Git 配置代理
-  collapsed:: true
 	- ```bash
 	  # 查看当前 Git 代理是什么
 	  git config --global --get http.proxy
