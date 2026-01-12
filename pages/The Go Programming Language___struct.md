@@ -356,9 +356,8 @@
 		- `db:"..."`：被 `database/sql` 库读取，用于定义字段与数据库列名的映射。
 		- `validate:"..."`：被数据校验库读取，用于定义字段的验证规则。
 	- **原理：**
-		- 结构体标签的工作原理完全依赖于 Go 的反射包。
 		- 当一个库（如 `encoding/json`）处理一个结构体时，它会执行以下步骤：
-			- 使用 `reflect.TypeOf()` 获取结构体的类型信息。
+			- 使用 Go 的反射包 `reflect.TypeOf()` 获取结构体的类型信息。
 			  logseq.order-list-type:: number
 			- 遍历结构体的所有字段。
 			  logseq.order-list-type:: number
