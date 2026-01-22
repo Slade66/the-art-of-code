@@ -15,7 +15,6 @@
 - [[The Go Programming Language/循环]]
 - [[The Go Programming Language/条件分支]]
 - [[The Go Programming Language/defer]]
-- [[The Go Programming Language/指针]]
 - [[The Go Programming Language/struct]]
 - [[The Go Programming Language/数组]]
 - [[The Go Programming Language/slice]]
