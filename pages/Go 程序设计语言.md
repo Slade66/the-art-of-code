@@ -20,7 +20,6 @@
 - [[The Go Programming Language/slice]]
 - [[The Go Programming Language/map]]
 - [[The Go Programming Language/方法]]
-- [[The Go Programming Language/接口]]
 - [[The Go Programming Language/Standard library]]
 - [[The Go Programming Language/错误处理]]
 - [[The Go Programming Language/字符串]]

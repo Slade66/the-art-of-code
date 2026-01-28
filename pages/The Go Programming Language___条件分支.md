@@ -170,5 +170,5 @@
 				      fmt.Println("Even")
 				  }
 				  ```
-	- ((6932808f-4fd4-41f7-9f37-0e309c77aeef))
+	- *Type Switches**
 -
